@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Platform Governance & Moderation - WorkBridge">
+    <title>Admin Governance Console | WorkBridge</title>
+    
+    <!-- CSS Foundations -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Global Top Navigation -->
+    <header class="site-header">
+        <div class="container nav-container">
+            <a href="index.html" class="brand-logo">
+                <span class="logo-accent">Work</span>Bridge
+                <span class="badge badge-danger ml-2">ADMIN</span>
+            </a>
+            
+            <nav id="mainNav" class="nav-links">
+                <!-- Populated dynamically via js/components/navbar.js -->
+            </nav>
+        </div>
+    </header>
+
+    <div class="dashboard-layout container">
+        
+        <!-- Admin Sidebar -->
+        <aside class="dashboard-sidebar">
+            <div class="card profile-widget">
+                <div class="profile-avatar avatar-admin" id="adminAvatar">A</div>
+                <h3 class="profile-name" id="adminName">System Administrator</h3>
+                <span class="badge badge-danger">Governance & Ops</span>
+                <p class="profile-email text-muted" id="adminEmail">admin@workbridge.local</p>
+            </div>
+
+            <div class="sidebar-menu-card card mt-3">
+                <h4 class="menu-heading">Governance Nav</h4>
+                <ul class="sidebar-menu">
+                    <li><button type="button" class="sidebar-link-btn active" data-target="panelMetrics">📊 Platform Overview</button></li>
+                    <li><button type="button" class="sidebar-link-btn" data-target="panelProviders">🛡️ Provider Verification</button></li>
+                    <li><button type="button" class="sidebar-link-btn" data-target="panelReports">⚠️ Abuse Reports</button></li>
+                    <li><button type="button" class="sidebar-link-btn" data-target="panelUsers">👥 User Directory</button></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Admin Workspace Main -->
+        <main class="dashboard-content">
+            
+            <div class="dashboard-header-row">
+                <div>
+                    <h1 class="page-title">Platform Governance</h1>
+                    <p class="text-muted">Monitor platform health, verify service providers, and resolve safety flags.</p>
+                </div>
+            </div>
+
+            <!-- TAB 1: Platform Telemetry & Metrics -->
+            <section id="panelMetrics" class="admin-panel">
+                <div class="metrics-grid mt-3">
+                    <div class="card metric-card">
+                        <div class="metric-icon">👥</div>
+                        <div class="metric-details">
+                            <span class="metric-label">Total Users</span>
+                            <h2 class="metric-value" id="metricTotalUsers">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-icon">💼</div>
+                        <div class="metric-details">
+                            <span class="metric-label">Verified Providers</span>
+                            <h2 class="metric-value text-info" id="metricVerifiedProviders">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-icon">📁</div>
+                        <div class="metric-details">
+                            <span class="metric-label">Active Projects</span>
+                            <h2 class="metric-value text-success" id="metricPlatformProjects">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-icon">🚩</div>
+                        <div class="metric-details">
+                            <span class="metric-label">Pending Reports</span>
+                            <h2 class="metric-value text-danger" id="metricOpenReports">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: Provider Verification Queue -->
+            <section id="panelProviders" class="admin-panel mt-4">
+                <div class="section-title-row">
+                    <h3 class="section-heading">Service Provider Verification Queue</h3>
+                </div>
+
+                <div class="card table-container mt-2">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Provider Name</th>
+                                <th>Category</th>
+                                <th>Skills</th>
+                                <th>Rating</th>
+                                <th>Status</th>
+                                <th class="text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="providerVerificationTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Loading providers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 3: Abuse & Content Reports Queue -->
+            <section id="panelReports" class="admin-panel mt-4">
+                <div class="section-title-row">
+                    <h3 class="section-heading">Safety & Moderation Flags</h3>
+                </div>
+
+                <div class="card table-container mt-2">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Reported Entity</th>
+                                <th>Reason</th>
+                                <th>Reported By</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th class="text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Loading reports...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 4: User Directory -->
+            <section id="panelUsers" class="admin-panel mt-4">
+                <div class="section-title-row">
+                    <h3 class="section-heading">User Directory</h3>
+                </div>
+
+                <div class="card table-container mt-2">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Email</th>
+                                <th>Joined</th>
+                                <th>Status</th>
+                                <th class="text-right">Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userDirectoryTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Loading user directory...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/toast.js"></script>
+</body>
+</html>

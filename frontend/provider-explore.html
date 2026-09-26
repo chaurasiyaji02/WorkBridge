@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore and invite verified technology service providers on WorkBridge">
+    <title>Explore Service Providers | WorkBridge</title>
+    
+    <!-- CSS Foundations -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+
+    <!-- Main Navigation Header -->
+    <header class="site-header">
+        <div class="container nav-container">
+            <a href="index.html" class="brand-logo">
+                <span class="logo-accent">Work</span>Bridge
+            </a>
+            
+            <nav id="mainNav" class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="provider-explore.html" class="nav-link active">Explore Providers</a>
+                <a href="auth.html" class="btn btn-outline" id="navLoginBtn">Sign In</a>
+                <a href="auth.html?mode=register" class="btn btn-primary" id="navRegisterBtn">Get Started</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-main">
+        <div class="container">
+            
+            <!-- Page Header -->
+            <div class="page-header-row">
+                <div>
+                    <h1 class="page-title">Explore Service Providers</h1>
+                    <p class="text-muted">Find specialized developers, designers, and engineering teams for your project.</p>
+                </div>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <section class="filter-panel card">
+                <form id="providerFilterForm" class="filter-grid">
+                    
+                    <div class="form-group mb-0">
+                        <label for="searchInput" class="form-label-sm">Search by Name or Skill</label>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="form-control" 
+                            placeholder="e.g., Spring Boot, React, UI/UX, Cloud"
+                        >
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="categoryFilter" class="form-label-sm">Domain / Category</label>
+                        <select id="categoryFilter" class="form-control">
+                            <option value="">All Categories</option>
+                            <option value="FULL_STACK">Full Stack Development</option>
+                            <option value="BACKEND">Backend Engineering</option>
+                            <option value="FRONTEND">Frontend & Web</option>
+                            <option value="MOBILE">Mobile App Development</option>
+                            <option value="UI_UX">UI/UX Design</option>
+                            <option value="DEVOPS">DevOps & Cloud Architecture</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="minRatingFilter" class="form-label-sm">Minimum Rating</label>
+                        <select id="minRatingFilter" class="form-control">
+                            <option value="0">Any Rating</option>
+                            <option value="4.5">4.5 & Above</option>
+                            <option value="4.0">4.0 & Above</option>
+                            <option value="3.5">3.5 & Above</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+                        <button type="button" id="resetFilterBtn" class="btn btn-outline btn-block">Reset</button>
+                    </div>
+
+                </form>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section mt-4">
+                <div class="results-meta-row">
+                    <span id="resultsCount" class="text-muted font-medium">Loading providers...</span>
+                </div>
+
+                <!-- Provider Card Grid (Populated via JS) -->
+                <div id="providerGrid" class="grid grid-3 mt-3">
+                    <!-- Skeleton / Placeholder loading cards -->
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State (Hidden by default) -->
+                <div id="emptyState" class="card empty-state text-center hidden">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No Providers Found</h3>
+                    <p class="text-muted">Try adjusting your filters or search keywords.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Invite / Start Project Modal -->
+    <div id="inviteModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalProviderTitle">Invite Provider to Project</h3>
+                <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+            </div>
+            <form id="inviteProjectForm" class="modal-body">
+                <input type="hidden" id="selectedProviderId" name="providerId">
+                
+                <div class="form-group">
+                    <label for="projectTitleInput" class="form-label">Project Name</label>
+                    <input 
+                        type="text" 
+                        id="projectTitleInput" 
+                        class="form-control" 
+                        placeholder="e.g., E-Commerce Admin Panel" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="projectSummaryInput" class="form-label">Initial Objective & Scope</label>
+                    <textarea 
+                        id="projectSummaryInput" 
+                        class="form-control" 
+                        rows="4" 
+                        placeholder="Briefly describe what you want to build. You can refine and version full requirements later."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="modalCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Send Invitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/modal.js"></script>
+    <script src="js/components/toast.js"></script>
+    <script src="js/pages/explorePage.js"></script>
+</body>
+</html>

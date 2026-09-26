@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Service Provider Dashboard - WorkBridge Intelligent Collaboration System">
+    <title>Provider Workspace | WorkBridge</title>
+    
+    <!-- CSS Foundations -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Global Top Navigation -->
+    <header class="site-header">
+        <div class="container nav-container">
+            <a href="index.html" class="brand-logo">
+                <span class="logo-accent">Work</span>Bridge
+            </a>
+            
+            <nav id="mainNav" class="nav-links">
+                <!-- Populated dynamically via js/components/navbar.js -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout container">
+        
+        <!-- Dashboard Sidebar / Provider Info -->
+        <aside class="dashboard-sidebar">
+            <div class="card profile-widget">
+                <div class="profile-avatar avatar-provider" id="providerAvatar">P</div>
+                <h3 class="profile-name" id="providerName">Loading Provider...</h3>
+                <span class="badge badge-primary" id="providerRoleBadge">Service Provider</span>
+                <p class="profile-email text-muted" id="providerEmail">loading@provider.com</p>
+                
+                <div class="profile-divider"></div>
+                
+                <div class="provider-meta-info">
+                    <div class="meta-item">
+                        <span class="meta-label">Domain:</span>
+                        <strong id="providerCategory" class="meta-value">Engineering Team</strong>
+                    </div>
+                    <div class="meta-item mt-1">
+                        <span class="meta-label">Rating:</span>
+                        <strong id="providerRating" class="text-highlight">★ 5.0</strong>
+                    </div>
+                    <div class="meta-item mt-1">
+                        <span class="meta-label">Verification:</span>
+                        <span class="badge badge-success" id="providerVerificationBadge">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider Team Overview Card -->
+            <div class="card mt-3">
+                <h4 class="menu-heading">Team Capacity</h4>
+                <div id="teamMembersSummary" class="team-summary-list mt-2">
+                    <p class="text-muted text-sm">Managing client project allocations</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard View Area -->
+        <main class="dashboard-content">
+            
+            <!-- Dashboard Header -->
+            <div class="dashboard-header-row">
+                <div>
+                    <h1 class="page-title">Provider Operations Hub</h1>
+                    <p class="text-muted">Manage incoming invitations, review requirement specifications, and maintain active deliverables.</p>
+                </div>
+            </div>
+
+            <!-- Metric Cards Grid -->
+            <section class="metrics-grid mt-3">
+                <div class="card metric-card">
+                    <div class="metric-icon">📩</div>
+                    <div class="metric-details">
+                        <span class="metric-label">New Invitations</span>
+                        <h2 class="metric-value text-info" id="metricInvitesCount">0</h2>
+                    </div>
+                </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">⚡</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Active Collaborations</span>
+                        <h2 class="metric-value" id="metricActiveProjects">0</h2>
+                    </div>
+                </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">📝</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Draft Agreements</span>
+                        <h2 class="metric-value text-warning" id="metricDraftAgreements">0</h2>
+                    </div>
+                </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">🏆</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Completed Engagements</span>
+                        <h2 class="metric-value text-success" id="metricCompletedProjects">0</h2>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Incoming Invitations Section -->
+            <section id="invitationsSection" class="mt-4">
+                <div class="section-title-row">
+                    <h3 class="section-heading">Pending Project Invitations</h3>
+                    <span class="badge badge-subtle" id="invitesBadge">0 Pending</span>
+                </div>
+
+                <div id="invitationsList" class="invitations-container mt-2">
+                    <!-- Dynamic Invitation Cards populated via JS -->
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-line w-75 mt-2"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State for Invitations -->
+                <div id="noInvitesState" class="card empty-state text-center hidden">
+                    <p class="text-muted">No pending invitations at this time.</p>
+                </div>
+            </section>
+
+            <!-- Active Engagements Section -->
+            <section id="providerProjectsSection" class="mt-4">
+                <div class="section-title-row">
+                    <h3 class="section-heading">Active Engagements</h3>
+                    
+                    <div class="filter-pill-group">
+                        <button type="button" class="filter-pill active" data-filter="ALL">All Active</button>
+                        <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Under Scoping</button>
+                        <button type="button" class="filter-pill" data-filter="AGREEMENT_LOCKED">Agreement Locked</button>
+                        <button type="button" class="filter-pill" data-filter="IN_PROGRESS">Building</button>
+                    </div>
+                </div>
+
+                <!-- Projects List Container -->
+                <div id="providerProjectsList" class="projects-list-grid mt-3">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Empty State for Active Projects -->
+                <div id="noProviderProjectsState" class="card empty-state text-center hidden">
+                    <div class="empty-icon">📂</div>
+                    <h3>No Active Projects</h3>
+                    <p class="text-muted">Accept incoming project invitations to start collaborating.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/api/projectApi.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/toast.js"></script>
+    <script src="js/pages/providerDashboardPage.js"></script>
+</body>
+</html>

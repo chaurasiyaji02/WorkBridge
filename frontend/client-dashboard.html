@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Client Dashboard - WorkBridge Intelligent Collaboration System">
+    <title>Client Dashboard | WorkBridge</title>
+    
+    <!-- CSS Foundations -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Global Top Navigation -->
+    <header class="site-header">
+        <div class="container nav-container">
+            <a href="index.html" class="brand-logo">
+                <span class="logo-accent">Work</span>Bridge
+            </a>
+            
+            <nav id="mainNav" class="nav-links">
+                <!-- Populated dynamically via js/components/navbar.js -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout container">
+        
+        <!-- Dashboard Sidebar / Profile Summary -->
+        <aside class="dashboard-sidebar">
+            <div class="card profile-widget">
+                <div class="profile-avatar" id="clientAvatar">C</div>
+                <h3 class="profile-name" id="clientName">Loading Name...</h3>
+                <span class="badge badge-subtle" id="userRoleBadge">Client</span>
+                <p class="profile-email text-muted" id="clientEmail">loading@email.com</p>
+                <div class="profile-divider"></div>
+                <div class="profile-stat-row">
+                    <span class="text-muted">Total Projects:</span>
+                    <strong id="statTotalProjects">0</strong>
+                </div>
+            </div>
+
+            <!-- Quick Navigation Actions -->
+            <div class="sidebar-menu-card card mt-3">
+                <h4 class="menu-heading">Quick Actions</h4>
+                <ul class="sidebar-menu">
+                    <li><a href="provider-explore.html" class="sidebar-link active">🔍 Find Service Providers</a></li>
+                    <li><a href="#activeProjectsSection" class="sidebar-link">📁 Active Workspaces</a></li>
+                    <li><a href="#pendingApprovalsSection" class="sidebar-link">⏳ Pending Approvals</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard View Area -->
+        <main class="dashboard-content">
+            
+            <!-- Welcome Banner & Create Action -->
+            <div class="dashboard-header-row">
+                <div>
+                    <h1 class="page-title">Client Command Center</h1>
+                    <p class="text-muted">Manage your technology projects, review requirement versions, and track deliverables.</p>
+                </div>
+                <div>
+                    <a href="provider-explore.html" class="btn btn-primary">+ Start New Project</a>
+                </div>
+            </div>
+
+            <!-- Metric Cards Grid -->
+            <section class="metrics-grid mt-3">
+                <div class="card metric-card">
+                    <div class="metric-icon">🚀</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Active Projects</span>
+                        <h2 class="metric-value" id="metricActiveCount">0</h2>
+                    </div>
+                </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">📑</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Pending Sign-offs</span>
+                        <h2 class="metric-value text-warning" id="metricPendingSignoffs">0</h2>
+                    </div>
+                </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">✅</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Completed Works</span>
+                        <h2 class="metric-value text-success" id="metricCompletedCount">0</h2>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pending Action Alerts Section -->
+            <section id="pendingApprovalsSection" class="mt-4 hidden">
+                <h3 class="section-heading text-warning">Action Required</h3>
+                <div id="pendingActionsList" class="alert-action-container mt-2">
+                    <!-- Populated via JS when agreements/requirements need client approval -->
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="activeProjectsSection" class="mt-4">
+                <div class="section-title-row">
+                    <h3 class="section-heading">Your Projects</h3>
+                    
+                    <!-- Filter Tabs -->
+                    <div class="filter-pill-group">
+                        <button type="button" class="filter-pill active" data-filter="ALL">All</button>
+                        <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Requirements</button>
+                        <button type="button" class="filter-pill" data-filter="IN_PROGRESS">In Progress</button>
+                        <button type="button" class="filter-pill" data-filter="COMPLETED">Completed</button>
+                    </div>
+                </div>
+
+                <!-- Projects List Container -->
+                <div id="projectsList" class="projects-list-grid mt-3">
+                    <!-- Skeleton Cards for Loading State -->
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-line w-25 mt-2"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-line w-25 mt-2"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="noProjectsState" class="card empty-state text-center hidden">
+                    <div class="empty-icon">📂</div>
+                    <h3>No Projects Yet</h3>
+                    <p class="text-muted">You haven't initiated any projects yet. Discover technology service providers to start collaborating.</p>
+                    <a href="provider-explore.html" class="btn btn-primary mt-2">Explore Providers</a>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/api/projectApi.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/toast.js"></script>
+    <script src="js/pages/clientDashboardPage.js"></script>
+</body>
+</html>
