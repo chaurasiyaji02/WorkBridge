@@ -5,9 +5,17 @@
  * Provides centralized API endpoints, enumeration keys, and application defaults.
  */
 
+const isLocalhost = Boolean(
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '[::1]'
+);
+
 const APP_CONFIG = {
-    // Spring Boot Backend Base URL
-    API_BASE_URL: 'http://localhost:8080/api',
+    // Spring Boot Backend Base URL (Auto-selects local or live Render cloud URL)
+    API_BASE_URL: isLocalhost 
+        ? 'http://localhost:8080/api' 
+        : 'https://workbridge-api-zpdo.onrender.com/api',
 
     // Role Identifiers
     ROLES: {
