@@ -9,9 +9,22 @@
 
 const ApiClient = (function () {
     function getBaseUrl() {
+        // Priority 1: Check window.APP_CONFIG
         if (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) {
-            return window.APP_CONFIG.API_BASE_URL.replace(/\/+$/, '');
+            return window.APP_CONFIG.API_BASE_URL.replace(/\/+\$/, '');
         }
+
+        // Priority 2: Auto-detect hostname directly if config.js failed to load
+        const isLocalhost = Boolean(
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === '[::1]'
+        );
+
+        if (!isLocalhost) {
+            return 'https://workbridge-api-zpdo.onrender.com/api';
+        }
+
         return 'http://localhost:8080/api';
     }
 
