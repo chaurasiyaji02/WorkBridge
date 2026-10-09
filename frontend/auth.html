@@ -37,11 +37,11 @@
                 </button>
             </div>
 
-            <!-- Dynamic Feedback / Toast Area -->
-            <div id="authAlert" class="alert alert-hidden" role="alert"></div>
+            <!-- Dynamic Feedback Alert Box -->
+            <div id="authAlert" class="alert alert-hidden mt-3" role="alert"></div>
 
             <!-- ===================== LOGIN FORM ===================== -->
-            <form id="loginForm" class="auth-form" novalidate>
+            <form id="loginForm" class="auth-form mt-3" novalidate>
                 <div class="form-group">
                     <label for="loginEmail" class="form-label">Email Address</label>
                     <input 
@@ -56,7 +56,7 @@
                     <span class="form-error" id="loginEmailError"></span>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mt-2">
                     <div class="form-label-row">
                         <label for="loginPassword" class="form-label">Password</label>
                     </div>
@@ -72,49 +72,50 @@
                     <span class="form-error" id="loginPasswordError"></span>
                 </div>
 
-                <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">
-                    Sign In to Workspace
+                <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block mt-3">
+                    <span class="btn-text">Sign In to Workspace</span>
                 </button>
             </form>
 
             <!-- ===================== REGISTER FORM ===================== -->
-            <form id="registerForm" class="auth-form form-hidden" novalidate>
+            <form id="registerForm" class="auth-form form-hidden mt-3" novalidate>
                 
                 <!-- Role Selection -->
                 <div class="form-group">
                     <label class="form-label">I want to join as a:</label>
                     <div class="role-selector-grid">
                         <label class="role-option">
-                            <input type="radio" name="role" value="CLIENT" checked>
+                            <input type="radio" name="role" value="CLIENT" id="roleClientRadio" checked>
                             <div class="role-box">
                                 <span class="role-title">Client</span>
-                                <span class="role-desc">Hire providers & manage project requirements</span>
+                                <span class="role-desc">Commission work &amp; lock project scopes</span>
                             </div>
                         </label>
                         <label class="role-option">
-                            <input type="radio" name="role" value="SERVICE_PROVIDER">
+                            <input type="radio" name="role" value="SERVICE_PROVIDER" id="roleProviderRadio">
                             <div class="role-box">
                                 <span class="role-title">Service Provider</span>
-                                <span class="role-desc">Offer technical services & collaborate on deliverables</span>
+                                <span class="role-desc">Deliver technical solutions &amp; milestones</span>
                             </div>
                         </label>
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mt-2">
                     <label for="regFullName" class="form-label">Full Name / Organization Name</label>
                     <input 
                         type="text" 
                         id="regFullName" 
                         name="fullName" 
                         class="form-control" 
-                        placeholder="Alex Johnson or TechNova Labs" 
+                        placeholder="e.g., Alex Chen or Apex Solutions" 
                         required
+                        autocomplete="name"
                     >
                     <span class="form-error" id="regFullNameError"></span>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mt-2">
                     <label for="regEmail" class="form-label">Email Address</label>
                     <input 
                         type="email" 
@@ -128,7 +129,19 @@
                     <span class="form-error" id="regEmailError"></span>
                 </div>
 
-                <div class="form-group">
+                <!-- Provider Domain Specialization (Dynamic depending on role) -->
+                <div class="form-group mt-2 hidden" id="providerDomainGroup">
+                    <label for="regDomain" class="form-label">Primary Technical Domain</label>
+                    <select id="regDomain" name="domain" class="form-control">
+                        <option value="Full-Stack Web Development">Full-Stack Web Development</option>
+                        <option value="Backend & Cloud Engineering">Backend &amp; Cloud Engineering</option>
+                        <option value="Mobile App Development">Mobile App Development</option>
+                        <option value="AI & Data Engineering">AI &amp; Data Engineering</option>
+                        <option value="API Security & DevOps">API Security &amp; DevOps</option>
+                    </select>
+                </div>
+
+                <div class="form-group mt-2">
                     <label for="regPassword" class="form-label">Password</label>
                     <input 
                         type="password" 
@@ -143,7 +156,7 @@
                     <span class="form-error" id="regPasswordError"></span>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mt-2">
                     <label for="regConfirmPassword" class="form-label">Confirm Password</label>
                     <input 
                         type="password" 
@@ -157,19 +170,23 @@
                     <span class="form-error" id="regConfirmPasswordError"></span>
                 </div>
 
-                <button type="submit" id="registerSubmitBtn" class="btn btn-primary btn-block">
-                    Create Account
+                <button type="submit" id="registerSubmitBtn" class="btn btn-primary btn-block mt-3">
+                    <span class="btn-text">Create Account</span>
                 </button>
             </form>
 
         </div>
     </main>
 
-    <!-- Shared Utilities and Page Script -->
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline (Strict Dependency Order) -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
     <script src="js/api/authApi.js"></script>
+    <script src="js/components/toast.js"></script>
     <script src="js/pages/authPage.js"></script>
 </body>
 </html>

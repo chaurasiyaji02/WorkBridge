@@ -20,6 +20,13 @@
                 <span class="logo-accent">Work</span>Bridge
                 <span class="badge badge-danger ml-2">ADMIN</span>
             </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
             
             <nav id="mainNav" class="nav-links">
                 <!-- Populated dynamically via js/components/navbar.js -->
@@ -30,21 +37,30 @@
     <div class="dashboard-layout container">
         
         <!-- Admin Sidebar -->
-        <aside class="dashboard-sidebar">
+        <aside class="dashboard-sidebar" id="dashboardSidebar">
             <div class="card profile-widget">
-                <div class="profile-avatar avatar-admin" id="adminAvatar">A</div>
-                <h3 class="profile-name" id="adminName">System Administrator</h3>
-                <span class="badge badge-danger">Governance & Ops</span>
+                <div class="profile-header-summary">
+                    <div class="profile-avatar avatar-admin" id="adminAvatar">A</div>
+                    <div class="profile-title-group">
+                        <h3 class="profile-name" id="adminName">System Administrator</h3>
+                        <span class="badge badge-danger">Governance &amp; Ops</span>
+                    </div>
+                </div>
                 <p class="profile-email text-muted" id="adminEmail">admin@workbridge.local</p>
+                <div class="profile-divider"></div>
+                <div class="profile-stat-row">
+                    <span class="text-muted">Cloud DB:</span>
+                    <strong class="text-success">Neon Live</strong>
+                </div>
             </div>
 
             <div class="sidebar-menu-card card mt-3">
                 <h4 class="menu-heading">Governance Nav</h4>
                 <ul class="sidebar-menu">
-                    <li><button type="button" class="sidebar-link-btn active" data-target="panelMetrics">📊 Platform Overview</button></li>
-                    <li><button type="button" class="sidebar-link-btn" data-target="panelProviders">🛡️ Provider Verification</button></li>
-                    <li><button type="button" class="sidebar-link-btn" data-target="panelReports">⚠️ Abuse Reports</button></li>
-                    <li><button type="button" class="sidebar-link-btn" data-target="panelUsers">👥 User Directory</button></li>
+                    <li><button type="button" class="sidebar-btn-link active" data-target="panelMetrics">📊 Platform Overview</button></li>
+                    <li><button type="button" class="sidebar-btn-link" data-target="panelProviders">🛡️ Provider Verification</button></li>
+                    <li><button type="button" class="sidebar-btn-link" data-target="panelReports">⚠️ Abuse Reports</button></li>
+                    <li><button type="button" class="sidebar-btn-link" data-target="panelUsers">👥 User Directory</button></li>
                 </ul>
             </div>
         </aside>
@@ -57,11 +73,16 @@
                     <h1 class="page-title">Platform Governance</h1>
                     <p class="text-muted">Monitor platform health, verify service providers, and resolve safety flags.</p>
                 </div>
+                <div class="header-action-group">
+                    <button type="button" class="btn btn-outline" id="refreshAdminBtn" title="Sync live records">
+                        <span class="btn-icon">🔄</span> Sync
+                    </button>
+                </div>
             </div>
 
             <!-- TAB 1: Platform Telemetry & Metrics -->
-            <section id="panelMetrics" class="admin-panel">
-                <div class="metrics-grid mt-3">
+            <section id="panelMetrics" class="admin-panel mt-3">
+                <div class="metrics-grid">
                     <div class="card metric-card">
                         <div class="metric-icon">👥</div>
                         <div class="metric-details">
@@ -94,12 +115,25 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card mt-3">
+                    <h3 class="card-title">System Status &amp; Integrity</h3>
+                    <p class="text-muted text-sm mt-1">WorkBridge engine operating with stateless JWT and Neon PostgreSQL cloud storage.</p>
+                    <div class="meta-kv-group mt-3">
+                        <div class="kv-item"><span class="text-muted">Spring Security:</span> <strong class="text-success">Active (Stateless JWT)</strong></div>
+                        <div class="kv-item mt-1"><span class="text-muted">Scope Version Engine:</span> <strong class="text-success">Enforced (v1.0 Immutable)</strong></div>
+                        <div class="kv-item mt-1"><span class="text-muted">API Host:</span> <strong>Render Web Service</strong></div>
+                    </div>
+                </div>
             </section>
 
             <!-- TAB 2: Provider Verification Queue -->
-            <section id="panelProviders" class="admin-panel mt-4">
+            <section id="panelProviders" class="admin-panel mt-3 hidden">
                 <div class="section-title-row">
-                    <h3 class="section-heading">Service Provider Verification Queue</h3>
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">Service Provider Verification Queue</h3>
+                        <span class="badge badge-subtle" id="unverifiedCountBadge">0 Pending</span>
+                    </div>
                 </div>
 
                 <div class="card table-container mt-2">
@@ -124,9 +158,12 @@
             </section>
 
             <!-- TAB 3: Abuse & Content Reports Queue -->
-            <section id="panelReports" class="admin-panel mt-4">
+            <section id="panelReports" class="admin-panel mt-3 hidden">
                 <div class="section-title-row">
-                    <h3 class="section-heading">Safety & Moderation Flags</h3>
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">Safety &amp; Moderation Flags</h3>
+                        <span class="badge badge-danger" id="reportsCountBadge">0 Flags</span>
+                    </div>
                 </div>
 
                 <div class="card table-container mt-2">
@@ -151,9 +188,12 @@
             </section>
 
             <!-- TAB 4: User Directory -->
-            <section id="panelUsers" class="admin-panel mt-4">
+            <section id="panelUsers" class="admin-panel mt-3 hidden">
                 <div class="section-title-row">
-                    <h3 class="section-heading">User Directory</h3>
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">User Directory</h3>
+                        <span class="badge badge-subtle" id="usersCountBadge">0 Registered</span>
+                    </div>
                 </div>
 
                 <div class="card table-container mt-2">
@@ -180,11 +220,58 @@
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Moderation / Review Action Modal -->
+    <div id="adminActionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminActionModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="adminActionModalTitle">Moderation Action</h3>
+                <button type="button" class="modal-close-btn" id="closeAdminModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="adminActionModalBody">
+                <p id="adminModalMessage">Confirm resolution for this governance item.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAdminModalBtn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAdminModalBtn">Confirm Action</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline (Strict Dependency Order) -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
+    <script src="js/api/projectApi.js"></script>
     <script src="js/components/navbar.js"></script>
     <script src="js/components/toast.js"></script>
+    <script src="js/pages/adminDashboardPage.js"></script>
+    <script>
+        // Inline lightweight tab switcher & route guard for Admin
+        document.addEventListener('DOMContentLoaded', () => {
+            const { ROLES } = window.APP_CONFIG || { ROLES: { ADMIN: 'ADMIN' } };
+            if (window.AuthState && typeof window.AuthState.requireAuth === 'function') {
+                window.AuthState.requireAuth([ROLES.ADMIN]);
+            }
+
+            const tabs = document.querySelectorAll('.sidebar-btn-link[data-target]');
+            const panels = document.querySelectorAll('.admin-panel');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    panels.forEach(p => p.classList.add('hidden'));
+
+                    tab.classList.add('active');
+                    const targetId = tab.getAttribute('data-target');
+                    const targetPanel = document.getElementById(targetId);
+                    if (targetPanel) targetPanel.classList.remove('hidden');
+                });
+            });
+        });
+        
+    </script>
 </body>
 </html>

@@ -2,25 +2,41 @@
  * WORKBRIDGE - SERVICE PROVIDER DASHBOARD CONTROLLER
  * File: js/pages/providerDashboardPage.js
  * 
- * Handles route guarding, invitation processing (Accept/Decline),
- * provider metric calculation, and active engagement listing.
+ * Handles route guarding, live Neon DB data hydration, invitation review/acceptance,
+ * scope version badge inspection, dynamic progress calculations, and clean zero-state rendering.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const { ROLES, PROJECT_STAGES } = window.APP_CONFIG;
+    const { ROLES, PROJECT_STAGES } = window.APP_CONFIG || {
+        ROLES: { SERVICE_PROVIDER: 'SERVICE_PROVIDER', CLIENT: 'CLIENT', ADMIN: 'ADMIN' },
+        PROJECT_STAGES: {
+            INVITED: 'INVITED',
+            REQUIREMENT_DISCUSSION: 'REQUIREMENT_DISCUSSION',
+            AGREEMENT_LOCKED: 'AGREEMENT_LOCKED',
+            IN_PROGRESS: 'IN_PROGRESS',
+            REVIEW: 'REVIEW',
+            COMPLETED: 'COMPLETED'
+        }
+    };
 
     // -------------------------------------------------------------------------
-    // 1. Route Guard: Ensure user is logged in as a SERVICE_PROVIDER
+    // 1. Route Guard: Ensure user is logged in as SERVICE_PROVIDER
     // -------------------------------------------------------------------------
-    window.AuthState.requireAuth([ROLES.SERVICE_PROVIDER]);
+    if (window.AuthState && typeof window.AuthState.requireAuth === 'function') {
+        window.AuthState.requireAuth([ROLES.SERVICE_PROVIDER]);
+    }
 
-    const currentUser = window.AuthState.getUser();
+    const currentUser = window.AuthState ? window.AuthState.getUser() : null;
     if (!currentUser) return;
 
     // DOM Elements - Profile & Sidebar
     const providerNameEl = document.getElementById('providerName');
     const providerEmailEl = document.getElementById('providerEmail');
     const providerAvatarEl = document.getElementById('providerAvatar');
+    const providerCategoryEl = document.getElementById('providerCategory');
+    const providerRatingEl = document.getElementById('providerRating');
+    const capacitySubtextEl = document.getElementById('capacitySubtext');
+    const activeCapacityBadgeEl = document.getElementById('activeCapacityBadge');
 
     // DOM Elements - Metrics
     const metricInvitesCount = document.getElementById('metricInvitesCount');
@@ -28,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const metricDraftAgreements = document.getElementById('metricDraftAgreements');
     const metricCompletedProjects = document.getElementById('metricCompletedProjects');
     const invitesBadge = document.getElementById('invitesBadge');
+    const activeProjectsCountBadge = document.getElementById('activeProjectsCountBadge');
 
     // DOM Elements - Lists & Containers
     const invitationsList = document.getElementById('invitationsList');
@@ -35,69 +52,146 @@ document.addEventListener('DOMContentLoaded', async () => {
     const providerProjectsList = document.getElementById('providerProjectsList');
     const noProviderProjectsState = document.getElementById('noProviderProjectsState');
     const filterPills = document.querySelectorAll('.filter-pill');
+    const refreshDashboardBtn = document.getElementById('refreshDashboardBtn');
 
-    // Populate Sidebar Profile Info
-    providerNameEl.textContent = currentUser.fullName || 'Engineering Team';
-    providerEmailEl.textContent = currentUser.email;
-    providerAvatarEl.textContent = (currentUser.fullName || currentUser.email).charAt(0).toUpperCase();
+    // DOM Elements - Review Invitation Modal
+    const invitationModal = document.getElementById('invitationModal');
+    const invitationModalTitle = document.getElementById('invitationModalTitle');
+    const modalProjectCategory = document.getElementById('modalProjectCategory');
+    const invitationModalContent = document.getElementById('invitationModalContent');
+    const closeInvitationModalBtn = document.getElementById('closeInvitationModalBtn');
+    const acceptInviteBtn = document.getElementById('acceptInviteBtn');
+    const declineInviteBtn = document.getElementById('declineInviteBtn');
 
-    // In-memory data store
+    // Sidebar Profile Hydration
+    if (providerNameEl) providerNameEl.textContent = currentUser.fullName || currentUser.username || 'Provider Partner';
+    if (providerEmailEl) providerEmailEl.textContent = currentUser.email || '';
+    if (providerAvatarEl) {
+        const initial = (currentUser.fullName || currentUser.username || currentUser.email || 'P').charAt(0).toUpperCase();
+        providerAvatarEl.textContent = initial;
+    }
+    if (providerCategoryEl && currentUser.domain) {
+        providerCategoryEl.textContent = currentUser.domain;
+    }
+
+    // In-memory State (Synchronized with live Neon DB)
     let pendingInvitations = [];
     let providerProjects = [];
+    let activeFilter = 'ALL';
+    let selectedInviteForModal = null;
 
-    // Load initial dashboard data
+    // Initial Data Fetch
     await loadProviderDashboard();
 
+    // Setup Event Listeners
+    setupEventListeners();
+
     // -------------------------------------------------------------------------
-    // 2. Fetch Dashboard Data
+    // 2. Fetch Live Dashboard Data (Strict Live Pipeline - No Mock Data)
     // -------------------------------------------------------------------------
     async function loadProviderDashboard() {
+        showLoadingState();
+
         try {
             const [invitesData, projectsData] = await Promise.all([
-                window.ProjectApi.getProviderInvitations().catch(() => []),
-                window.ProjectApi.getProviderProjects('ALL').catch(() => [])
+                fetchInvitationsSafe(),
+                fetchProjectsSafe()
             ]);
 
             pendingInvitations = Array.isArray(invitesData) ? invitesData : [];
             providerProjects = Array.isArray(projectsData) ? projectsData : [];
 
-            // Fallback mock items if testing locally without running backend
-            if (pendingInvitations.length === 0 && providerProjects.length === 0) {
-                const mock = getFallbackProviderData();
-                pendingInvitations = mock.invitations;
-                providerProjects = mock.projects;
-            }
-
             updateMetrics();
             renderInvitations();
-            renderProjectsList(providerProjects);
+            renderFilteredProjects();
+
+            if (capacitySubtextEl && activeCapacityBadgeEl) {
+                const activeCount = providerProjects.filter(p => p.stage !== PROJECT_STAGES.COMPLETED).length;
+                if (activeCount >= 3) {
+                    activeCapacityBadgeEl.textContent = 'High Load';
+                    activeCapacityBadgeEl.className = 'badge badge-warning';
+                    capacitySubtextEl.textContent = `${activeCount} active collaborations ongoing.`;
+                } else {
+                    activeCapacityBadgeEl.textContent = 'Available';
+                    activeCapacityBadgeEl.className = 'badge badge-success';
+                    capacitySubtextEl.textContent = `${activeCount} active engagements running.`;
+                }
+            }
 
         } catch (error) {
-            console.error('Failed to load provider workspace:', error);
-            window.Toast.error('Could not load workspace. Showing offline cache.');
+            console.error('Failed to hydrate provider workspace:', error);
+            if (window.Toast) {
+                window.Toast.error('Could not sync with live database. Please check your connection.');
+            }
+            renderInvitations();
+            renderFilteredProjects();
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 3. Compute Metrics
-    // -------------------------------------------------------------------------
-    function updateMetrics() {
-        metricInvitesCount.textContent = pendingInvitations.length;
-        invitesBadge.textContent = `${pendingInvitations.length} Pending`;
+    async function fetchInvitationsSafe() {
+        if (window.ProjectApi && typeof window.ProjectApi.getProviderInvitations === 'function') {
+            return await window.ProjectApi.getProviderInvitations();
+        }
+        if (window.ApiClient && typeof window.ApiClient.get === 'function') {
+            const res = await window.ApiClient.get('/api/projects/invitations/provider');
+            return res.data || res;
+        }
+        return [];
+    }
 
-        const activeCount = providerProjects.filter(p => p.stage !== PROJECT_STAGES.COMPLETED).length;
-        const completedCount = providerProjects.filter(p => p.stage === PROJECT_STAGES.COMPLETED).length;
-        const draftAgreementsCount = providerProjects.filter(p => p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION).length;
+    async function fetchProjectsSafe() {
+        if (window.ProjectApi && typeof window.ProjectApi.getProviderProjects === 'function') {
+            return await window.ProjectApi.getProviderProjects('ALL');
+        }
+        if (window.ApiClient && typeof window.ApiClient.get === 'function') {
+            const res = await window.ApiClient.get('/api/projects/provider?status=ALL');
+            return res.data || res;
+        }
+        return [];
+    }
 
-        metricActiveProjects.textContent = activeCount;
-        metricCompletedProjects.textContent = completedCount;
-        metricDraftAgreements.textContent = draftAgreementsCount;
+    function showLoadingState() {
+        if (invitationsList) {
+            invitationsList.innerHTML = `
+                <div class="card card-skeleton">
+                    <div class="skeleton-line w-50"></div>
+                    <div class="skeleton-line w-75 mt-2"></div>
+                </div>
+            `;
+            invitationsList.classList.remove('hidden');
+        }
+        if (noInvitesState) noInvitesState.classList.add('hidden');
     }
 
     // -------------------------------------------------------------------------
-    // 4. Render Incoming Invitations (With Accept / Decline Handlers)
+    // 3. Compute Metrics (Dynamic Calculations)
+    // -------------------------------------------------------------------------
+    function updateMetrics() {
+        const invitesCount = pendingInvitations.length;
+        if (metricInvitesCount) metricInvitesCount.textContent = invitesCount;
+        if (invitesBadge) invitesBadge.textContent = `${invitesCount} Pending`;
+
+        const activeCount = providerProjects.filter(p => p.stage !== PROJECT_STAGES.COMPLETED).length;
+        const completedCount = providerProjects.filter(p => p.stage === PROJECT_STAGES.COMPLETED).length;
+        
+        // Scope Locked or Scoping count
+        const scopeLockedCount = providerProjects.filter(p => 
+            p.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
+            (p.agreement && (p.agreement.status === 'LOCKED' || p.agreement.status === 'ACTIVE'))
+        ).length;
+
+        if (metricActiveProjects) metricActiveProjects.textContent = activeCount;
+        if (metricCompletedProjects) metricCompletedProjects.textContent = completedCount;
+        if (metricDraftAgreements) metricDraftAgreements.textContent = scopeLockedCount;
+        if (activeProjectsCountBadge) activeProjectsCountBadge.textContent = `${providerProjects.length} Total`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Render Incoming Invitations
     // -------------------------------------------------------------------------
     function renderInvitations() {
+        if (!invitationsList || !noInvitesState) return;
+
         invitationsList.innerHTML = '';
 
         if (pendingInvitations.length === 0) {
@@ -111,23 +205,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         pendingInvitations.forEach(invite => {
             const inviteCard = document.createElement('div');
-            inviteCard.className = 'card mt-2';
-            inviteCard.style.borderLeft = '4px solid var(--info)';
+            inviteCard.className = 'card mt-2 invite-item-card';
+            inviteCard.style.borderLeft = '4px solid var(--primary, #3b82f6)';
+
+            const budgetDisplay = invite.budget ? `$${Number(invite.budget).toLocaleString()}` : 'Negotiable';
+            const clientNameDisplay = invite.clientName || invite.clientEmail || 'Client';
 
             inviteCard.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 250px;">
-                        <span class="badge badge-info mb-1">New Collaboration Invite</span>
-                        <h3 class="card-title mt-1" style="font-size: 1.15rem;">${escapeHtml(invite.title)}</h3>
-                        <p class="card-text text-sm mt-1">${escapeHtml(invite.summary || 'Initial project collaboration request.')}</p>
-                        <span class="text-xs text-muted">Client: <strong>${escapeHtml(invite.clientName || 'Verified Client')}</strong></span>
+                    <div style="flex: 1; min-width: 260px;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem;">
+                            <span class="badge badge-info">Project Invitation</span>
+                            <span class="badge badge-subtle">Budget: ${budgetDisplay}</span>
+                        </div>
+                        <h3 class="card-title" style="font-size: 1.15rem; margin-top: 0.25rem;">${escapeHtml(invite.title || 'Untitled Project')}</h3>
+                        <p class="card-text text-sm mt-1">${escapeHtml(invite.summary || invite.description || 'Client has requested your technical collaboration.')}</p>
+                        <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted, #64748b);">
+                            <span>Requested by: <strong>${escapeHtml(clientNameDisplay)}</strong></span>
+                            ${invite.createdAt ? ` &bull; <span>\${new Date(invite.createdAt).toLocaleDateString()}</span>` : ''}
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; align-self: center;">
-                        <button type="button" class="btn btn-outline btn-sm btn-decline-invite" data-id="${invite.id}">
-                            Decline
+                    <div style="display: flex; gap: 0.5rem; align-items: center; align-self: center; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline btn-sm btn-review-invite" data-id="${invite.id}">
+                            Review Scope
                         </button>
                         <button type="button" class="btn btn-primary btn-sm btn-accept-invite" data-id="${invite.id}">
-                            Accept & Open Workspace
+                            Accept &amp; Enter
                         </button>
                     </div>
                 </div>
@@ -136,44 +239,41 @@ document.addEventListener('DOMContentLoaded', async () => {
             invitationsList.appendChild(inviteCard);
         });
 
-        // Attach listeners for invitation actions
-        document.querySelectorAll('.btn-accept-invite').forEach(btn => {
+        // Attach action handlers
+        invitationsList.querySelectorAll('.btn-review-invite').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const inviteId = btn.getAttribute('data-id');
+                const invite = pendingInvitations.find(inv => String(inv.id) === String(inviteId));
+                if (invite) openInvitationModal(invite);
+            });
+        });
+
+        invitationsList.querySelectorAll('.btn-accept-invite').forEach(btn => {
             btn.addEventListener('click', () => handleInvitationResponse(btn.getAttribute('data-id'), 'ACCEPT'));
         });
-
-        document.querySelectorAll('.btn-decline-invite').forEach(btn => {
-            btn.addEventListener('click', () => handleInvitationResponse(btn.getAttribute('data-id'), 'DECLINE'));
-        });
     }
 
-    async function handleInvitationResponse(projectId, action) {
-        try {
-            await window.ProjectApi.respondToInvitation(projectId, action);
-            
-            if (action === 'ACCEPT') {
-                window.Toast.success('Invitation accepted! Opening collaboration workspace...');
-                setTimeout(() => {
-                    window.location.href = `project-view.html?id=${projectId}`;
-                }, 800);
+    // -------------------------------------------------------------------------
+    // 5. Render Active Engagements with Milestone Calculation & Scope Badging
+    // -------------------------------------------------------------------------
+    function renderFilteredProjects() {
+        if (!providerProjectsList || !noProviderProjectsState) return;
+
+        let filtered = providerProjects;
+        if (activeFilter !== 'ALL') {
+            if (activeFilter === PROJECT_STAGES.AGREEMENT_LOCKED) {
+                filtered = providerProjects.filter(p => 
+                    p.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
+                    (p.agreement && (p.agreement.status === 'LOCKED' || p.agreement.status === 'ACTIVE'))
+                );
             } else {
-                window.Toast.info('Invitation declined.');
-                // Remove locally and re-render
-                pendingInvitations = pendingInvitations.filter(inv => String(inv.id) !== String(projectId));
-                updateMetrics();
-                renderInvitations();
+                filtered = providerProjects.filter(p => p.stage === activeFilter);
             }
-        } catch (error) {
-            window.Toast.error(error.message || `Failed to ${action.toLowerCase()} invitation.`);
         }
-    }
 
-    // -------------------------------------------------------------------------
-    // 5. Render Active Engagements
-    // -------------------------------------------------------------------------
-    function renderProjectsList(projects) {
         providerProjectsList.innerHTML = '';
 
-        if (projects.length === 0) {
+        if (filtered.length === 0) {
             noProviderProjectsState.classList.remove('hidden');
             providerProjectsList.classList.add('hidden');
             return;
@@ -182,44 +282,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         noProviderProjectsState.classList.add('hidden');
         providerProjectsList.classList.remove('hidden');
 
-        projects.forEach(project => {
+        filtered.forEach(project => {
             const card = document.createElement('div');
             card.className = 'card project-card';
             card.style.display = 'flex';
             card.style.flexDirection = 'column';
             card.style.justifyContent = 'space-between';
 
+            // Calculate Dynamic Milestone Progress
+            const progress = calculateProjectProgress(project);
+
+            // Scope Lock Visual Badging
+            const isScopeLocked = project.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
+                (project.agreement && (project.agreement.status === 'LOCKED' || project.agreement.status === 'ACTIVE'));
+            
+            const scopeBadge = isScopeLocked 
+                ? `<span class="badge badge-success" style="font-size: 0.75rem;">🔒 Scope Locked (v${project.agreement?.version || '1.0'})</span>` 
+                : `<span class="badge badge-warning" style="font-size: 0.75rem;">📝 Scope Draft</span>`;
+
             const stageBadge = getStageBadge(project.stage);
-            const progress = project.progressPercentage !== undefined ? project.progressPercentage : 30;
+            const clientDisplay = project.clientName || project.client?.fullName || 'Client Partner';
 
             card.innerHTML = `
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
                         <span class="badge badge-subtle">PRJ-${String(project.id).padStart(3, '0')}</span>
-                        ${stageBadge}
+                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                            ${scopeBadge}
+                            ${stageBadge}
+                        </div>
                     </div>
                     <h3 class="card-title" style="font-size: 1.15rem; margin-top: 0.25rem;">
-                        <a href="project-view.html?id=${project.id}" style="color: inherit;">
-                            ${escapeHtml(project.title)}
+                        <a href="project-view.html?id=${project.id}" style="color: inherit; text-decoration: none;">
+                            ${escapeHtml(project.title || 'Untitled Collaboration')}
                         </a>
                     </h3>
-                    <p class="card-text text-sm" style="min-height: 40px;">
-                        ${escapeHtml(project.summary || 'Active technical collaboration.')}
+                    <p class="card-text text-sm" style="min-height: 38px; margin-top: 0.4rem; color: var(--text-muted, #64748b);">
+                        ${escapeHtml(project.summary || project.description || 'Active technical delivery engagement.')}
                     </p>
                 </div>
 
-                <div class="project-card-footer mt-3" style="border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">
-                        <span>Progress</span>
+                <div class="project-card-footer mt-3" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 0.75rem;">
+                    <!-- Visual Progress Bar Engine -->
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted, #64748b); margin-bottom: 0.35rem;">
+                        <span>Milestone Progress</span>
                         <strong>${progress}%</strong>
                     </div>
-                    <div style="width: 100%; height: 6px; background-color: var(--bg-muted); border-radius: var(--radius-full); overflow: hidden;">
-                        <div style="width: ${progress}%; height: 100%; background-color: var(--primary);"></div>
+                    <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #f1f5f9); border-radius: 9999px; overflow: hidden;">
+                        <div style="width: ${progress}%; height: 100%; background-color: ${progress === 100 ? 'var(--success, #10b981)' : 'var(--primary, #3b82f6)'}; transition: width 0.3s ease;"></div>
                     </div>
                     
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
-                        <span class="text-xs text-muted">Client: <strong>${escapeHtml(project.clientName || 'Client')}</strong></span>
-                        <a href="project-view.html?id=${project.id}" class="btn btn-outline btn-sm">Enter Workspace &rarr;</a>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="text-xs text-muted">Client: <strong>${escapeHtml(clientDisplay)}</strong></span>
+                        <a href="project-view.html?id=${project.id}" class="btn btn-outline btn-sm">
+                            Enter Workspace &rarr;
+                        </a>
                     </div>
                 </div>
             `;
@@ -228,26 +345,174 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // -------------------------------------------------------------------------
-    // 6. Stage Filter Pills Handler
-    // -------------------------------------------------------------------------
-    filterPills.forEach(pill => {
-        pill.addEventListener('click', () => {
-            filterPills.forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
+    // Dynamic Progress Calculator from Milestones
+    function calculateProjectProgress(project) {
+        if (project.stage === PROJECT_STAGES.COMPLETED) return 100;
+        
+        if (Array.isArray(project.milestones) && project.milestones.length > 0) {
+            const approvedWeight = project.milestones.reduce((acc, m) => {
+                if (m.status === 'APPROVED' || m.status === 'COMPLETED') {
+                    return acc + (Number(m.weightPercentage) || (100 / project.milestones.length));
+                }
+                return acc;
+            }, 0);
+            return Math.min(100, Math.round(approvedWeight));
+        }
 
-            const filter = pill.getAttribute('data-filter');
-            if (filter === 'ALL') {
-                renderProjectsList(providerProjects);
-            } else {
-                const filtered = providerProjects.filter(p => p.stage === filter);
-                renderProjectsList(filtered);
+        if (typeof project.progressPercentage === 'number') {
+            return Math.min(100, Math.max(0, project.progressPercentage));
+        }
+
+        return 0; // Clean zero state when no milestones completed
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. Invitation Processing Handlers (Accept / Decline)
+    // -------------------------------------------------------------------------
+    async function handleInvitationResponse(projectId, action) {
+        if (!projectId) return;
+
+        try {
+            if (window.ProjectApi && typeof window.ProjectApi.respondToInvitation === 'function') {
+                await window.ProjectApi.respondToInvitation(projectId, action);
+            } else if (window.ApiClient && typeof window.ApiClient.post === 'function') {
+                await window.ApiClient.post(`/api/projects/${projectId}/invitations/respond`, { action });
             }
-        });
-    });
+
+            if (action === 'ACCEPT') {
+                if (window.Toast) window.Toast.success('Invitation accepted! Launching workspace...');
+                closeInvitationModal();
+                setTimeout(() => {
+                    window.location.href = `project-view.html?id=${projectId}`;
+                }, 600);
+            } else {
+                if (window.Toast) window.Toast.info('Invitation declined.');
+                closeInvitationModal();
+                pendingInvitations = pendingInvitations.filter(inv => String(inv.id) !== String(projectId));
+                updateMetrics();
+                renderInvitations();
+            }
+        } catch (error) {
+            console.error(`Error processing invitation (${action}):`, error);
+            if (window.Toast) {
+                window.Toast.error(error.message || `Unable to ${action.toLowerCase()} invitation right now.`);
+            }
+        }
+    }
 
     // -------------------------------------------------------------------------
-    // 7. Helpers & Fallback Generator
+    // 7. Modal Handlers
+    // -------------------------------------------------------------------------
+    function openInvitationModal(invite) {
+        if (!invitationModal) return;
+        selectedInviteForModal = invite;
+
+        if (invitationModalTitle) {
+            invitationModalTitle.textContent = invite.title || 'Project Scope Details';
+        }
+        if (modalProjectCategory) {
+            modalProjectCategory.textContent = invite.category || 'Direct Engagement';
+        }
+
+        if (invitationModalContent) {
+            const budgetText = invite.budget ? `$${Number(invite.budget).toLocaleString()}` : 'To be scoped';
+            const clientName = invite.clientName || invite.clientEmail || 'Verified Client';
+
+            invitationModalContent.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-muted, #64748b);">Client Description &amp; Scope Objectives</h4>
+                        <p style="margin-top: 0.35rem; line-height: 1.5; font-size: 0.95rem;">
+                            ${escapeHtml(invite.description || invite.summary || 'No detailed scope notes provided.')}
+                        </p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; background: var(--bg-muted, #f8fafc); padding: 0.75rem; border-radius: 6px;">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Client</span>
+                            <div style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(clientName)}</div>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Initial Budget</span>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--success, #10b981);">${budgetText}</div>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Contract Type</span>
+                            <div style="font-weight: 600; font-size: 0.9rem;">Milestone-Locked</div>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-muted" style="margin: 0;">
+                        Accepting will initialize a collaborative workspace where both parties finalize milestones before the agreement is version-locked.
+                    </p>
+                </div>
+            `;
+        }
+
+        invitationModal.classList.remove('hidden');
+    }
+
+    function closeInvitationModal() {
+        if (!invitationModal) return;
+        invitationModal.classList.add('hidden');
+        selectedInviteForModal = null;
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. Event Listeners & Stage Filter Pills
+    // -------------------------------------------------------------------------
+    function setupEventListeners() {
+        // Stage Filter Pills
+        filterPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                filterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                activeFilter = pill.getAttribute('data-filter') || 'ALL';
+                renderFilteredProjects();
+            });
+        });
+
+        // Manual Sync Button
+        if (refreshDashboardBtn) {
+            refreshDashboardBtn.addEventListener('click', async () => {
+                refreshDashboardBtn.disabled = true;
+                refreshDashboardBtn.style.opacity = '0.6';
+                await loadProviderDashboard();
+                if (window.Toast) window.Toast.info('Dashboard synced with Neon DB.');
+                refreshDashboardBtn.disabled = false;
+                refreshDashboardBtn.style.opacity = '1';
+            });
+        }
+
+        // Modal Action Triggers
+        if (closeInvitationModalBtn) {
+            closeInvitationModalBtn.addEventListener('click', closeInvitationModal);
+        }
+        if (declineInviteBtn) {
+            declineInviteBtn.addEventListener('click', () => {
+                if (selectedInviteForModal) {
+                    handleInvitationResponse(selectedInviteForModal.id, 'DECLINE');
+                }
+            });
+        }
+        if (acceptInviteBtn) {
+            acceptInviteBtn.addEventListener('click', () => {
+                if (selectedInviteForModal) {
+                    handleInvitationResponse(selectedInviteForModal.id, 'ACCEPT');
+                }
+            });
+        }
+
+        // Close modal when clicking on backdrop
+        if (invitationModal) {
+            invitationModal.addEventListener('click', (e) => {
+                if (e.target === invitationModal) closeInvitationModal();
+            });
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. Helpers
     // -------------------------------------------------------------------------
     function getStageBadge(stage) {
         switch (stage) {
@@ -256,7 +521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             case PROJECT_STAGES.REQUIREMENT_DISCUSSION:
                 return `<span class="badge badge-warning">Scoping</span>`;
             case PROJECT_STAGES.AGREEMENT_LOCKED:
-                return `<span class="badge badge-info">Agreement Locked</span>`;
+                return `<span class="badge badge-info">Locked</span>`;
             case PROJECT_STAGES.IN_PROGRESS:
                 return `<span class="badge badge-primary">Building</span>`;
             case PROJECT_STAGES.REVIEW:
@@ -275,28 +540,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
-    }
-
-    function getFallbackProviderData() {
-        return {
-            invitations: [
-                {
-                    id: 201,
-                    title: 'Fintech Payment Gateway Integration',
-                    summary: 'Need a team to architect secure tokenized payment settlement webhooks using Spring Boot.',
-                    clientName: 'Nexus Corp'
-                }
-            ],
-            projects: [
-                {
-                    id: 202,
-                    title: 'Inventory & Supply Chain Sync Service',
-                    summary: 'Warehouse logistics synchronization pipeline with automated stock threshold alerts.',
-                    stage: PROJECT_STAGES.IN_PROGRESS,
-                    clientName: 'Global Retailers Ltd',
-                    progressPercentage: 55
-                }
-            ]
-        };
     }
 });

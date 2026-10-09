@@ -20,6 +20,13 @@
             <a href="index.html" class="brand-logo">
                 <span class="logo-accent">Work</span>Bridge
             </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
             
             <nav id="mainNav" class="nav-links">
                 <!-- Populated dynamically via js/components/navbar.js -->
@@ -38,45 +45,60 @@
                         <a href="javascript:history.back()" class="text-link">&larr; Back to Dashboard</a>
                         <span class="breadcrumb-separator">/</span>
                         <span id="projectCodeBadge" class="badge badge-subtle">PRJ-000</span>
+                        <span id="scopeLockTopBadge" class="badge badge-warning">📝 Scope Draft (v1.0)</span>
                     </div>
-                    <h1 class="project-title" id="projectTitle">Loading Project...</h1>
+                    <h1 class="project-title mt-1" id="projectTitle">Loading Project...</h1>
                 </div>
 
                 <div class="project-header-actions">
-                    <button type="button" id="btnProposeStageAdvance" class="btn btn-outline">Advance Project Stage</button>
+                    <button type="button" id="btnViewAuditHistory" class="btn btn-outline btn-sm">📜 Scope Audit History</button>
+                    <button type="button" id="btnProposeStageAdvance" class="btn btn-primary btn-sm">Advance Stage</button>
                 </div>
             </div>
 
-            <!-- Project Stage & Progress Pipeline -->
-            <div class="stage-pipeline-container mt-3">
-                <div class="stage-step" data-stage="INVITED">
-                    <div class="step-circle">1</div>
-                    <span class="step-label">Invited</span>
+            <!-- Dynamic Project Completion Engine (Weighted Milestones) -->
+            <div class="workspace-progress-engine mt-3">
+                <div class="progress-engine-meta">
+                    <span class="text-xs text-muted">LIVE COMPLETION PROGRESS (WEIGHTED MILESTONES)</span>
+                    <strong id="projectProgressPercent" class="text-sm">0%</strong>
                 </div>
-                <div class="step-connector"></div>
-                <div class="stage-step" data-stage="REQUIREMENT_DISCUSSION">
-                    <div class="step-circle">2</div>
-                    <span class="step-label">Scoping</span>
+                <div class="progress-bar-track mt-1">
+                    <div id="projectProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
                 </div>
-                <div class="step-connector"></div>
-                <div class="stage-step" data-stage="AGREEMENT_LOCKED">
-                    <div class="step-circle">3</div>
-                    <span class="step-label">Agreement</span>
-                </div>
-                <div class="step-connector"></div>
-                <div class="stage-step" data-stage="IN_PROGRESS">
-                    <div class="step-circle">4</div>
-                    <span class="step-label">Building</span>
-                </div>
-                <div class="step-connector"></div>
-                <div class="stage-step" data-stage="REVIEW">
-                    <div class="step-circle">5</div>
-                    <span class="step-label">Review</span>
-                </div>
-                <div class="step-connector"></div>
-                <div class="stage-step" data-stage="COMPLETED">
-                    <div class="step-circle">6</div>
-                    <span class="step-label">Completed</span>
+            </div>
+
+            <!-- Project Stage & Progress Pipeline (Mobile Responsive Wrapper) -->
+            <div class="stage-pipeline-scroll-wrapper mt-3">
+                <div class="stage-pipeline-container">
+                    <div class="stage-step" data-stage="INVITED">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Invited</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="stage-step" data-stage="REQUIREMENT_DISCUSSION">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Scoping</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="stage-step" data-stage="AGREEMENT_LOCKED">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">Agreement</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="stage-step" data-stage="IN_PROGRESS">
+                        <div class="step-circle">4</div>
+                        <span class="step-label">Building</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="stage-step" data-stage="REVIEW">
+                        <div class="step-circle">5</div>
+                        <span class="step-label">Review</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="stage-step" data-stage="COMPLETED">
+                        <div class="step-circle">6</div>
+                        <span class="step-label">Completed</span>
+                    </div>
                 </div>
             </div>
 
@@ -91,7 +113,8 @@
                     <span>Agreement: <strong id="agreementStatusText">Draft Pending</strong></span>
                 </div>
                 <div class="status-indicator">
-                    <span>Progress: <strong id="projectProgressPercent">0%</strong></span>
+                    <span class="status-dot dot-gray" id="contractLockDot"></span>
+                    <span>Version Lock: <strong id="contractLockText">Unlocked</strong></span>
                 </div>
             </div>
         </section>
@@ -99,9 +122,10 @@
         <!-- Workspace Tabs Navigation -->
         <nav class="workspace-tabs mt-3" role="tablist">
             <button type="button" class="tab-btn active" data-tab="tabOverview" role="tab">📊 Overview</button>
-            <button type="button" class="tab-btn" data-tab="tabRequirements" role="tab">📑 Requirements & AI</button>
+            <button type="button" class="tab-btn" data-tab="tabRequirements" role="tab">📑 Requirements &amp; AI</button>
+            <button type="button" class="tab-btn" data-tab="tabMilestones" role="tab">🎯 Milestones &amp; Work</button>
             <button type="button" class="tab-btn" data-tab="tabAgreement" role="tab">📜 Mutual Agreement</button>
-            <button type="button" class="tab-btn" data-tab="tabDiscussions" role="tab">💬 Discussions & Decisions</button>
+            <button type="button" class="tab-btn" data-tab="tabDiscussions" role="tab">💬 Discussions &amp; Decisions</button>
             <button type="button" class="tab-btn" data-tab="tabResources" role="tab">📁 Resources Vault</button>
         </nav>
 
@@ -113,18 +137,18 @@
                 <!-- Main Overview Column -->
                 <div class="grid-col-span-2">
                     <div class="card">
-                        <h3 class="card-title">Project Summary</h3>
-                        <p class="card-text text-muted" id="projectDescription">Loading summary...</p>
+                        <h3 class="card-title">Project Summary &amp; Scope Intent</h3>
+                        <p class="card-text text-muted mt-2" id="projectDescription">Loading summary...</p>
                     </div>
 
-                    <!-- Daily/Recent Progress Updates -->
+                    <!-- Progress Updates -->
                     <div class="card mt-3">
                         <div class="section-title-row">
-                            <h3 class="card-title">Recent Progress Updates</h3>
+                            <h3 class="card-title">Recent Delivery Updates</h3>
                             <button type="button" id="btnPostUpdate" class="btn btn-outline btn-sm">+ Post Update</button>
                         </div>
                         <div id="updatesTimeline" class="updates-timeline mt-3">
-                            <!-- Populated dynamically via JS -->
+                            <div class="text-center text-muted py-3">No project updates posted yet.</div>
                         </div>
                     </div>
                 </div>
@@ -132,24 +156,25 @@
                 <!-- Team & Meta Column -->
                 <div class="grid-col-span-1">
                     <div class="card">
-                        <h3 class="card-title">Collaboration Team</h3>
+                        <h3 class="card-title">Collaborating Entities</h3>
                         <div class="team-list mt-3">
                             <div class="team-member-item">
-                                <span class="role-pill">Client</span>
+                                <span class="badge badge-primary">Client</span>
                                 <strong id="overviewClientName">Loading...</strong>
                             </div>
                             <div class="team-member-item mt-2">
-                                <span class="role-pill">Provider</span>
+                                <span class="badge badge-success">Provider</span>
                                 <strong id="overviewProviderName">Loading...</strong>
                             </div>
                         </div>
                     </div>
 
                     <div class="card mt-3">
-                        <h3 class="card-title">Project Details</h3>
+                        <h3 class="card-title">Contract Parameters</h3>
                         <div class="meta-kv-group mt-2">
                             <div class="kv-item"><span class="text-muted">Target Deadline:</span> <strong id="metaDeadline">--</strong></div>
-                            <div class="kv-item mt-1"><span class="text-muted">Agreed Budget:</span> <strong id="metaBudget">--</strong></div>
+                            <div class="kv-item mt-1"><span class="text-muted">Agreed Consideration:</span> <strong id="metaBudget" class="text-success">--</strong></div>
+                            <div class="kv-item mt-1"><span class="text-muted">Governance Version:</span> <strong id="metaVersion">v1.0</strong></div>
                         </div>
                     </div>
                 </div>
@@ -166,24 +191,25 @@
                 <div class="version-left">
                     <span class="badge badge-primary" id="currentReqVersionBadge">Version 1.0</span>
                     <span class="badge badge-warning" id="currentReqLockStatus">DRAFT</span>
+                    <span class="text-xs text-muted ml-2" id="reqLockNotice">Editing allowed during Scoping stage.</span>
                 </div>
                 <div class="version-actions">
                     <button type="button" id="btnAiAnalyzeReq" class="btn btn-ai">✨ AI Requirement Audit</button>
                     <button type="button" id="btnLockRequirement" class="btn btn-primary">Lock Current Version</button>
-                    <button type="button" id="btnProposeReqChange" class="btn btn-outline hidden">+ Propose Version Update</button>
+                    <button type="button" id="btnProposeReqChange" class="btn btn-outline hidden">+ Propose Scope Amendment</button>
                 </div>
             </div>
 
-            <!-- AI Feedback Panel (Hidden until user clicks Audit) -->
+            <!-- AI Feedback Panel -->
             <div id="aiAuditResultPanel" class="card ai-card mt-3 hidden">
                 <div class="ai-header">
-                    <span class="ai-sparkle">✨</span>
-                    <h3 class="card-title">AI Requirement Quality Insight</h3>
-                    <button type="button" class="btn-close-sm" id="btnCloseAiPanel">&times;</button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="ai-sparkle">✨</span>
+                        <h3 class="card-title">AI Requirement Quality Insight</h3>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="btnCloseAiPanel" aria-label="Close insight">&times;</button>
                 </div>
-                <div id="aiAuditContent" class="ai-body mt-2">
-                    <!-- Populated by AI service -->
-                </div>
+                <div id="aiAuditContent" class="ai-body mt-2"></div>
             </div>
 
             <!-- Requirement Document Viewer / Editor -->
@@ -194,40 +220,62 @@
                         <textarea id="reqObjective" class="form-control" rows="3" placeholder="Core goal of the software..." required></textarea>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mt-2">
                         <label for="reqTargetUsers" class="form-label">Target Audience / Users</label>
                         <textarea id="reqTargetUsers" class="form-control" rows="2" placeholder="Who will use this platform..."></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="reqFeatures" class="form-label">Key Features & Technical Scope</label>
+                    <div class="form-group mt-2">
+                        <label for="reqFeatures" class="form-label">Key Features &amp; Technical Scope</label>
                         <textarea id="reqFeatures" class="form-control" rows="6" placeholder="List itemized features and deliverables..." required></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="reqTechPreferences" class="form-label">Tech Stack & Architecture Constraints</label>
+                    <div class="form-group mt-2">
+                        <label for="reqTechPreferences" class="form-label">Tech Stack &amp; Architecture Constraints</label>
                         <input type="text" id="reqTechPreferences" class="form-control" placeholder="e.g., Spring Boot, HTML5, PostgreSQL, REST APIs">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mt-2">
                         <label for="reqNonFunctional" class="form-label">Performance / Non-Functional Expectations</label>
                         <textarea id="reqNonFunctional" class="form-control" rows="2" placeholder="Security, load performance, device support..."></textarea>
                     </div>
 
-                    <button type="submit" id="btnSaveReqDraft" class="btn btn-outline">Save Working Draft</button>
+                    <div class="mt-3" id="reqFormActions">
+                        <button type="submit" id="btnSaveReqDraft" class="btn btn-outline">Save Working Draft</button>
+                    </div>
                 </form>
             </div>
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 3: MUTUAL DIGITAL AGREEMENT                               -->
+        <!-- TAB 3: VISUAL MILESTONE & PROGRESS ENGINE (CORE ENGINE B)     -->
+        <!-- ============================================================= -->
+        <section id="tabMilestones" class="tab-content mt-3 hidden">
+            <div class="card">
+                <div class="section-title-row">
+                    <div>
+                        <h3 class="card-title">Project Milestones &amp; Verification Stepper</h3>
+                        <p class="text-muted text-sm">Delivery milestones track live progress. Submitting verified artifacts increments project completion.</p>
+                    </div>
+                    <button type="button" id="btnAddMilestoneBtn" class="btn btn-outline btn-sm">+ Add Milestone</button>
+                </div>
+
+                <!-- Milestone Stepper Nodes Container -->
+                <div id="milestonesContainer" class="milestones-stepper-list mt-3">
+                    <!-- Populated dynamically via projectWorkspacePage.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 4: MUTUAL DIGITAL AGREEMENT (CORE ENGINE A)               -->
         <!-- ============================================================= -->
         <section id="tabAgreement" class="tab-content mt-3 hidden">
             <div class="card agreement-document-card">
                 <div class="agreement-header text-center">
-                    <span class="badge badge-subtle">Digital Project Agreement</span>
-                    <h2 class="mt-1">Mutual Terms & Scope Confirmation</h2>
-                    <p class="text-muted text-sm">Both parties must review and confirm terms before execution begins.</p>
+                    <span class="badge badge-primary" id="agreementVersionPill">Digital Project Agreement (v1.0)</span>
+                    <h2 class="mt-2" id="agreementTitleHeader">Mutual Terms &amp; Scope Confirmation</h2>
+                    <p class="text-muted text-sm">Once both parties sign, terms are snapshot and cannot be modified without a formal Scope Amendment.</p>
                 </div>
 
                 <div class="agreement-body mt-4">
@@ -238,41 +286,45 @@
                     </div>
 
                     <div class="agreement-section mt-3">
-                        <h4>2. Deliverables & Scope Reference</h4>
+                        <h4>2. Deliverables &amp; Scope Reference</h4>
                         <p id="agDeliverablesText" class="text-muted">Bound to locked requirement specification.</p>
                     </div>
 
                     <div class="agreement-section mt-3">
-                        <h4>3. Timeline & Target Completion</h4>
+                        <h4>3. Timeline &amp; Delivery Target</h4>
                         <p><strong>Target Delivery:</strong> <span id="agTimelineText">--</span></p>
                     </div>
 
                     <div class="agreement-section mt-3">
-                        <h4>4. Agreed Consideration / Milestone Value</h4>
-                        <p><strong>Agreed Amount:</strong> <span id="agAmountText">--</span></p>
+                        <h4>4. Agreed Consideration / Milestone Budget</h4>
+                        <p><strong>Agreed Amount:</strong> <span id="agAmountText" class="text-success font-medium">--</span></p>
                     </div>
 
+                    <!-- Digital Sign-off Verification -->
                     <div class="agreement-sign-box mt-4">
                         <div class="sign-status-col">
-                            <span>Client Approval:</span>
+                            <span class="font-medium">Client Acceptance:</span>
                             <span class="badge badge-warning" id="agClientSignStatus">Pending</span>
+                            <small class="text-muted text-xs mt-1" id="agClientSignTimestamp"></small>
                         </div>
                         <div class="sign-status-col">
-                            <span>Provider Approval:</span>
+                            <span class="font-medium">Provider Acceptance:</span>
                             <span class="badge badge-warning" id="agProviderSignStatus">Pending</span>
+                            <small class="text-muted text-xs mt-1" id="agProviderSignTimestamp"></small>
                         </div>
                     </div>
                 </div>
 
                 <div class="agreement-footer mt-4 text-center">
-                    <button type="button" id="btnApproveAgreement" class="btn btn-primary btn-lg">Approve & Sign Agreement</button>
-                    <button type="button" id="btnRequestAgreementChange" class="btn btn-outline btn-lg">Request Changes</button>
+                    <button type="button" id="btnApproveAgreement" class="btn btn-success btn-lg">✍️ Approve &amp; Sign Agreement</button>
+                    <button type="button" id="btnRequestAgreementChange" class="btn btn-outline btn-lg ml-2">Request Revision</button>
+                    <button type="button" id="btnProposeAmendment" class="btn btn-primary btn-lg hidden">📝 Propose Scope Amendment (v2.0)</button>
                 </div>
             </div>
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 4: DISCUSSIONS & DECISIONS                                -->
+        <!-- TAB 5: DISCUSSIONS & DECISIONS                                -->
         <!-- ============================================================= -->
         <section id="tabDiscussions" class="tab-content mt-3 hidden">
             <div class="workspace-split-layout">
@@ -287,9 +339,11 @@
                     <!-- AI Summary Box -->
                     <div id="aiSummaryBox" class="ai-summary-card hidden">
                         <div class="ai-header">
-                            <span class="ai-sparkle">✨</span>
-                            <strong>Discussion Summary & Next Steps</strong>
-                            <button type="button" class="btn-close-sm" id="btnCloseSummary">&times;</button>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="ai-sparkle">✨</span>
+                                <strong>Discussion Summary &amp; Next Steps</strong>
+                            </div>
+                            <button type="button" class="modal-close-btn" id="btnCloseSummary" aria-label="Close summary">&times;</button>
                         </div>
                         <div id="aiSummaryContent" class="ai-body text-sm mt-1"></div>
                     </div>
@@ -312,10 +366,10 @@
                         <h3 class="card-title">Logged Decisions</h3>
                         <button type="button" id="btnLogDecision" class="btn btn-outline btn-sm">+ Log Decision</button>
                     </div>
-                    <p class="text-muted text-xs">Permanent record of architecture & design choices made during chat.</p>
+                    <p class="text-muted text-xs">Permanent record of architecture &amp; design choices made during chat.</p>
                     
                     <div id="decisionsList" class="decisions-list mt-3">
-                        <!-- Populated via JS -->
+                        <div class="text-center text-muted py-3">No architecture decisions recorded yet.</div>
                     </div>
                 </div>
 
@@ -323,7 +377,7 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 5: RESOURCE VAULT                                         -->
+        <!-- TAB 6: RESOURCE VAULT                                         -->
         <!-- ============================================================= -->
         <section id="tabResources" class="tab-content mt-3 hidden">
             <div class="card">
@@ -358,40 +412,220 @@
 
     </main>
 
-    <!-- Upload Resource Modal -->
-    <div id="resourceModal" class="modal-backdrop hidden">
+    <!-- Modal 1: Milestone Deliverable Submission / Verification -->
+    <div id="milestoneActionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="milestoneModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">Upload Project Asset</h3>
-                <button type="button" class="modal-close" id="modalResourceClose">&times;</button>
+                <h3 class="modal-title" id="milestoneModalTitle">Milestone Deliverable</h3>
+                <button type="button" class="modal-close-btn" id="closeMilestoneModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <form id="resourceUploadForm" class="modal-body">
-                <div class="form-group">
-                    <label for="resourceTitleInput" class="form-label">Asset Title</label>
-                    <input type="text" id="resourceTitleInput" class="form-control" placeholder="e.g., System Architecture Diagram" required>
-                </div>
-                <div class="form-group">
-                    <label for="resourceTypeSelect" class="form-label">Asset Type</label>
-                    <select id="resourceTypeSelect" class="form-control">
-                        <option value="DOCUMENT">Document (PDF/DOCX)</option>
-                        <option value="DESIGN">Design Asset / Figma Link</option>
-                        <option value="CREDENTIALS">API Reference / Config</option>
-                        <option value="OTHER">Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="resourceFileInput" class="form-label">Select File or Resource URL</label>
-                    <input type="text" id="resourceUrlInput" class="form-control" placeholder="Paste file URL or link" required>
+            <form id="milestoneActionForm">
+                <div class="modal-body">
+                    <input type="hidden" id="actionMilestoneId">
+                    <div class="form-group">
+                        <label for="deliverableUrlInput" class="form-label">Deliverable URL (GitHub PR, Figma, Live Link) *</label>
+                        <input type="url" id="deliverableUrlInput" class="form-control" placeholder="https://github.com/.../pull/1" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="deliverableNotesInput" class="form-label">Submission Notes &amp; Verification Details</label>
+                        <textarea id="deliverableNotesInput" class="form-control" rows="3" placeholder="Provide overview of what was implemented in this milestone..."></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" id="modalResourceCancel">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="cancelMilestoneActionBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitDeliverableBtn">Submit for Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Propose Scope Amendment (Core Engine A) -->
+    <div id="amendmentModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="amendmentModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-warning">Change Request Protocol</span>
+                    <h3 class="modal-title mt-1" id="amendmentModalTitle">Propose Scope Amendment (v2.0)</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeAmendmentModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="amendmentForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="amendmentReasonInput" class="form-label">Reason for Amendment *</label>
+                        <input type="text" id="amendmentReasonInput" class="form-control" placeholder="e.g., Additional Payment Gateway integration required" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="amendmentDetailsInput" class="form-label">Modified Scope &amp; Budget Adjustments *</label>
+                        <textarea id="amendmentDetailsInput" class="form-control" rows="4" placeholder="Detail the modifications to milestones and any change to total consideration..." required></textarea>
+                    </div>
+                    <p class="text-xs text-muted mt-2">
+                        Current terms remain active (v1.0) until both parties accept this amendment, which will increment the contract to v2.0.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelAmendmentBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitAmendmentBtn">Submit Amendment Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Audit History & Version Timeline -->
+    <div id="auditHistoryModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="auditHistoryTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="auditHistoryTitle">Contract Audit History &amp; Timeline</h3>
+                <button type="button" class="modal-close-btn" id="closeAuditModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="auditTimelineContainer" class="audit-timeline-list">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="closeAuditModalFooterBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Log Architecture Decision -->
+    <div id="decisionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="decisionModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="decisionModalTitle">Log Project Decision</h3>
+                <button type="button" class="modal-close-btn" id="closeDecisionModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="decisionForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="decisionTitleInput" class="form-label">Decision Summary *</label>
+                        <input type="text" id="decisionTitleInput" class="form-control" placeholder="e.g., Adopted JWT with RS256 signing" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="decisionRationaleInput" class="form-label">Rationale &amp; Consequences *</label>
+                        <textarea id="decisionRationaleInput" class="form-control" rows="3" placeholder="Why this path was chosen and what constraints apply..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelDecisionBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitDecisionBtn">Record Decision</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Upload Resource Asset -->
+    <div id="resourceModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="resourceModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="resourceModalTitle">Upload Project Asset</h3>
+                <button type="button" class="modal-close-btn" id="modalResourceClose" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="resourceUploadForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="resourceTitleInput" class="form-label">Asset Title *</label>
+                        <input type="text" id="resourceTitleInput" class="form-control" placeholder="e.g., System Architecture Diagram" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="resourceTypeSelect" class="form-label">Asset Type</label>
+                        <select id="resourceTypeSelect" class="form-control">
+                            <option value="DOCUMENT">Document (PDF/DOCX)</option>
+                            <option value="DESIGN">Design Asset / Figma Link</option>
+                            <option value="CREDENTIALS">API Reference / Config</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="resourceUrlInput" class="form-label">Select File or Resource URL *</label>
+                        <input type="text" id="resourceUrlInput" class="form-control" placeholder="Paste file URL or link" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modalResourceCancel">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save to Vault</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Modal 6: Advance Project Stage -->
+    <div id="stageAdvanceModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="stageModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary">Stage Progression</span>
+                    <h3 class="modal-title mt-1" id="stageModalTitle">Advance Project Lifecycle</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeStageModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="stageAdvanceForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="targetStageSelect" class="form-label">Next Target Stage *</label>
+                        <select id="targetStageSelect" class="form-control" required>
+                            <option value="REQUIREMENT_DISCUSSION">2. Scoping &amp; Requirements</option>
+                            <option value="AGREEMENT_LOCKED">3. Scope &amp; Agreement Locked</option>
+                            <option value="IN_PROGRESS">4. Active Building</option>
+                            <option value="REVIEW">5. Final Verification &amp; Review</option>
+                            <option value="COMPLETED">6. Project Completed &amp; Closed</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="stageTransitionNotes" class="form-label">Transition Summary / Verification Hand-off *</label>
+                        <textarea id="stageTransitionNotes" class="form-control" rows="3" placeholder="Explain why deliverables for the current stage are verified..." required></textarea>
+                    </div>
+                    <p class="text-xs text-muted mt-2">
+                        Moving past Scoping requires a locked agreement. Both parties receive real-time stage audit alerts.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelStageModalBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirmStageAdvanceBtn">Confirm Stage Transition</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 7: Add Milestone Definition -->
+    <div id="addMilestoneModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="addMilestoneModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="addMilestoneModalTitle">Create Project Milestone</h3>
+                <button type="button" class="modal-close-btn" id="closeAddMilestoneModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="addMilestoneForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="milestoneTitleInput" class="form-label">Milestone Title *</label>
+                        <input type="text" id="milestoneTitleInput" class="form-control" placeholder="e.g., Phase 1: Architecture, Auth & DB Schema" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="milestoneWeightInput" class="form-label">Weight Percentage (% of Total Project) *</label>
+                        <input type="number" id="milestoneWeightInput" class="form-control" placeholder="e.g., 25" min="1" max="100" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="milestoneTargetDateInput" class="form-label">Estimated Delivery Date</label>
+                        <input type="date" id="milestoneTargetDateInput" class="form-control">
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="milestoneDeliverablesInput" class="form-label">Expected Deliverables &amp; Acceptance Criteria</label>
+                        <textarea id="milestoneDeliverablesInput" class="form-control" rows="3" placeholder="What specific APIs, UI components, or test suites must be demonstrated?" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelAddMilestoneBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveMilestoneBtn">Add to Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline (Strict Dependency Order) -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>

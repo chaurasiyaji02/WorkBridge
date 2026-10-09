@@ -19,6 +19,13 @@
             <a href="index.html" class="brand-logo">
                 <span class="logo-accent">Work</span>Bridge
             </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
             
             <nav id="mainNav" class="nav-links">
                 <!-- Populated dynamically via js/components/navbar.js -->
@@ -30,36 +37,55 @@
     <div class="dashboard-layout container">
         
         <!-- Dashboard Sidebar / Provider Info -->
-        <aside class="dashboard-sidebar">
+        <aside class="dashboard-sidebar" id="dashboardSidebar">
             <div class="card profile-widget">
-                <div class="profile-avatar avatar-provider" id="providerAvatar">P</div>
-                <h3 class="profile-name" id="providerName">Loading Provider...</h3>
-                <span class="badge badge-primary" id="providerRoleBadge">Service Provider</span>
-                <p class="profile-email text-muted" id="providerEmail">loading@provider.com</p>
+                <div class="profile-header-summary">
+                    <div class="profile-avatar avatar-provider" id="providerAvatar">P</div>
+                    <div class="profile-title-group">
+                        <h3 class="profile-name" id="providerName">Provider Profile</h3>
+                        <span class="badge badge-primary" id="providerRoleBadge">Service Provider</span>
+                    </div>
+                </div>
+                <p class="profile-email text-muted" id="providerEmail">provider@workbridge.io</p>
                 
                 <div class="profile-divider"></div>
                 
                 <div class="provider-meta-info">
                     <div class="meta-item">
-                        <span class="meta-label">Domain:</span>
-                        <strong id="providerCategory" class="meta-value">Engineering Team</strong>
+                        <span class="meta-label">Primary Domain:</span>
+                        <strong id="providerCategory" class="meta-value">Engineering & Build</strong>
                     </div>
                     <div class="meta-item mt-1">
-                        <span class="meta-label">Rating:</span>
+                        <span class="meta-label">Reputation:</span>
                         <strong id="providerRating" class="text-highlight">★ 5.0</strong>
                     </div>
                     <div class="meta-item mt-1">
-                        <span class="meta-label">Verification:</span>
-                        <span class="badge badge-success" id="providerVerificationBadge">Verified</span>
+                        <span class="meta-label">Governance Status:</span>
+                        <span class="badge badge-success" id="providerVerificationBadge">Verified Account</span>
                     </div>
+                </div>
+
+                
+                <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-3" style="text-align: center; text-decoration: none; display: block;">⚙️ Edit Profile &amp; Domain</a>
+
+            </div> <!-- Yeh card profile-widget ka closing div hai -->
+
+            <!-- Provider Team & Delivery Capacity -->
+            <div class="card mt-3">
+                <div class="card-header-flex">
+                    <h4 class="menu-heading">Delivery Capacity</h4>
+                    <span class="badge badge-subtle" id="activeCapacityBadge">Available</span>
+                </div>
+                <div id="teamMembersSummary" class="team-summary-list mt-2">
+                    <p class="text-muted text-sm" id="capacitySubtext">Connected to live Neon DB pipeline.</p>
                 </div>
             </div>
 
-            <!-- Provider Team Overview Card -->
-            <div class="card mt-3">
-                <h4 class="menu-heading">Team Capacity</h4>
-                <div id="teamMembersSummary" class="team-summary-list mt-2">
-                    <p class="text-muted text-sm">Managing client project allocations</p>
+            <!-- Quick Action Links -->
+            <div class="card mt-3 quick-links-card">
+                <h4 class="menu-heading">Discovery</h4>
+                <div class="quick-links-list mt-2">
+                    <a href="provider-explore.html" class="btn btn-secondary btn-block text-center">Browse Marketplace Gigs</a>
                 </div>
             </div>
         </aside>
@@ -67,11 +93,16 @@
         <!-- Main Dashboard View Area -->
         <main class="dashboard-content">
             
-            <!-- Dashboard Header -->
+            <!-- Dashboard Header with Context Badging -->
             <div class="dashboard-header-row">
                 <div>
                     <h1 class="page-title">Provider Operations Hub</h1>
                     <p class="text-muted">Manage incoming invitations, review requirement specifications, and maintain active deliverables.</p>
+                </div>
+                <div class="header-action-group">
+                    <button type="button" class="btn btn-outline" id="refreshDashboardBtn" title="Sync live records">
+                        <span class="btn-icon">🔄</span> Sync
+                    </button>
                 </div>
             </div>
 
@@ -88,15 +119,15 @@
                 <div class="card metric-card">
                     <div class="metric-icon">⚡</div>
                     <div class="metric-details">
-                        <span class="metric-label">Active Collaborations</span>
+                        <span class="metric-label">Active Engagements</span>
                         <h2 class="metric-value" id="metricActiveProjects">0</h2>
                     </div>
                 </div>
 
                 <div class="card metric-card">
-                    <div class="metric-icon">📝</div>
+                    <div class="metric-icon">🔒</div>
                     <div class="metric-details">
-                        <span class="metric-label">Draft Agreements</span>
+                        <span class="metric-label">Scope Locked (v1+)</span>
                         <h2 class="metric-value text-warning" id="metricDraftAgreements">0</h2>
                     </div>
                 </div>
@@ -104,7 +135,7 @@
                 <div class="card metric-card">
                     <div class="metric-icon">🏆</div>
                     <div class="metric-details">
-                        <span class="metric-label">Completed Engagements</span>
+                        <span class="metric-label">Completed</span>
                         <h2 class="metric-value text-success" id="metricCompletedProjects">0</h2>
                     </div>
                 </div>
@@ -113,13 +144,15 @@
             <!-- Incoming Invitations Section -->
             <section id="invitationsSection" class="mt-4">
                 <div class="section-title-row">
-                    <h3 class="section-heading">Pending Project Invitations</h3>
-                    <span class="badge badge-subtle" id="invitesBadge">0 Pending</span>
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">Pending Project Invitations</h3>
+                        <span class="badge badge-subtle" id="invitesBadge">0 Pending</span>
+                    </div>
                 </div>
 
                 <div id="invitationsList" class="invitations-container mt-2">
-                    <!-- Dynamic Invitation Cards populated via JS -->
-                    <div class="card card-skeleton">
+                    <!-- Loading Skeleton Placeholder -->
+                    <div class="card card-skeleton" id="invitationSkeleton">
                         <div class="skeleton-line w-50"></div>
                         <div class="skeleton-line w-75 mt-2"></div>
                     </div>
@@ -127,44 +160,76 @@
 
                 <!-- Empty State for Invitations -->
                 <div id="noInvitesState" class="card empty-state text-center hidden">
-                    <p class="text-muted">No pending invitations at this time.</p>
+                    <div class="empty-icon">📭</div>
+                    <h4>No Pending Invitations</h4>
+                    <p class="text-muted">You're fully caught up. When clients invite you to scope their projects, they will appear here.</p>
                 </div>
             </section>
 
             <!-- Active Engagements Section -->
             <section id="providerProjectsSection" class="mt-4">
                 <div class="section-title-row">
-                    <h3 class="section-heading">Active Engagements</h3>
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">Active Engagements</h3>
+                        <span class="badge badge-subtle" id="activeProjectsCountBadge">0 Total</span>
+                    </div>
                     
                     <div class="filter-pill-group">
-                        <button type="button" class="filter-pill active" data-filter="ALL">All Active</button>
+                        <button type="button" class="filter-pill active" data-filter="ALL">All</button>
                         <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Under Scoping</button>
-                        <button type="button" class="filter-pill" data-filter="AGREEMENT_LOCKED">Agreement Locked</button>
+                        <button type="button" class="filter-pill" data-filter="AGREEMENT_LOCKED">Scope Locked</button>
                         <button type="button" class="filter-pill" data-filter="IN_PROGRESS">Building</button>
                     </div>
                 </div>
 
                 <!-- Projects List Container -->
                 <div id="providerProjectsList" class="projects-list-grid mt-3">
-                    <!-- Populated via JS -->
+                    <!-- Populated dynamically via JS -->
                 </div>
 
                 <!-- Empty State for Active Projects -->
                 <div id="noProviderProjectsState" class="card empty-state text-center hidden">
                     <div class="empty-icon">📂</div>
-                    <h3>No Active Projects</h3>
-                    <p class="text-muted">Accept incoming project invitations to start collaborating.</p>
+                    <h3>No Active Engagements</h3>
+                    <p class="text-muted">You do not have any active project contracts currently running.</p>
+                    <div class="empty-actions mt-3">
+                        <a href="provider-explore.html" class="btn btn-primary">Find Client Postings</a>
+                    </div>
                 </div>
             </section>
 
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Review Invitation & Scope Modal -->
+    <div class="modal-backdrop hidden" id="invitationModal" role="dialog" aria-modal="true" aria-labelledby="invitationModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary" id="modalProjectCategory">Software Development</span>
+                    <h3 class="modal-title mt-1" id="invitationModalTitle">Project Invitation Details</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeInvitationModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="invitationModalContent">
+                <!-- Dynamically populated by providerDashboardPage.js -->
+            </div>
+            <div class="modal-footer" id="invitationModalActions">
+                <button type="button" class="btn btn-secondary" id="declineInviteBtn">Decline</button>
+                <button type="button" class="btn btn-success" id="acceptInviteBtn">Accept & Open Workspace</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Script Loading Pipeline (Strict Dependency Order) -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
     <script src="js/api/projectApi.js"></script>
+    <script src="js/api/agreementApi.js"></script>
     <script src="js/components/navbar.js"></script>
     <script src="js/components/toast.js"></script>
     <script src="js/pages/providerDashboardPage.js"></script>

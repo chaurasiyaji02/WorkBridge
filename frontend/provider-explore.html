@@ -11,20 +11,24 @@
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
 </head>
-<body>
+<body class="dashboard-body">
 
-    <!-- Main Navigation Header -->
+    <!-- Global Top Navigation -->
     <header class="site-header">
         <div class="container nav-container">
             <a href="index.html" class="brand-logo">
                 <span class="logo-accent">Work</span>Bridge
             </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
             
             <nav id="mainNav" class="nav-links">
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="provider-explore.html" class="nav-link active">Explore Providers</a>
-                <a href="auth.html" class="btn btn-outline" id="navLoginBtn">Sign In</a>
-                <a href="auth.html?mode=register" class="btn btn-primary" id="navRegisterBtn">Get Started</a>
+                <!-- Dynamically populated via js/components/navbar.js -->
             </nav>
         </div>
     </header>
@@ -33,15 +37,18 @@
         <div class="container">
             
             <!-- Page Header -->
-            <div class="page-header-row">
+            <div class="dashboard-header-row">
                 <div>
-                    <h1 class="page-title">Explore Service Providers</h1>
-                    <p class="text-muted">Find specialized developers, designers, and engineering teams for your project.</p>
+                    <h1 class="page-title">Explore Verified Service Providers</h1>
+                    <p class="text-muted">Find specialized engineers, full-stack developers, and technical teams ready for milestone-locked engagements.</p>
+                </div>
+                <div class="header-action-group">
+                    <span class="badge badge-success" id="providerVerificationNotice">🛡️ Verified Talent Only</span>
                 </div>
             </div>
 
             <!-- Search & Filter Controls -->
-            <section class="filter-panel card">
+            <section class="filter-panel card mt-3">
                 <form id="providerFilterForm" class="filter-grid">
                     
                     <div class="form-group mb-0">
@@ -50,7 +57,7 @@
                             type="text" 
                             id="searchInput" 
                             class="form-control" 
-                            placeholder="e.g., Spring Boot, React, UI/UX, Cloud"
+                            placeholder="e.g., Spring Boot, React, DevOps, AI"
                         >
                     </div>
 
@@ -60,25 +67,26 @@
                             <option value="">All Categories</option>
                             <option value="FULL_STACK">Full Stack Development</option>
                             <option value="BACKEND">Backend Engineering</option>
-                            <option value="FRONTEND">Frontend & Web</option>
+                            <option value="FRONTEND">Frontend &amp; Web</option>
                             <option value="MOBILE">Mobile App Development</option>
-                            <option value="UI_UX">UI/UX Design</option>
-                            <option value="DEVOPS">DevOps & Cloud Architecture</option>
+                            <option value="AI_DATA">AI &amp; Data Engineering</option>
+                            <option value="DEVOPS">DevOps &amp; Cloud Infrastructure</option>
+                            <option value="SECURITY">API Security &amp; Audit</option>
                         </select>
                     </div>
 
                     <div class="form-group mb-0">
-                        <label for="minRatingFilter" class="form-label-sm">Minimum Rating</label>
+                        <label for="minRatingFilter" class="form-label-sm">Minimum Reputation</label>
                         <select id="minRatingFilter" class="form-control">
                             <option value="0">Any Rating</option>
-                            <option value="4.5">4.5 & Above</option>
-                            <option value="4.0">4.0 & Above</option>
-                            <option value="3.5">3.5 & Above</option>
+                            <option value="4.8">★ 4.8 &amp; Above</option>
+                            <option value="4.5">★ 4.5 &amp; Above</option>
+                            <option value="4.0">★ 4.0 &amp; Above</option>
                         </select>
                     </div>
 
                     <div class="filter-actions">
-                        <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+                        <button type="submit" class="btn btn-primary btn-block">Search</button>
                         <button type="button" id="resetFilterBtn" class="btn btn-outline btn-block">Reset</button>
                     </div>
 
@@ -87,35 +95,41 @@
 
             <!-- Results Section -->
             <section class="results-section mt-4">
-                <div class="results-meta-row">
-                    <span id="resultsCount" class="text-muted font-medium">Loading providers...</span>
+                <div class="section-title-row">
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">Available Providers</h3>
+                        <span id="resultsCount" class="badge badge-subtle">Loading providers...</span>
+                    </div>
                 </div>
 
-                <!-- Provider Card Grid (Populated via JS) -->
-                <div id="providerGrid" class="grid grid-3 mt-3">
+                <!-- Provider Card Grid (Populated dynamically via JS) -->
+                <div id="providerGrid" class="projects-list-grid mt-3">
                     <!-- Skeleton / Placeholder loading cards -->
                     <div class="card card-skeleton">
                         <div class="skeleton-line w-75"></div>
-                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-line w-50 mt-2"></div>
                         <div class="skeleton-box mt-3"></div>
                     </div>
                     <div class="card card-skeleton">
                         <div class="skeleton-line w-75"></div>
-                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-line w-50 mt-2"></div>
                         <div class="skeleton-box mt-3"></div>
                     </div>
                     <div class="card card-skeleton">
                         <div class="skeleton-line w-75"></div>
-                        <div class="skeleton-line w-50"></div>
+                        <div class="skeleton-line w-50 mt-2"></div>
                         <div class="skeleton-box mt-3"></div>
                     </div>
                 </div>
 
-                <!-- Empty State (Hidden by default) -->
+                <!-- Empty State (Zero-state handling) -->
                 <div id="emptyState" class="card empty-state text-center hidden">
                     <div class="empty-icon">🔍</div>
                     <h3>No Providers Found</h3>
-                    <p class="text-muted">Try adjusting your filters or search keywords.</p>
+                    <p class="text-muted">No verified providers matched your search parameters. Try clearing filters or using broader skill terms.</p>
+                    <div class="empty-actions mt-3">
+                        <button type="button" class="btn btn-outline" id="clearSearchStateBtn">Clear Filters</button>
+                    </div>
                 </div>
             </section>
 
@@ -123,49 +137,73 @@
     </main>
 
     <!-- Invite / Start Project Modal -->
-    <div id="inviteModal" class="modal-backdrop hidden">
+    <div id="inviteModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalProviderTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title" id="modalProviderTitle">Invite Provider to Project</h3>
-                <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
-            </div>
-            <form id="inviteProjectForm" class="modal-body">
-                <input type="hidden" id="selectedProviderId" name="providerId">
-                
-                <div class="form-group">
-                    <label for="projectTitleInput" class="form-label">Project Name</label>
-                    <input 
-                        type="text" 
-                        id="projectTitleInput" 
-                        class="form-control" 
-                        placeholder="e.g., E-Commerce Admin Panel" 
-                        required
-                    >
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary" id="modalProviderCategoryBadge">Provider Engagement</span>
+                    <h3 class="modal-title mt-1" id="modalProviderTitle">Invite Provider to Project</h3>
                 </div>
+                <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="inviteProjectForm">
+                <div class="modal-body">
+                    <input type="hidden" id="selectedProviderId" name="providerId">
+                    
+                    <div class="form-group">
+                        <label for="projectTitleInput" class="form-label">Project Title *</label>
+                        <input 
+                            type="text" 
+                            id="projectTitleInput" 
+                            class="form-control" 
+                            placeholder="e.g., Cloud Inventory & Supply Chain Microservice" 
+                            required
+                        >
+                    </div>
 
-                <div class="form-group">
-                    <label for="projectSummaryInput" class="form-label">Initial Objective & Scope</label>
-                    <textarea 
-                        id="projectSummaryInput" 
-                        class="form-control" 
-                        rows="4" 
-                        placeholder="Briefly describe what you want to build. You can refine and version full requirements later."
-                        required
-                    ></textarea>
+                    <div class="form-group mt-2">
+                        <label for="projectBudgetInput" class="form-label">Estimated Initial Budget ($ USD)</label>
+                        <input 
+                            type="number" 
+                            id="projectBudgetInput" 
+                            class="form-control" 
+                            placeholder="e.g., 2000"
+                            min="0"
+                        >
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectSummaryInput" class="form-label">Initial Objective &amp; Requirements Summary *</label>
+                        <textarea 
+                            id="projectSummaryInput" 
+                            class="form-control" 
+                            rows="4" 
+                            placeholder="Describe required technology stacks, expected deliverables, and estimated milestone timeline..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <p class="text-xs text-muted mt-2">
+                        🔒 Sending this invite initiates a collaborative Scope Workspace. Deliverables and milestones become immutable once both parties sign Agreement v1.0.
+                    </p>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" id="modalCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Send Invitation</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline (Strict Dependency Order) -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
+    <script src="js/api/projectApi.js"></script>
     <script src="js/components/navbar.js"></script>
     <script src="js/components/modal.js"></script>
     <script src="js/components/toast.js"></script>

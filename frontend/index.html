@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="WorkBridge - Intelligent Collaboration and Resource Management System. Turn project discussions into structured, agreed, and traceable collaboration.">
-    <title>WorkBridge | Intelligent Collaboration & Resource Management</title>
+    <title>WorkBridge | Intelligent Collaboration &amp; Resource Management</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -20,13 +20,16 @@
                 <span class="logo-accent">Work</span>Bridge
             </a>
             
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+
             <!-- Dynamic Navigation container populated via JS -->
             <nav id="mainNav" class="nav-links">
-                <a href="index.html" class="nav-link active">Home</a>
-                <a href="provider-explore.html" class="nav-link">Explore Providers</a>
-                <a href="#features" class="nav-link">How It Works</a>
-                <a href="auth.html" class="btn btn-outline" id="navLoginBtn">Sign In</a>
-                <a href="auth.html?mode=register" class="btn btn-primary" id="navRegisterBtn">Get Started</a>
+                <!-- Populated dynamically via js/components/navbar.js -->
             </nav>
         </div>
     </header>
@@ -37,41 +40,65 @@
         <section class="hero-section">
             <div class="container hero-container">
                 <div class="hero-content">
-                    <span class="badge badge-subtle">Final-Year Engineering Project</span>
+                    <div class="hero-badge-group mb-2">
+                        <span class="badge badge-primary">Final-Year Engineering Project</span>
+                        <span class="badge badge-success ml-1">Neon Cloud DB Connected</span>
+                    </div>
                     <h1 class="hero-title">
                         Turn scattered project discussions into <span class="text-highlight">structured, locked reality.</span>
                     </h1>
                     <p class="hero-description">
                         WorkBridge eliminates scope drift, lost files, and unclear agreements. A specialized collaboration workspace connecting clients and technology service providers with versioned requirements and digital project agreements.
                     </p>
-                    <div class="hero-actions">
-                        <a href="auth.html?mode=register" class="btn btn-primary btn-lg">Start a Project</a>
-                        <a href="provider-explore.html" class="btn btn-outline btn-lg">Find Providers</a>
+                    <div class="hero-actions" id="heroActionContainer">
+                        <a href="auth.html?mode=register" class="btn btn-primary btn-lg" id="heroPrimaryCta">Start a Project</a>
+                        <a href="provider-explore.html" class="btn btn-outline btn-lg">Explore Providers</a>
                     </div>
                 </div>
+
+                <!-- Interactive State Machine Preview Visual -->
                 <div class="hero-preview-card">
                     <div class="preview-header">
-                        <span class="preview-dot dot-red"></span>
-                        <span class="preview-dot dot-yellow"></span>
-                        <span class="preview-dot dot-green"></span>
-                        <span class="preview-title">Project State Machine: Active</span>
+                        <div class="preview-traffic-dots">
+                            <span class="preview-dot dot-red"></span>
+                            <span class="preview-dot dot-yellow"></span>
+                            <span class="preview-dot dot-green"></span>
+                        </div>
+                        <span class="preview-title">WorkBridge Engine v1.0</span>
                     </div>
                     <div class="preview-body">
+                        <!-- Scope Lock Indicator (Core Feature A) -->
                         <div class="preview-item">
-                            <span class="preview-label">Requirement Status</span>
-                            <span class="badge badge-success">V2 - LOCKED</span>
+                            <span class="preview-label">Scope State</span>
+                            <span class="badge badge-success">🔒 Scope Locked (v1.0)</span>
                         </div>
+
+                        <!-- Mutual Sign-off Status -->
                         <div class="preview-item">
-                            <span class="preview-label">Mutual Agreement</span>
-                            <span class="badge badge-success">MUTUALLY SIGNED</span>
+                            <span class="preview-label">Digital Sign-off</span>
+                            <span class="badge badge-primary">Mutually Accepted</span>
                         </div>
-                        <div class="preview-item">
-                            <span class="preview-label">AI Quality Score</span>
-                            <span class="badge badge-info">Zero Ambiguity Detected</span>
+
+                        <!-- Visual Milestone Progress (Core Feature B) -->
+                        <div class="preview-item flex-column-item">
+                            <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 0.25rem;">
+                                <span class="preview-label">Milestone Progress (Weighted)</span>
+                                <strong class="text-highlight font-medium">75%</strong>
+                            </div>
+                            <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #f1f5f9); border-radius: 9999px; overflow: hidden;">
+                                <div style="width: 75%; height: 100%; background-color: var(--primary, #3b82f6);"></div>
+                            </div>
                         </div>
+
+                        <!-- AI Ambiguity Analyzer -->
                         <div class="preview-item">
-                            <span class="preview-label">Active Workspace</span>
-                            <span class="text-muted">Chat, Decisions, Resources Synced</span>
+                            <span class="preview-label">AI Ambiguity Audit</span>
+                            <span class="badge badge-subtle">Zero Conflicts Detected</span>
+                        </div>
+
+                        <div class="preview-item">
+                            <span class="preview-label">Dispute Prevention</span>
+                            <span class="text-success font-medium">100% Traceable</span>
                         </div>
                     </div>
                 </div>
@@ -88,18 +115,18 @@
                 <div class="grid grid-3">
                     <div class="card problem-card">
                         <div class="card-icon">⚠️</div>
-                        <h3 class="card-title">Scope Creep & Silent Edits</h3>
-                        <p class="card-text">Requirements change constantly inside informal chat threads without version history or mutual sign-off, creating conflict at delivery.</p>
+                        <h3 class="card-title">Scope Creep &amp; Silent Edits</h3>
+                        <p class="card-text">Requirements change constantly inside informal chat threads without version history or mutual sign-off, creating conflict at delivery time.</p>
                     </div>
                     <div class="card problem-card">
                         <div class="card-icon">🗂️</div>
                         <h3 class="card-title">Scattered Resources</h3>
-                        <p class="card-text">Crucial UI files, documentation, credentials, and API references get lost deep in multi-day conversation logs.</p>
+                        <p class="card-text">Crucial UI files, architecture documents, credentials, and API references get lost deep in unstructured multi-day conversation logs.</p>
                     </div>
                     <div class="card problem-card">
                         <div class="card-icon">📑</div>
                         <h3 class="card-title">Ambiguous Agreements</h3>
-                        <p class="card-text">Milestones, timelines, and deliverables are rarely bound to a locked digital agreement before development work begins.</p>
+                        <p class="card-text">Milestones, timelines, and deliverables are rarely bound to an immutable digital agreement before development work begins.</p>
                     </div>
                 </div>
             </div>
@@ -110,18 +137,18 @@
             <div class="container">
                 <div class="section-header text-center">
                     <h2 class="section-title">The WorkBridge Framework</h2>
-                    <p class="section-subtitle">A structured, role-based workflow engineered for clarity and accountability.</p>
+                    <p class="section-subtitle">A structured, role-based workflow engineered for clarity, version integrity, and dispute prevention.</p>
                 </div>
                 <div class="grid grid-2">
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 1</div>
                         <h3 class="card-title">Smart Requirement Versioning</h3>
-                        <p class="card-text">Requirements are structured documents with full version tracking (V1, V2, V3). Once locked by mutual agreement, no party can make silent modifications without a formal change request.</p>
+                        <p class="card-text">Requirements are structured documents with full version tracking (v1.0, v2.0). Once locked by mutual agreement, neither party can make silent modifications without a formal Scope Amendment.</p>
                     </div>
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 2</div>
                         <h3 class="card-title">Digital Project Agreements</h3>
-                        <p class="card-text">A transparent mutual project agreement defining deliverables, timelines, and terms. Both client and provider review and lock terms before active development starts.</p>
+                        <p class="card-text">A transparent mutual project agreement defining deliverables, weighted milestones, and terms. Both client and provider review and lock terms before active building starts.</p>
                     </div>
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 3</div>
@@ -130,7 +157,7 @@
                     </div>
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 4</div>
-                        <h3 class="card-title">AI Requirement Analysis & Summaries</h3>
+                        <h3 class="card-title">AI Requirement Auditing &amp; Summaries</h3>
                         <p class="card-text">On-demand AI auditing to detect missing technical details, ambiguous statements, or contradictions in requirements, plus one-click discussion summaries.</p>
                     </div>
                 </div>
@@ -154,6 +181,26 @@
     <!-- Shared Scripts -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
     <script src="js/components/navbar.js"></script>
+    <script>
+        // Hero Dynamic CTA adaptation based on auth state
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.AuthState && window.AuthState.isAuthenticated()) {
+                const user = window.AuthState.getUser();
+                const heroPrimaryCta = document.getElementById('heroPrimaryCta');
+                if (heroPrimaryCta && user) {
+                    heroPrimaryCta.textContent = 'Go to Your Dashboard';
+                    if (user.role === 'SERVICE_PROVIDER') {
+                        heroPrimaryCta.href = 'provider-dashboard.html';
+                    } else if (user.role === 'ADMIN') {
+                        heroPrimaryCta.href = 'admin-dashboard.html';
+                    } else {
+                        heroPrimaryCta.href = 'client-dashboard.html';
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your WorkBridge profile details and technical capabilities.">
+    <title>Profile Settings | WorkBridge</title>
+    
+    <!-- CSS Foundations -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Global Top Navigation -->
+    <header class="site-header">
+        <div class="container nav-container">
+            <a href="index.html" class="brand-logo">
+                <span class="logo-accent">Work</span>Bridge
+            </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+            
+            <nav id="mainNav" class="nav-links">
+                <!-- Dynamically populated via js/components/navbar.js -->
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-main">
+        <div class="container" style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+            
+            <!-- Breadcrumbs -->
+            <div class="project-meta-breadcrumbs mb-2">
+                <a href="javascript:history.back()" class="text-link" id="backToDashboardLink">&larr; Back to Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="badge badge-subtle">Settings</span>
+            </div>
+
+            <!-- Page Title -->
+            <div class="dashboard-header-row mb-3">
+                <div>
+                    <h1 class="page-title">Profile &amp; Capability Settings</h1>
+                    <p class="text-muted">Update your display details, technical domain, and offering portfolio.</p>
+                </div>
+                <div>
+                    <span class="badge badge-primary" id="roleIndicatorBadge">Loading Role...</span>
+                </div>
+            </div>
+
+            <!-- Profile Settings Card -->
+            <div class="card mt-3">
+                <form id="profileSettingsForm">
+                    
+                    <!-- Identity Section -->
+                    <div class="form-group">
+                        <label for="profileFullName" class="form-label">Full Name / Organization Name *</label>
+                        <input type="text" id="profileFullName" class="form-control" placeholder="e.g., Alex Johnson or TechNova Solutions" required>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="profileEmail" class="form-label">Account Email</label>
+                        <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.7; cursor: not-allowed;">
+                        <span class="text-xs text-muted">Email is tied to your account authentication and cannot be changed.</span>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- PROVIDER SPECIALIZED FIELDS (Dynamic)      -->
+                    <!-- ========================================== -->
+                    <div id="providerSpecializedFields" class="hidden">
+                        
+                        <div class="profile-divider my-3"></div>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🛠️ Provider Technical Services &amp; Domain</h4>
+
+                        <div class="form-group mt-2">
+                            <label for="providerDomainSelect" class="form-label">Primary Technical Domain *</label>
+                            <select id="providerDomainSelect" class="form-control">
+                                <option value="Full-Stack Web Development">Full-Stack Web Development</option>
+                                <option value="Backend Engineering & Cloud">Backend Engineering &amp; Cloud</option>
+                                <option value="Frontend & UI/UX Design">Frontend &amp; UI/UX Design</option>
+                                <option value="Mobile App Development">Mobile App Development</option>
+                                <option value="AI & Data Engineering">AI &amp; Data Engineering</option>
+                                <option value="DevOps & Infrastructure">DevOps &amp; Infrastructure</option>
+                                <option value="Security Architecture & Audit">Security Architecture &amp; Audit</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mt-2">
+                            <label for="providerSkillsInput" class="form-label">Key Skills &amp; Frameworks (Comma separated)</label>
+                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="e.g., Spring Boot, React, PostgreSQL, Docker, AWS">
+                        </div>
+
+                        <div class="form-group mt-2">
+                            <label for="providerHourlyRateInput" class="form-label">Standard Rate ($ USD / hr or project base)</label>
+                            <input type="number" id="providerHourlyRateInput" class="form-control" placeholder="e.g., 45" min="0">
+                        </div>
+
+                    </div>
+
+                    <!-- Common Bio / Company Summary -->
+                    <div class="form-group mt-2">
+                        <label for="profileBioInput" class="form-label" id="bioLabel">About / Professional Bio</label>
+                        <textarea id="profileBioInput" class="form-control" rows="4" placeholder="Describe your experience, technical background, past projects, or collaboration expectations..."></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="modal-footer mt-4" style="padding-top: 1rem; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" class="btn btn-secondary" id="btnCancelProfile">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveProfile">Save Changes</button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline -->
+    <script src="js/config.js"></script>
+    <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/toast.js"></script>
+    <script src="js/pages/profileSettingsPage.js"></script>
+</body>
+</html>

@@ -19,6 +19,13 @@
             <a href="index.html" class="brand-logo">
                 <span class="logo-accent">Work</span>Bridge
             </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
             
             <nav id="mainNav" class="nav-links">
                 <!-- Populated dynamically via js/components/navbar.js -->
@@ -30,27 +37,51 @@
     <div class="dashboard-layout container">
         
         <!-- Dashboard Sidebar / Profile Summary -->
-        <aside class="dashboard-sidebar">
+        <aside class="dashboard-sidebar" id="dashboardSidebar">
             <div class="card profile-widget">
-                <div class="profile-avatar" id="clientAvatar">C</div>
-                <h3 class="profile-name" id="clientName">Loading Name...</h3>
-                <span class="badge badge-subtle" id="userRoleBadge">Client</span>
+                <div class="profile-header-summary">
+                    <div class="profile-avatar avatar-client" id="clientAvatar">C</div>
+                    <div class="profile-title-group">
+                        <h3 class="profile-name" id="clientName">Loading Name...</h3>
+                        <span class="badge badge-primary" id="userRoleBadge">Client</span>
+                    </div>
+                </div>
                 <p class="profile-email text-muted" id="clientEmail">loading@email.com</p>
+                
                 <div class="profile-divider"></div>
+                
                 <div class="profile-stat-row">
                     <span class="text-muted">Total Projects:</span>
                     <strong id="statTotalProjects">0</strong>
                 </div>
-            </div>
+                <div class="profile-stat-row mt-1">
+                    <span class="text-muted">Active Engagements:</span>
+                    <strong id="statActiveProjects" class="text-highlight">0</strong>
+                </div>
 
+               
+                <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-3" style="text-align: center; text-decoration: none; display: block;">⚙️ Edit Profile</a>
+
+            </div> <!-- Yeh card profile-widget ka closing div hai -->
             <!-- Quick Navigation Actions -->
+             
             <div class="sidebar-menu-card card mt-3">
                 <h4 class="menu-heading">Quick Actions</h4>
                 <ul class="sidebar-menu">
-                    <li><a href="provider-explore.html" class="sidebar-link active">🔍 Find Service Providers</a></li>
-                    <li><a href="#activeProjectsSection" class="sidebar-link">📁 Active Workspaces</a></li>
+                    <li><button type="button" class="sidebar-btn-link" id="quickCreateProjectBtn">➕ Post New Project</button></li>
+                    <li><a href="provider-explore.html" class="sidebar-link">🔍 Find Service Providers</a></li>
+                    <li><a href="#activeProjectsSection" class="sidebar-link active">📁 Active Workspaces</a></li>
                     <li><a href="#pendingApprovalsSection" class="sidebar-link">⏳ Pending Approvals</a></li>
                 </ul>
+            </div>
+
+            <!-- Cloud Database Live Status -->
+            <div class="card mt-3">
+                <div class="card-header-flex">
+                    <h4 class="menu-heading">Database Sync</h4>
+                    <span class="badge badge-success" id="dbStatusBadge">Neon Live</span>
+                </div>
+                <p class="text-muted text-xs mt-1">Real-time persistence with PostgreSQL serverless backend.</p>
             </div>
         </aside>
 
@@ -63,8 +94,13 @@
                     <h1 class="page-title">Client Command Center</h1>
                     <p class="text-muted">Manage your technology projects, review requirement versions, and track deliverables.</p>
                 </div>
-                <div>
-                    <a href="provider-explore.html" class="btn btn-primary">+ Start New Project</a>
+                <div class="header-action-group">
+                    <button type="button" class="btn btn-outline" id="refreshClientDashboardBtn" title="Sync live records">
+                        <span class="btn-icon">🔄</span> Sync
+                    </button>
+                    <button type="button" class="btn btn-primary" id="openCreateProjectModalBtn">
+                        + Start New Project
+                    </button>
                 </div>
             </div>
 
@@ -75,6 +111,14 @@
                     <div class="metric-details">
                         <span class="metric-label">Active Projects</span>
                         <h2 class="metric-value" id="metricActiveCount">0</h2>
+                    </div>
+                </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">🔒</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Scope Locked (v1+)</span>
+                        <h2 class="metric-value text-info" id="metricLockedCount">0</h2>
                     </div>
                 </div>
 
@@ -97,22 +141,31 @@
 
             <!-- Pending Action Alerts Section -->
             <section id="pendingApprovalsSection" class="mt-4 hidden">
-                <h3 class="section-heading text-warning">Action Required</h3>
+                <div class="section-title-row">
+                    <div class="title-with-badge">
+                        <h3 class="section-heading text-warning">Action Required</h3>
+                        <span class="badge badge-warning" id="pendingApprovalsCountBadge">0 Pending</span>
+                    </div>
+                </div>
                 <div id="pendingActionsList" class="alert-action-container mt-2">
-                    <!-- Populated via JS when agreements/requirements need client approval -->
+                    <!-- Populated dynamically via JS when agreements or milestones need client sign-off -->
                 </div>
             </section>
 
             <!-- Projects Section -->
             <section id="activeProjectsSection" class="mt-4">
                 <div class="section-title-row">
-                    <h3 class="section-heading">Your Projects</h3>
+                    <div class="title-with-badge">
+                        <h3 class="section-heading">Your Projects</h3>
+                        <span class="badge badge-subtle" id="projectsCountBadge">0 Total</span>
+                    </div>
                     
                     <!-- Filter Tabs -->
                     <div class="filter-pill-group">
                         <button type="button" class="filter-pill active" data-filter="ALL">All</button>
                         <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Requirements</button>
-                        <button type="button" class="filter-pill" data-filter="IN_PROGRESS">In Progress</button>
+                        <button type="button" class="filter-pill" data-filter="AGREEMENT_LOCKED">Scope Locked</button>
+                        <button type="button" class="filter-pill" data-filter="IN_PROGRESS">Building</button>
                         <button type="button" class="filter-pill" data-filter="COMPLETED">Completed</button>
                     </div>
                 </div>
@@ -125,30 +178,99 @@
                         <div class="skeleton-line w-25 mt-2"></div>
                         <div class="skeleton-box mt-3"></div>
                     </div>
-                    <div class="card card-skeleton">
-                        <div class="skeleton-line w-50"></div>
-                        <div class="skeleton-line w-25 mt-2"></div>
-                        <div class="skeleton-box mt-3"></div>
-                    </div>
                 </div>
 
                 <!-- Empty State -->
                 <div id="noProjectsState" class="card empty-state text-center hidden">
                     <div class="empty-icon">📂</div>
                     <h3>No Projects Yet</h3>
-                    <p class="text-muted">You haven't initiated any projects yet. Discover technology service providers to start collaborating.</p>
-                    <a href="provider-explore.html" class="btn btn-primary mt-2">Explore Providers</a>
+                    <p class="text-muted">You haven't initiated any projects yet. Post a scope requirement or explore providers to get started.</p>
+                    <div class="empty-actions mt-3">
+                        <button type="button" class="btn btn-primary" id="emptyStateCreateBtn">+ Post Your First Project</button>
+                        <a href="provider-explore.html" class="btn btn-outline ml-2">Find Providers</a>
+                    </div>
                 </div>
             </section>
 
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Create Project Modal -->
+    <div class="modal-backdrop hidden" id="createProjectModal" role="dialog" aria-modal="true" aria-labelledby="createProjectModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="createProjectModalTitle">Create New Project Scope</h3>
+                <button type="button" class="modal-close-btn" id="closeCreateProjectModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="createProjectForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="projectTitleInput" class="form-label">Project Title *</label>
+                        <input type="text" id="projectTitleInput" class="form-control" placeholder="e.g. AI-Powered Inventory Dashboard" required>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectCategoryInput" class="form-label">Domain / Category *</label>
+                        <select id="projectCategoryInput" class="form-control" required>
+                            <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
+                            <option value="MOBILE_APPS">Mobile Application (iOS / Android)</option>
+                            <option value="CLOUD_DEVOPS">Cloud Infrastructure &amp; DevOps</option>
+                            <option value="AI_DATA">AI &amp; Data Engineering</option>
+                            <option value="SECURITY">Security &amp; API Architecture</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectBudgetInput" class="form-label">Initial Estimated Budget ($ USD)</label>
+                        <input type="number" id="projectBudgetInput" class="form-control" placeholder="e.g. 1500" min="0">
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectSummaryInput" class="form-label">Project Objective &amp; Requirements Summary *</label>
+                        <textarea id="projectSummaryInput" class="form-control" rows="4" placeholder="Describe deliverables, key technology requirements, and target timeline..." required></textarea>
+                    </div>
+
+                    <p class="text-xs text-muted mt-2">
+                        🔒 Projects begin in <strong>Scope Discussion</strong>. Terms become legally immutable once both you and your assigned provider sign Agreement v1.0.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelCreateProjectBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitCreateProjectBtn">Create &amp; Open Scope</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sign-off / Review Scope Modal -->
+    <div class="modal-backdrop hidden" id="scopeReviewModal" role="dialog" aria-modal="true" aria-labelledby="scopeReviewModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-warning" id="scopeReviewVersionBadge">Scope v1.0 Review</span>
+                    <h3 class="modal-title mt-1" id="scopeReviewModalTitle">Milestone Agreement Approval</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeScopeReviewModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="scopeReviewModalBody">
+                <!-- Dynamically populated via clientDashboardPage.js -->
+            </div>
+            <div class="modal-footer" id="scopeReviewModalActions">
+                <button type="button" class="btn btn-secondary" id="requestScopeAmendmentBtn">Request Revision</button>
+                <button type="button" class="btn btn-success" id="signScopeAgreementBtn">✍️ Sign &amp; Lock Scope (v1.0)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline (Strict Dependency Order) -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
     <script src="js/api/projectApi.js"></script>
+    <script src="js/api/agreementApi.js"></script>
     <script src="js/components/navbar.js"></script>
     <script src="js/components/toast.js"></script>
     <script src="js/pages/clientDashboardPage.js"></script>
