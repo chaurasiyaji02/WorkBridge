@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -70,9 +71,65 @@ public class ProfileService {
         profile.setBio(request.getBio());
         profile.setHourlyRate(request.getHourlyRate());
         if (request.getSkills() != null) {
-            profile.setSkills(request.getSkills());
+            profile.setSkills(new ArrayList<>(request.getSkills()));
         }
         profile.setLocation(request.getLocation());
+
+        ProviderProfile saved = providerProfileRepository.save(profile);
+        return mapToProviderResponse(saved);
+    }
+
+    /**
+     * Endpoint support for POST /api/profile/services
+     * Allows a Provider to post a new service/gig from mobile or web,
+     * immediately persisting it to Neon DB and updating the provider's discoverable profile.
+     */
+    @Transactional
+    public ProviderProfileDto.Response createServiceOffer(ProviderProfileDto.ServiceOfferRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userEmail));
+
+        ProviderProfile profile = providerProfileRepository.findByUserId(user.getId())
+                .orElseGet(() -> ProviderProfile.builder()
+                        .user(user)
+                        .averageRating(5.0)
+                        .completedProjectsCount(0)
+                        .skills(new ArrayList<>())
+                        .portfolioItems(new ArrayList<>())
+                        .build());
+
+        // Update profile fields with latest service offer details
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            profile.setTitle(request.getTitle());
+        }
+        if (request.getHourlyRate() != null) {
+            profile.setHourlyRate(request.getHourlyRate());
+        }
+        if (request.getBio() != null && !request.getBio().isBlank()) {
+            profile.setBio(request.getBio());
+        }
+
+        // Parse comma-separated String skills into List<String>
+        if (request.getSkills() != null && !request.getSkills().isBlank()) {
+            List<String> parsedSkills = Arrays.stream(request.getSkills().split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+            profile.setSkills(new ArrayList<>(parsedSkills));
+        }
+
+        // Add service entry as an item to portfolio so it is permanently queryable
+        PortfolioItem item = PortfolioItem.builder()
+                .providerProfile(profile)
+                .title(request.getTitle())
+                .description(request.getBio() != null ? request.getBio() : request.getCategory())
+                .projectUrl(request.getCategory())
+                .build();
+
+        if (profile.getPortfolioItems() == null) {
+            profile.setPortfolioItems(new ArrayList<>());
+        }
+        profile.getPortfolioItems().add(item);
 
         ProviderProfile saved = providerProfileRepository.save(profile);
         return mapToProviderResponse(saved);
@@ -105,7 +162,11 @@ public class ProfileService {
                 .imageUrl(request.getImageUrl())
                 .build();
 
+        if (profile.getPortfolioItems() == null) {
+            profile.setPortfolioItems(new ArrayList<>());
+        }
         profile.getPortfolioItems().add(item);
+
         ProviderProfile saved = providerProfileRepository.save(profile);
         return mapToProviderResponse(saved);
     }
@@ -115,19 +176,32 @@ public class ProfileService {
         ProviderProfile profile = providerProfileRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found for: " + userEmail));
 
-        profile.getPortfolioItems().removeIf(item -> item.getId().equals(itemId));
+        if (profile.getPortfolioItems() != null) {
+            profile.getPortfolioItems().removeIf(item -> item.getId().equals(itemId));
+        }
+
         ProviderProfile saved = providerProfileRepository.save(profile);
         return mapToProviderResponse(saved);
     }
 
+    /**
+     * Cross-Device Discovery Pipeline:
+     * Searches providers in Neon DB. If criteria are empty or repository returns no records,
+     * automatically queries registered providers and returns profiles so the Client Explore feed
+     * displays real-time database records across devices.
+     */
     @Transactional(readOnly = true)
     public List<ProviderProfileDto.Response> searchProviders(ProviderSearchCriteria criteria) {
         List<ProviderProfile> profiles = providerProfileRepository.searchProviders(
-                criteria.getSkill(),
-                criteria.getMinRate(),
-                criteria.getMaxRate(),
-                criteria.getLocation()
+                criteria != null ? criteria.getSkill() : null,
+                criteria != null ? criteria.getMinRate() : null,
+                criteria != null ? criteria.getMaxRate() : null,
+                criteria != null ? criteria.getLocation() : null
         );
+
+        if (profiles.isEmpty()) {
+            profiles = providerProfileRepository.findAll();
+        }
 
         return profiles.stream()
                 .map(this::mapToProviderResponse)
@@ -170,12 +244,13 @@ public class ProfileService {
                 .userFullName(profile.getUser().getFullName())
                 .userEmail(profile.getUser().getEmail())
                 .title(profile.getTitle())
+                .domain(profile.getUser().getDomain())
                 .bio(profile.getBio())
                 .hourlyRate(profile.getHourlyRate())
-                .skills(profile.getSkills())
+                .skills(profile.getSkills() != null ? profile.getSkills() : new ArrayList<>())
                 .location(profile.getLocation())
-                .averageRating(profile.getAverageRating())
-                .completedProjectsCount(profile.getCompletedProjectsCount())
+                .averageRating(profile.getAverageRating() != null ? profile.getAverageRating() : 5.0)
+                .completedProjectsCount(profile.getCompletedProjectsCount() != null ? profile.getCompletedProjectsCount() : 0)
                 .portfolioItems(portfolioResponses)
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())

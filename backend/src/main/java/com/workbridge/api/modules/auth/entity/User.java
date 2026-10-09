@@ -1,5 +1,6 @@
 package com.workbridge.api.modules.auth.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.workbridge.api.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,11 +27,28 @@ public class User extends BaseEntity implements UserDetails {
     private String email;
 
     @Column(name = "password_hash", nullable = false)
+    @JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private Role role;
+
+    @Column(length = 100)
+    private String domain;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    @Column(name = "hourly_rate")
+    private Double hourlyRate;
+
+    @Column(length = 255)
+    private String skills;
+
+    @Builder.Default
+    @Column(name = "average_rating")
+    private Double averageRating = 5.0;
 
     @Builder.Default
     @Column(nullable = false)

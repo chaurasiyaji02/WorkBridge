@@ -7,6 +7,7 @@ import com.workbridge.api.modules.profile.dto.ProviderSearchCriteria;
 import com.workbridge.api.modules.profile.service.ProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,7 +17,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/profiles")
+@RequestMapping({"/api/profiles", "/api/profile"})
 @RequiredArgsConstructor
 public class ProfileController {
 
@@ -72,6 +73,24 @@ public class ProfileController {
         return ResponseEntity.ok(ApiResponse.ok("Provider profile retrieved successfully", response));
     }
 
+    /**
+     * POST /api/profile/services or /api/profiles/services
+     * Persists new service gigs created by providers directly into Neon PostgreSQL.
+     */
+    @PostMapping({"/services", "/provider/services"})
+    public ResponseEntity<ApiResponse<ProviderProfileDto.Response>> createServiceOffer(
+            @RequestBody ProviderProfileDto.ServiceOfferRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        ProviderProfileDto.Response response = profileService.createServiceOffer(request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Service published successfully", response));
+    }
+
+    /**
+     * GET /api/profile/providers/search or /api/profiles/providers/search
+     * Centralized provider catalog query for cross-device synchronization.
+     */
     @GetMapping("/providers/search")
     public ResponseEntity<ApiResponse<List<ProviderProfileDto.Response>>> searchProviders(
             @RequestParam(required = false) String skill,

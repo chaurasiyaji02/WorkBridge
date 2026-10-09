@@ -32,6 +32,30 @@ public class ProviderProfileDto {
         private String location;
     }
 
+    /**
+     * DTO for POST /api/profile/services
+     * Dispatched when a provider posts a new service/gig from web or mobile.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ServiceOfferRequest {
+        @Size(max = 150, message = "Title must not exceed 150 characters")
+        private String title;
+
+        private String category;
+
+        @DecimalMin(value = "0.0", inclusive = false, message = "Hourly rate must be greater than 0")
+        private BigDecimal hourlyRate;
+
+        private Integer deliveryDays;
+
+        private String skills;
+
+        private String bio;
+    }
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -66,6 +90,7 @@ public class ProviderProfileDto {
         private String userFullName;
         private String userEmail;
         private String title;
+        private String domain;
         private String bio;
         private BigDecimal hourlyRate;
         private List<String> skills;
