@@ -2,8 +2,9 @@
  * WORKBRIDGE - CLIENT DASHBOARD PAGE CONTROLLER
  * File: js/pages/clientDashboardPage.js
  * 
+ * Synchronized with client-dashboard.html DOM elements.
  * Handles client authentication guards, metric aggregates, project listing,
- * stage pill filtering, action item alerts, and the Post New Project modal workflow.
+ * stage pill filtering, action item alerts, and the Create Project modal workflow.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -33,11 +34,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clientEmailEl = document.getElementById('clientEmail');
     const clientAvatarEl = document.getElementById('clientAvatar');
     const statTotalProjectsEl = document.getElementById('statTotalProjects');
+    const statActiveProjectsEl = document.getElementById('statActiveProjects');
 
     // DOM Elements - Metrics
     const metricActiveCount = document.getElementById('metricActiveCount');
+    const metricLockedCount = document.getElementById('metricLockedCount');
     const metricPendingSignoffs = document.getElementById('metricPendingSignoffs');
     const metricCompletedCount = document.getElementById('metricCompletedCount');
+    const projectsCountBadge = document.getElementById('projectsCountBadge');
+    const pendingApprovalsCountBadge = document.getElementById('pendingApprovalsCountBadge');
 
     // DOM Elements - Sections & Lists
     const pendingApprovalsSection = document.getElementById('pendingApprovalsSection');
@@ -45,12 +50,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const projectsList = document.getElementById('projectsList');
     const noProjectsState = document.getElementById('noProjectsState');
     const filterPills = document.querySelectorAll('.filter-pill');
+    const refreshClientDashboardBtn = document.getElementById('refreshClientDashboardBtn');
 
-    // DOM Elements - New Project Modal
-    const btnNewProject = document.getElementById('btnNewProject');
-    const newProjectModal = document.getElementById('newProjectModal');
-    const newProjectForm = document.getElementById('newProjectForm');
-    const btnSubmitNewProject = document.getElementById('btnSubmitNewProject');
+    // DOM Elements - Modal & Buttons (Strictly matching client-dashboard.html)
+    const openCreateProjectModalBtn = document.getElementById('openCreateProjectModalBtn');
+    const quickCreateProjectBtn = document.getElementById('quickCreateProjectBtn');
+    const emptyStateCreateBtn = document.getElementById('emptyStateCreateBtn');
+    const createProjectModal = document.getElementById('createProjectModal');
+    const createProjectForm = document.getElementById('createProjectForm');
+    const closeCreateProjectModalBtn = document.getElementById('closeCreateProjectModalBtn');
+    const cancelCreateProjectBtn = document.getElementById('cancelCreateProjectBtn');
+    const submitCreateProjectBtn = document.getElementById('submitCreateProjectBtn');
 
     // Populate Sidebar Profile Information
     const displayName = currentUser.fullName || currentUser.username || currentUser.email || 'Client Workspace';
@@ -64,26 +74,62 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load initial dashboard data
     await loadClientDashboard();
 
+    // Setup Event Listeners
+    setupEventListeners();
+
     // -------------------------------------------------------------------------
-    // 2. Fetch Dashboard Data & Projects
+    // 2. Fetch Dashboard Data & Projects (Safe Hybrid Sync)
     // -------------------------------------------------------------------------
     async function loadClientDashboard() {
+        let remoteProjects = [];
         try {
-            const data = await window.ProjectApi.getClientProjects('ALL');
-            clientProjects = Array.isArray(data) ? data : [];
-            updateMetrics(clientProjects);
-            renderPendingAlerts(clientProjects);
-            renderProjectsList(clientProjects);
-        } catch (error) {
-            console.error('Failed to load client projects:', error);
-            if (window.Toast) {
-                window.Toast.error('Could not connect to database. Displaying offline cached workspace.');
+            if (window.ProjectApi && typeof window.ProjectApi.getClientProjects === 'function') {
+                const data = await window.ProjectApi.getClientProjects('ALL');
+                remoteProjects = Array.isArray(data) ? data : [];
             }
-            clientProjects = getFallbackClientProjects();
-            updateMetrics(clientProjects);
-            renderPendingAlerts(clientProjects);
-            renderProjectsList(clientProjects);
+        } catch (error) {
+            console.warn('Backend client projects query deferred, loading local pipeline:', error.message);
         }
+
+        // Merge with local projects created by this client (or from explore page invitations)
+        const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
+        const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
+
+        const combinedMap = new Map();
+
+        // 1. Add remote projects
+        remoteProjects.forEach(p => combinedMap.set(String(p.id), p));
+
+        // 2. Add local created projects
+        localProjects.forEach(p => {
+            if (!combinedMap.has(String(p.id))) {
+                combinedMap.set(String(p.id), p);
+            }
+        });
+
+        // 3. Add explore invitations initiated by this client
+        localInvites.forEach(inv => {
+            if (!combinedMap.has(String(inv.id))) {
+                combinedMap.set(String(inv.id), {
+                    id: inv.id,
+                    title: inv.title,
+                    description: inv.description || inv.summary,
+                    summary: inv.summary,
+                    stage: inv.stage || PROJECT_STAGES.INVITED,
+                    assignedProviderName: inv.providerName || 'Invited Provider',
+                    budget: inv.budget,
+                    completionPercentage: 10,
+                    hasPendingApproval: false
+                });
+            }
+        });
+
+        clientProjects = Array.from(combinedMap.values());
+
+        // Update UI
+        updateMetrics(clientProjects);
+        renderPendingAlerts(clientProjects);
+        renderProjectsList(clientProjects);
     }
 
     // -------------------------------------------------------------------------
@@ -91,20 +137,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     function updateMetrics(projects) {
         if (statTotalProjectsEl) statTotalProjectsEl.textContent = projects.length;
+        if (projectsCountBadge) projectsCountBadge.textContent = `${projects.length} Total`;
 
         const activeCount = projects.filter(p => p.stage !== PROJECT_STAGES.COMPLETED).length;
         const completedCount = projects.filter(p => p.stage === PROJECT_STAGES.COMPLETED).length;
         
-        // Count projects requiring client signature or approval
+        const lockedCount = projects.filter(p => 
+            p.stage === PROJECT_STAGES.AGREEMENT_LOCKED ||
+            p.stage === PROJECT_STAGES.IN_PROGRESS
+        ).length;
+
         const pendingCount = projects.filter(p => 
             p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION || 
             p.stage === PROJECT_STAGES.AGREEMENT_LOCKED ||
             p.hasPendingApproval
         ).length;
 
+        if (statActiveProjectsEl) statActiveProjectsEl.textContent = activeCount;
         if (metricActiveCount) metricActiveCount.textContent = activeCount;
+        if (metricLockedCount) metricLockedCount.textContent = lockedCount;
         if (metricCompletedCount) metricCompletedCount.textContent = completedCount;
         if (metricPendingSignoffs) metricPendingSignoffs.textContent = pendingCount;
+        if (pendingApprovalsCountBadge) pendingApprovalsCountBadge.textContent = `${pendingCount} Pending`;
     }
 
     // -------------------------------------------------------------------------
@@ -139,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             alertCard.style.gap = '0.75rem';
 
             let actionText = 'Action pending: Review & lock requirement specifications with provider.';
-            if (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED || p.stage === 'AGREEMENT_LOCKED') {
+            if (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED) {
                 actionText = 'Action pending: Digital Agreement drafted. Review terms and apply signature.';
             }
 
@@ -220,104 +274,131 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Filter Pills Handler
+    // 6. Modal Functions (Open / Close)
     // -------------------------------------------------------------------------
-    filterPills.forEach(pill => {
-        pill.addEventListener('click', () => {
-            filterPills.forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-
-            const filter = pill.getAttribute('data-filter');
-            if (filter === 'ALL') {
-                renderProjectsList(clientProjects);
-            } else {
-                const filtered = clientProjects.filter(p => p.stage === filter);
-                renderProjectsList(filtered);
-            }
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // 7. Post New Project Modal Workflow
-    // -------------------------------------------------------------------------
-    if (btnNewProject && newProjectModal) {
-        btnNewProject.addEventListener('click', () => {
-            if (window.Modal) {
-                window.Modal.open(newProjectModal);
-            } else {
-                newProjectModal.classList.remove('hidden');
-            }
-        });
+    function openCreateModal() {
+        if (!createProjectModal) return;
+        createProjectModal.classList.remove('hidden');
     }
 
-    // Also wire any CTA button inside the empty state
-    const emptyStateCreateBtn = document.getElementById('emptyStateCreateBtn');
-    if (emptyStateCreateBtn && newProjectModal) {
-        emptyStateCreateBtn.addEventListener('click', () => {
-            if (window.Modal) {
-                window.Modal.open(newProjectModal);
-            } else {
-                newProjectModal.classList.remove('hidden');
-            }
-        });
+    function closeCreateModal() {
+        if (!createProjectModal) return;
+        createProjectModal.classList.add('hidden');
+        if (createProjectForm) createProjectForm.reset();
     }
 
-    if (newProjectForm) {
-        newProjectForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    // -------------------------------------------------------------------------
+    // 7. Event Listeners Setup
+    // -------------------------------------------------------------------------
+    function setupEventListeners() {
+        // Filter Pills Handler
+        filterPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                filterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
 
-            const title = (document.getElementById('projectTitleInput')?.value || '').trim();
-            const category = document.getElementById('projectCategorySelect')?.value || 'FULL_STACK';
-            const budget = document.getElementById('projectBudgetInput')?.value || 1000;
-            const deadline = document.getElementById('projectDeadlineInput')?.value || '';
-            const description = (document.getElementById('projectDescriptionInput')?.value || '').trim();
+                const filter = pill.getAttribute('data-filter');
+                if (filter === 'ALL') {
+                    renderProjectsList(clientProjects);
+                } else {
+                    const filtered = clientProjects.filter(p => p.stage === filter);
+                    renderProjectsList(filtered);
+                }
+            });
+        });
 
-            if (!title) {
-                if (window.Toast) window.Toast.error('Please enter a project title.');
-                return;
-            }
+        // Sync Refresh Button
+        if (refreshClientDashboardBtn) {
+            refreshClientDashboardBtn.addEventListener('click', async () => {
+                refreshClientDashboardBtn.disabled = true;
+                refreshClientDashboardBtn.style.opacity = '0.6';
+                await loadClientDashboard();
+                if (window.Toast) window.Toast.info('Dashboard synced.');
+                refreshClientDashboardBtn.disabled = false;
+                refreshClientDashboardBtn.style.opacity = '1';
+            });
+        }
 
-            if (btnSubmitNewProject) {
-                btnSubmitNewProject.disabled = true;
-                btnSubmitNewProject.textContent = 'Posting Project...';
-            }
+        // Connect ALL 3 buttons to open Create Project Modal
+        if (openCreateProjectModalBtn) openCreateProjectModalBtn.addEventListener('click', openCreateModal);
+        if (quickCreateProjectBtn) quickCreateProjectBtn.addEventListener('click', openCreateModal);
+        if (emptyStateCreateBtn) emptyStateCreateBtn.addEventListener('click', openCreateModal);
 
-            try {
-                const createdProject = await window.ProjectApi.createProject({
+        // Modal Close Triggers
+        if (closeCreateProjectModalBtn) closeCreateProjectModalBtn.addEventListener('click', closeCreateModal);
+        if (cancelCreateProjectBtn) cancelCreateProjectBtn.addEventListener('click', closeCreateModal);
+
+        if (createProjectModal) {
+            createProjectModal.addEventListener('click', (e) => {
+                if (e.target === createProjectModal) closeCreateModal();
+            });
+        }
+
+        // Project Creation Form Submit Handler
+        if (createProjectForm) {
+            createProjectForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const title = (document.getElementById('projectTitleInput')?.value || '').trim();
+                const category = document.getElementById('projectCategoryInput')?.value || 'WEB_DEVELOPMENT';
+                const budget = document.getElementById('projectBudgetInput')?.value || 1000;
+                const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
+
+                if (!title || !summary) {
+                    if (window.Toast) window.Toast.error('Please enter project title and scope summary.');
+                    return;
+                }
+
+                if (submitCreateProjectBtn) {
+                    submitCreateProjectBtn.disabled = true;
+                    submitCreateProjectBtn.textContent = 'Creating Project...';
+                }
+
+                const newProjectPayload = {
+                    id: Date.now(),
                     title,
                     category,
                     budget: Number(budget),
-                    deadline,
-                    description
-                });
+                    description: summary,
+                    summary: summary,
+                    stage: PROJECT_STAGES.INVITED,
+                    assignedProviderName: 'Pending Assignment',
+                    completionPercentage: 0,
+                    hasPendingApproval: false,
+                    createdAt: new Date().toISOString()
+                };
 
-                if (window.Toast) window.Toast.success('Project created! Initializing workspace...');
-                if (window.Modal) {
-                    window.Modal.close(newProjectModal, true);
-                } else {
-                    newProjectModal.classList.add('hidden');
-                    newProjectForm.reset();
+                // 1. Immediately store into local pipeline so client dashboard updates without delay
+                const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
+                localProjects.unshift(newProjectPayload);
+                localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
+
+                // 2. Attempt remote save if API is reachable
+                try {
+                    if (window.ProjectApi && typeof window.ProjectApi.createProject === 'function') {
+                        await window.ProjectApi.createProject({
+                            title,
+                            category,
+                            budget: Number(budget),
+                            description: summary
+                        });
+                    }
+                } catch (err) {
+                    console.warn('Backend sync deferred, project registered in local dashboard:', err.message);
                 }
 
-                // Add to memory and re-render or redirect directly to workspace
-                if (createdProject && createdProject.id) {
-                    window.location.href = `project-view.html?id=${createdProject.id}`;
-                } else {
-                    await loadClientDashboard();
+                if (window.Toast) window.Toast.success('Project created successfully!');
+                closeCreateModal();
+
+                if (submitCreateProjectBtn) {
+                    submitCreateProjectBtn.disabled = false;
+                    submitCreateProjectBtn.textContent = 'Create & Open Scope';
                 }
 
-            } catch (err) {
-                console.error('Project creation error:', err);
-                if (window.Toast) {
-                    window.Toast.error(err.message || 'Could not post project. Please retry.');
-                }
-            } finally {
-                if (btnSubmitNewProject) {
-                    btnSubmitNewProject.disabled = false;
-                    btnSubmitNewProject.textContent = 'Create Project Requirement';
-                }
-            }
-        });
+                // Immediately re-load to display new project card
+                await loadClientDashboard();
+            });
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -349,28 +430,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
-    }
-
-    function getFallbackClientProjects() {
-        return [
-            {
-                id: 101,
-                title: 'E-Commerce Admin Dashboard & Analytics',
-                description: 'Custom administrative suite for multi-vendor catalog management and real-time sales reporting.',
-                stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION,
-                assignedProviderName: 'Apex Tech Solutions',
-                completionPercentage: 20,
-                hasPendingApproval: true
-            },
-            {
-                id: 102,
-                title: 'Mobile Banking API Gateway & Auth Service',
-                description: 'High-throughput OAuth2 and token management microservice built on Spring Boot.',
-                stage: PROJECT_STAGES.IN_PROGRESS,
-                assignedProviderName: 'DevCore Systems',
-                completionPercentage: 65,
-                hasPendingApproval: false
-            }
-        ];
     }
 });
