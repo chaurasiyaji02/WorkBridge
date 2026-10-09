@@ -3,7 +3,7 @@
  * File: js/pages/providerDashboardPage.js
  * 
  * Manages provider route guards, incoming project invitations (review/accept/decline),
- * active project milestone tracking, and service capability posting to the public explore catalog.
+ * active project milestone tracking, and cloud-synchronized service publishing.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -141,14 +141,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (window.ProjectApi && typeof window.ProjectApi.getProviderInvitations === 'function') {
                 liveInvites = await window.ProjectApi.getProviderInvitations();
             } else if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-                const res = await window.ApiClient.get('/api/projects/invitations/provider');
-                liveInvites = res.data || res;
+                const res = await window.ApiClient.get('/projects/invitations/provider');
+                liveInvites = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
             }
         } catch (e) {
             console.warn('Backend invitations query deferred:', e.message);
         }
 
-        // Merge with locally pending invitations created by clients in demo mode
+        // Merge with local fallback invitations
         const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
         const myLocalInvites = localInvites.filter(inv => 
             !inv.providerId || String(inv.providerId) === String(currentUser.id) || String(inv.providerEmail) === String(currentUser.email)
@@ -170,8 +170,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return await window.ProjectApi.getProviderProjects('ALL');
             }
             if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-                const res = await window.ApiClient.get('/api/projects/provider?status=ALL');
-                return res.data || res;
+                const res = await window.ApiClient.get('/projects/provider?status=ALL');
+                return (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
             }
         } catch (e) {
             console.warn('Backend provider projects query deferred:', e.message);
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (window.ProjectApi && typeof window.ProjectApi.respondToInvitation === 'function') {
                 await window.ProjectApi.respondToInvitation(projectId, action);
             } else if (window.ApiClient && typeof window.ApiClient.post === 'function') {
-                await window.ApiClient.post(`/api/projects/${projectId}/invitations/respond`, { action });
+                await window.ApiClient.post(`/projects/${projectId}/invitations/respond`, { action });
             }
 
             // Sync with local fallback invitations
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Event Listeners & Post Service Submission
+    // 8. Event Listeners & Live Cloud Service Publishing
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Stage Filter Pills
@@ -562,66 +562,78 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Post Service Form Submit
+        // Post Service Form Submit -> Synced directly to Neon DB
         if (postServiceForm) {
             postServiceForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const title = (document.getElementById('serviceTitleInput')?.value || '').trim();
                 const category = document.getElementById('serviceCategorySelect')?.value || 'WEB_DEVELOPMENT';
-                const hourlyRate = Number(document.getElementById('serviceRateInput')?.value) || 50;
-                const deliveryDays = Number(document.getElementById('serviceDeliveryDaysInput')?.value) || 14;
+                const hourlyRate = parseFloat(document.getElementById('serviceRateInput')?.value) || 50.0;
+                const deliveryDays = parseInt(document.getElementById('serviceDeliveryDaysInput')?.value, 10) || 14;
                 const skillsText = (document.getElementById('serviceSkillsInput')?.value || '').trim();
                 const description = (document.getElementById('serviceDescriptionInput')?.value || '').trim();
 
                 if (!title || !description) {
-                    if (window.Toast) window.Toast.error('Please fill in service title and description.');
+                    if (window.Toast) window.Toast.error('Please enter a service title and description.');
                     return;
                 }
 
                 if (btnSubmitService) {
                     btnSubmitService.disabled = true;
-                    btnSubmitService.textContent = 'Publishing...';
+                    btnSubmitService.textContent = 'Publishing to Cloud...';
                 }
 
-                const newServicePayload = {
-                    id: Date.now(),
-                    userId: currentUser.id,
-                    userFullName: displayName,
+                // Strict Backend Contract: ProviderProfileDto.ServiceOfferRequest
+                const cloudPayload = {
                     title: title,
-                    domain: document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || 'Full-Stack Web Development',
                     category: category,
                     hourlyRate: hourlyRate,
                     deliveryDays: deliveryDays,
-                    skills: skillsText ? skillsText.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'Spring Boot'],
-                    bio: description,
-                    averageRating: 5.0,
-                    createdAt: new Date().toISOString()
+                    skills: skillsText, // comma-separated string parsed cleanly by ProfileService.java
+                    bio: description
                 };
 
-                // Store in shared local explore catalog
-                const existingServices = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
-                existingServices.unshift(newServicePayload);
-                localStorage.setItem('wb_posted_services', JSON.stringify(existingServices));
-
-                // Attempt backend post if API is live
                 try {
-                    if (window.ApiClient && typeof window.ApiClient.post === 'function') {
-                        await window.ApiClient.post('/api/profile/services', newServicePayload);
+                    // Centralized ApiClient strips '/api' automatically if present
+                    if (!window.ApiClient || typeof window.ApiClient.post !== 'function') {
+                        throw new Error('ApiClient service unavailable.');
                     }
+
+                    // 1. Dispatch directly to Neon DB via Render Web Service
+                    await window.ApiClient.post('/profiles/services', cloudPayload);
+
+                    // 2. Also keep a local cache entry for immediate optimistic rendering
+                    const localCatalog = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
+                    localCatalog.unshift({
+                        id: Date.now(),
+                        userId: currentUser.id,
+                        userFullName: displayName,
+                        domain: document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || category,
+                        ...cloudPayload,
+                        skills: skillsText ? skillsText.split(',').map(s => s.trim()).filter(Boolean) : ['Java'],
+                        averageRating: 5.0,
+                        createdAt: new Date().toISOString()
+                    });
+                    localStorage.setItem('wb_posted_services', JSON.stringify(localCatalog));
+
+                    if (window.Toast) {
+                        window.Toast.success('Service published! Clients across all devices can now find your service.');
+                    }
+
+                    closePostServiceModal();
+                    await loadProviderDashboard();
+
                 } catch (err) {
-                    console.warn('Backend service publishing deferred, saved to explore catalog:', err.message);
-                }
-
-                if (window.Toast) {
-                    window.Toast.success('Service successfully published! Clients can now discover and invite you.');
-                }
-
-                closePostServiceModal();
-
-                if (btnSubmitService) {
-                    btnSubmitService.disabled = false;
-                    btnSubmitService.textContent = 'Publish to Explore';
+                    console.error('Failed to publish service to backend:', err);
+                    if (window.Toast) {
+                        window.Toast.error(err.message || 'Could not save service to cloud database. Please retry.');
+                    }
+                } finally {
+                    if (btnSubmitService) {
+                        btnSubmitService.disabled = false;
+                        btnSubmitService.textContent = 'Publish to Explore';
+                    }
                 }
             });
         }
