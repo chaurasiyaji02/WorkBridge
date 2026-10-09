@@ -2,8 +2,8 @@
  * WORKBRIDGE - PROVIDER DISCOVERY PAGE CONTROLLER
  * File: js/pages/explorePage.js
  * 
- * Manages provider catalog queries, multi-criteria filtering (search, category, rating),
- * profile domain parsing, and direct project invitation workflows.
+ * Manages provider catalog queries, dynamically posted services/gigs,
+ * multi-criteria filtering (search, category, rating), and project invitations.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryFilter = document.getElementById('categoryFilter');
     const minRatingFilter = document.getElementById('minRatingFilter');
     const resetFilterBtn = document.getElementById('resetFilterBtn');
+    const clearSearchStateBtn = document.getElementById('clearSearchStateBtn');
 
     // DOM Elements - Invitation Modal
     const inviteModal = document.getElementById('inviteModal');
@@ -26,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedProviderIdInput = document.getElementById('selectedProviderId');
     const modalProviderTitle = document.getElementById('modalProviderTitle');
     const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
 
     let allProviders = [];
 
@@ -33,34 +36,62 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProviders();
 
     /**
-     * Fetch verified provider directory from backend.
+     * Fetch verified provider directory and merge provider-posted services.
      */
     async function loadProviders() {
         const searchPath = config.ENDPOINTS?.PROFILE?.SEARCH_PROVIDERS || '/profile/providers/search';
+        let remoteProviders = [];
 
         try {
             let data = null;
             try {
                 data = await window.ApiClient.get(searchPath);
             } catch (err) {
-                // Secondary fallback attempt for route variations
                 data = await window.ApiClient.get('/profiles/providers/search');
             }
-
-            allProviders = Array.isArray(data) ? data : (data?.content || []);
-            if (allProviders.length === 0) {
-                allProviders = getFallbackProviders();
-            }
-            renderProviders(allProviders);
+            remoteProviders = Array.isArray(data) ? data : (data?.content || []);
         } catch (error) {
-            console.warn('Backend provider query failed, presenting local directory:', error.message);
-            allProviders = getFallbackProviders();
-            renderProviders(allProviders);
+            console.warn('Backend provider query deferred, falling back to local catalog:', error.message);
         }
+
+        if (remoteProviders.length === 0) {
+            remoteProviders = getFallbackProviders();
+        }
+
+        // Merge with newly posted services from Providers (stored in wb_posted_services)
+        const postedServices = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
+        
+        // Map posted services into explore provider shape
+        const formattedPosted = postedServices.map(svc => ({
+            id: svc.id,
+            userId: svc.userId || svc.id,
+            fullName: svc.userFullName || 'Specialized Provider',
+            userFullName: svc.userFullName || 'Specialized Provider',
+            title: svc.title,
+            domain: svc.domain || svc.title,
+            category: svc.category || 'WEB_DEVELOPMENT',
+            averageRating: svc.averageRating || 5.0,
+            hourlyRate: svc.hourlyRate || 50,
+            bio: svc.bio || 'Verified service package with milestone guarantees.',
+            skills: svc.skills || ['Full-Stack', 'Cloud'],
+            isNewPost: true
+        }));
+
+        // Put user-posted services first
+        const combined = [...formattedPosted];
+        remoteProviders.forEach(p => {
+            const pId = p.userId || p.id;
+            if (!combined.some(c => String(c.userId || c.id) === String(pId))) {
+                combined.push(p);
+            }
+        });
+
+        allProviders = combined;
+        renderProviders(allProviders);
     }
 
     /**
-     * Render Provider Cards to the Grid.
+     * Render Provider & Service Cards to the Grid.
      */
     function renderProviders(providers) {
         if (!providerGrid) return;
@@ -86,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
             card.style.flexDirection = 'column';
             card.style.justifyContent = 'space-between';
 
-            // Normalize skills whether returned as Array or comma-delimited string
             const skillsList = parseSkills(provider.skills);
             const skillsBadges = skillsList.slice(0, 5)
                 .map(skill => `<span class="badge badge-subtle">${escapeHtml(skill)}</span>`)
@@ -97,15 +127,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const domainTitle = provider.domain || provider.title || provider.category || 'Software Engineering';
             const hourlyRate = provider.hourlyRate || provider.rate || 50;
             const rating = Number(provider.averageRating || provider.rating || 5.0).toFixed(1);
+            const newPill = provider.isNewPost ? `<span class="badge badge-primary">⚡ Newly Posted</span>` : '';
 
             card.innerHTML = `
                 <div>
                     <div class="provider-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
                         <div>
-                            <h3 class="card-title" style="font-size: 1.15rem; margin-bottom: 0.25rem;">
-                                ${escapeHtml(providerName)}
-                            </h3>
-                            <span class="badge badge-primary">${escapeHtml(domainTitle)}</span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                <h3 class="card-title" style="font-size: 1.15rem; margin: 0;">
+                                    ${escapeHtml(providerName)}
+                                </h3>
+                                ${newPill}
+                            </div>
+                            <span class="badge badge-subtle">${escapeHtml(domainTitle)}</span>
                         </div>
                         <div class="rating-badge" style="font-weight: 700; color: var(--primary, #3b82f6); font-size: 0.95rem;">
                             ★ ${rating}
@@ -122,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="provider-card-footer mt-4" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
-                    <span class="text-muted text-xs">Standard: <strong>$${hourlyRate}/hr</strong></span>
+                    <span class="text-muted text-xs">Rate: <strong>$${hourlyRate}/hr</strong></span>
                     <button type="button" class="btn btn-primary btn-sm btn-invite" data-id="${providerId}" data-name="${escapeHtml(providerName)}">
                         + Start Project
                     </button>
@@ -132,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             providerGrid.appendChild(card);
         });
 
-        // Attach click listeners to "+ Start Project" action triggers
+        // Click listeners for "+ Start Project" buttons
         providerGrid.querySelectorAll('.btn-invite').forEach(btn => {
             btn.addEventListener('click', () => {
                 const providerId = btn.getAttribute('data-id');
@@ -143,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Filter Execution Logic (Search query, category dropdown, min-rating).
+     * Multi-criteria filtering logic.
      */
     function applyFilters() {
         const query = (searchInput?.value || '').toLowerCase().trim();
@@ -156,18 +190,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const domain = (p.domain || p.title || p.category || '').toLowerCase();
             const skills = parseSkills(p.skills).map(s => s.toLowerCase());
 
-            // 1. Text Search matching name, bio, domain, or skills
             const matchesQuery = !query || 
                 providerName.includes(query) || 
                 bio.includes(query) || 
                 domain.includes(query) || 
                 skills.some(s => s.includes(query));
 
-            // 2. Category matching
             const providerCat = (p.category || p.domain || '').toUpperCase();
             const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || providerCat.includes(selectedCategory);
 
-            // 3. Minimum Rating matching
             const rating = parseFloat(p.averageRating || p.rating || 5.0);
             const matchesRating = rating >= minRating;
 
@@ -177,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderProviders(filtered);
     }
 
-    // Filter Form & Input Event Listeners
     if (filterForm) {
         filterForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -189,17 +219,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
     if (minRatingFilter) minRatingFilter.addEventListener('change', applyFilters);
 
-    if (resetFilterBtn) {
-        resetFilterBtn.addEventListener('click', () => {
-            if (searchInput) searchInput.value = '';
-            if (categoryFilter) categoryFilter.value = '';
-            if (minRatingFilter) minRatingFilter.value = '0';
-            renderProviders(allProviders);
-        });
+    function resetFilters() {
+        if (searchInput) searchInput.value = '';
+        if (categoryFilter) categoryFilter.value = '';
+        if (minRatingFilter) minRatingFilter.value = '0';
+        renderProviders(allProviders);
     }
 
+    if (resetFilterBtn) resetFilterBtn.addEventListener('click', resetFilters);
+    if (clearSearchStateBtn) clearSearchStateBtn.addEventListener('click', resetFilters);
+
     // -------------------------------------------------------------------------
-    // Project Invitation & Initiation Workflow
+    // Project Invitation Modal & Submission
     // -------------------------------------------------------------------------
     function handleInviteClick(providerId, providerName) {
         const isLoggedIn = window.AuthState ? window.AuthState.isLoggedIn() : false;
@@ -208,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.Toast) window.Toast.info('Please sign in as a Client to start a project.');
             setTimeout(() => {
                 window.location.href = `auth.html?redirect=${encodeURIComponent('provider-explore.html')}`;
-            }, 800);
+            }, 700);
             return;
         }
 
@@ -228,6 +259,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function closeInviteModal() {
+        if (window.Modal) {
+            window.Modal.close('inviteModal', true);
+        } else if (inviteModal) {
+            inviteModal.classList.add('hidden');
+            if (inviteProjectForm) inviteProjectForm.reset();
+        }
+    }
+
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeInviteModal);
+    if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeInviteModal);
+
     if (inviteProjectForm) {
         inviteProjectForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -236,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = (document.getElementById('projectTitleInput')?.value || '').trim();
             const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
             const budget = document.getElementById('projectBudgetInput')?.value || 1500;
-            const deadline = document.getElementById('projectDeadlineInput')?.value || '';
 
             if (!title || !summary) {
                 if (window.Toast) window.Toast.error('Please enter a project title and initial scope summary.');
@@ -248,38 +290,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalSubmitBtn.textContent = 'Dispatching Invitation...';
             }
 
+            const currentUser = window.AuthState ? window.AuthState.getUser() : null;
+            const invitationRecord = {
+                id: Date.now(),
+                providerId: providerId,
+                clientName: currentUser?.fullName || currentUser?.email || 'Verified Client',
+                clientEmail: currentUser?.email || 'client@workbridge.io',
+                title: title,
+                summary: summary,
+                description: summary,
+                budget: Number(budget),
+                stage: 'INVITED',
+                createdAt: new Date().toISOString()
+            };
+
+            // Always save to shared local invitations so Provider dashboard immediately receives it
+            const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
+            localInvites.unshift(invitationRecord);
+            localStorage.setItem('wb_local_invitations', JSON.stringify(localInvites));
+
+            // Also register into local projects list
+            const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
+            localProjects.unshift(invitationRecord);
+            localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
+
             try {
-                const newProject = await window.ProjectApi.createAndInvite({
-                    providerId,
-                    title,
-                    summary,
-                    description: summary,
-                    budget: Number(budget),
-                    deadline
-                });
-
-                if (window.Toast) window.Toast.success('Invitation sent! Opening collaborative workspace...');
-                if (window.Modal) {
-                    window.Modal.close('inviteModal', true);
-                } else if (inviteModal) {
-                    inviteModal.classList.add('hidden');
-                    inviteProjectForm.reset();
+                // Try backend API dispatch if live
+                if (window.ProjectApi && typeof window.ProjectApi.createAndInvite === 'function') {
+                    await window.ProjectApi.createAndInvite({
+                        providerId,
+                        title,
+                        summary,
+                        description: summary,
+                        budget: Number(budget)
+                    });
                 }
-
-                setTimeout(() => {
-                    const projectId = newProject?.id || 1;
-                    window.location.href = `project-view.html?id=${projectId}`;
-                }, 750);
-
             } catch (error) {
-                console.error('Invitation dispatch error:', error);
-                if (window.Toast) window.Toast.error(error.message || 'Failed to dispatch invitation.');
-            } finally {
-                if (modalSubmitBtn) {
-                    modalSubmitBtn.disabled = false;
-                    modalSubmitBtn.textContent = 'Send Invitation';
-                }
+                console.warn('Backend invite sync deferred, registered in local invitation pipe:', error.message);
             }
+
+            if (window.Toast) {
+                window.Toast.success('Invitation sent! The provider has received your project proposal.');
+            }
+
+            closeInviteModal();
+
+            if (modalSubmitBtn) {
+                modalSubmitBtn.disabled = false;
+                modalSubmitBtn.textContent = 'Send Invitation';
+            }
+
+            setTimeout(() => {
+                window.location.href = `client-dashboard.html`;
+            }, 800);
         });
     }
 
@@ -310,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userId: 1,
                 fullName: 'Apex Tech Solutions',
                 domain: 'Full-Stack Web Development',
-                category: 'WEB_DEVELOPMENT',
+                category: 'FULL_STACK',
                 averageRating: 4.9,
                 hourlyRate: 65,
                 bio: 'Specialized enterprise engineering team delivering high-performance Java 21, Spring Boot microservices, and modern web applications.',

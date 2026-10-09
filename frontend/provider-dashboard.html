@@ -65,15 +65,13 @@
                     </div>
                 </div>
 
-                
                 <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-3" style="text-align: center; text-decoration: none; display: block;">⚙️ Edit Profile &amp; Domain</a>
-
-            </div> <!-- Yeh card profile-widget ka closing div hai -->
+            </div>
 
             <!-- Provider Team & Delivery Capacity -->
             <div class="card mt-3">
-                <div class="card-header-flex">
-                    <h4 class="menu-heading">Delivery Capacity</h4>
+                <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 class="menu-heading" style="margin: 0;">Delivery Capacity</h4>
                     <span class="badge badge-subtle" id="activeCapacityBadge">Available</span>
                 </div>
                 <div id="teamMembersSummary" class="team-summary-list mt-2">
@@ -93,13 +91,16 @@
         <!-- Main Dashboard View Area -->
         <main class="dashboard-content">
             
-            <!-- Dashboard Header with Context Badging -->
+            <!-- Dashboard Header with Post Service Action -->
             <div class="dashboard-header-row">
                 <div>
                     <h1 class="page-title">Provider Operations Hub</h1>
-                    <p class="text-muted">Manage incoming invitations, review requirement specifications, and maintain active deliverables.</p>
+                    <p class="text-muted">Manage incoming invitations, post your specialized services, and track active deliverables.</p>
                 </div>
-                <div class="header-action-group">
+                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" id="btnOpenPostServiceModal">
+                        <span>➕</span> Post New Service
+                    </button>
                     <button type="button" class="btn btn-outline" id="refreshDashboardBtn" title="Sync live records">
                         <span class="btn-icon">🔄</span> Sync
                     </button>
@@ -144,8 +145,8 @@
             <!-- Incoming Invitations Section -->
             <section id="invitationsSection" class="mt-4">
                 <div class="section-title-row">
-                    <div class="title-with-badge">
-                        <h3 class="section-heading">Pending Project Invitations</h3>
+                    <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h3 class="section-heading" style="margin: 0;">Pending Project Invitations</h3>
                         <span class="badge badge-subtle" id="invitesBadge">0 Pending</span>
                     </div>
                 </div>
@@ -169,8 +170,8 @@
             <!-- Active Engagements Section -->
             <section id="providerProjectsSection" class="mt-4">
                 <div class="section-title-row">
-                    <div class="title-with-badge">
-                        <h3 class="section-heading">Active Engagements</h3>
+                    <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h3 class="section-heading" style="margin: 0;">Active Engagements</h3>
                         <span class="badge badge-subtle" id="activeProjectsCountBadge">0 Total</span>
                     </div>
                     
@@ -221,10 +222,70 @@
         </div>
     </div>
 
+    <!-- Post New Service / Gig Modal -->
+    <div class="modal-backdrop hidden" id="postServiceModal" role="dialog" aria-modal="true" aria-labelledby="postServiceModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary">Marketplace Service</span>
+                    <h3 class="modal-title mt-1" id="postServiceModalTitle">Post Service Offering</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closePostServiceModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="postServiceForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="serviceTitleInput" class="form-label">Service Title</label>
+                        <input type="text" id="serviceTitleInput" class="form-control" placeholder="e.g. Full-Stack Spring Boot & React Development" required>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="serviceCategorySelect" class="form-label">Category / Specialization</label>
+                        <select id="serviceCategorySelect" class="form-control">
+                            <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
+                            <option value="BACKEND">Backend & Cloud Microservices</option>
+                            <option value="FRONTEND">Frontend & UI/UX Systems</option>
+                            <option value="MOBILE">Mobile App Development</option>
+                            <option value="DEVOPS">Cloud Architecture & DevOps</option>
+                            <option value="AI">AI & Machine Learning</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div>
+                                <label for="serviceRateInput" class="form-label">Hourly Rate ($/hr)</label>
+                                <input type="number" id="serviceRateInput" class="form-control" placeholder="50" min="10" value="50" required>
+                            </div>
+                            <div>
+                                <label for="serviceDeliveryDaysInput" class="form-label">Standard SLA (Days)</label>
+                                <input type="number" id="serviceDeliveryDaysInput" class="form-control" placeholder="14" min="1" value="14">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="serviceSkillsInput" class="form-label">Skills & Tech Stack (comma-separated)</label>
+                        <input type="text" id="serviceSkillsInput" class="form-control" placeholder="Spring Boot, Java 21, PostgreSQL, React, JWT" required>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="serviceDescriptionInput" class="form-label">Service Scope & Deliverable Overview</label>
+                        <textarea id="serviceDescriptionInput" class="form-control" rows="3" placeholder="Describe the capabilities, milestone guarantees, and architectural standards you provide..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelPostServiceBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitService">Publish to Explore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Script Loading Pipeline (Strict Dependency Order) -->
+    <!-- Script Loading Pipeline -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>

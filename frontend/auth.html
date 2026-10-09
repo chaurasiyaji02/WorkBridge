@@ -43,15 +43,14 @@
             <!-- ===================== LOGIN FORM ===================== -->
             <form id="loginForm" class="auth-form mt-3" novalidate>
                 <div class="form-group">
-                    <label for="loginEmail" class="form-label">Email Address</label>
+                    <label for="loginEmail" class="form-label">Email or Username</label>
                     <input 
-                        type="email" 
+                        type="text" 
                         id="loginEmail" 
                         name="email" 
                         class="form-control" 
-                        placeholder="you@company.com" 
-                        required 
-                        autocomplete="email"
+                        placeholder="you@company.com ya username" 
+                        autocomplete="username"
                     >
                     <span class="form-error" id="loginEmailError"></span>
                 </div>
@@ -66,7 +65,6 @@
                         name="password" 
                         class="form-control" 
                         placeholder="••••••••" 
-                        required 
                         autocomplete="current-password"
                     >
                     <span class="form-error" id="loginPasswordError"></span>
@@ -109,7 +107,6 @@
                         name="fullName" 
                         class="form-control" 
                         placeholder="e.g., Alex Chen or Apex Solutions" 
-                        required
                         autocomplete="name"
                     >
                     <span class="form-error" id="regFullNameError"></span>
@@ -118,18 +115,17 @@
                 <div class="form-group mt-2">
                     <label for="regEmail" class="form-label">Email Address</label>
                     <input 
-                        type="email" 
+                        type="text" 
                         id="regEmail" 
                         name="email" 
                         class="form-control" 
-                        placeholder="you@company.com" 
-                        required 
+                        placeholder="test@gmail.com ya koi bhi email" 
                         autocomplete="email"
                     >
                     <span class="form-error" id="regEmailError"></span>
                 </div>
 
-                <!-- Provider Domain Specialization (Dynamic depending on role) -->
+                <!-- Provider Domain Specialization -->
                 <div class="form-group mt-2 hidden" id="providerDomainGroup">
                     <label for="regDomain" class="form-label">Primary Technical Domain</label>
                     <select id="regDomain" name="domain" class="form-control">
@@ -148,9 +144,7 @@
                         id="regPassword" 
                         name="password" 
                         class="form-control" 
-                        placeholder="Minimum 8 characters" 
-                        required 
-                        minlength="8"
+                        placeholder="Apna password daalein" 
                         autocomplete="new-password"
                     >
                     <span class="form-error" id="regPasswordError"></span>
@@ -163,8 +157,7 @@
                         id="regConfirmPassword" 
                         name="confirmPassword" 
                         class="form-control" 
-                        placeholder="Re-enter your password" 
-                        required 
+                        placeholder="Wahi password dobara daalein" 
                         autocomplete="new-password"
                     >
                     <span class="form-error" id="regConfirmPasswordError"></span>
@@ -181,7 +174,7 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts Pipeline (Strict Dependency Order) -->
+    <!-- Scripts Pipeline -->
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>

@@ -2,8 +2,8 @@
  * WORKBRIDGE - SERVICE PROVIDER DASHBOARD CONTROLLER
  * File: js/pages/providerDashboardPage.js
  * 
- * Handles route guarding, live Neon DB data hydration, invitation review/acceptance,
- * scope version badge inspection, dynamic progress calculations, and clean zero-state rendering.
+ * Manages provider route guards, incoming project invitations (review/accept/decline),
+ * active project milestone tracking, and service capability posting to the public explore catalog.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const providerEmailEl = document.getElementById('providerEmail');
     const providerAvatarEl = document.getElementById('providerAvatar');
     const providerCategoryEl = document.getElementById('providerCategory');
-    const providerRatingEl = document.getElementById('providerRating');
     const capacitySubtextEl = document.getElementById('capacitySubtext');
     const activeCapacityBadgeEl = document.getElementById('activeCapacityBadge');
 
@@ -63,18 +62,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const acceptInviteBtn = document.getElementById('acceptInviteBtn');
     const declineInviteBtn = document.getElementById('declineInviteBtn');
 
+    // DOM Elements - Post Service Modal
+    const btnOpenPostServiceModal = document.getElementById('btnOpenPostServiceModal');
+    const postServiceModal = document.getElementById('postServiceModal');
+    const postServiceForm = document.getElementById('postServiceForm');
+    const closePostServiceModalBtn = document.getElementById('closePostServiceModalBtn');
+    const cancelPostServiceBtn = document.getElementById('cancelPostServiceBtn');
+    const btnSubmitService = document.getElementById('btnSubmitService');
+
     // Sidebar Profile Hydration
-    if (providerNameEl) providerNameEl.textContent = currentUser.fullName || currentUser.username || 'Provider Partner';
+    const displayName = currentUser.fullName || currentUser.username || 'Provider Partner';
+    if (providerNameEl) providerNameEl.textContent = displayName;
     if (providerEmailEl) providerEmailEl.textContent = currentUser.email || '';
     if (providerAvatarEl) {
-        const initial = (currentUser.fullName || currentUser.username || currentUser.email || 'P').charAt(0).toUpperCase();
-        providerAvatarEl.textContent = initial;
+        providerAvatarEl.textContent = displayName.charAt(0).toUpperCase();
     }
     if (providerCategoryEl && currentUser.domain) {
         providerCategoryEl.textContent = currentUser.domain;
     }
 
-    // In-memory State (Synchronized with live Neon DB)
+    // In-memory State
     let pendingInvitations = [];
     let providerProjects = [];
     let activeFilter = 'ALL';
@@ -87,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // -------------------------------------------------------------------------
-    // 2. Fetch Live Dashboard Data (Strict Live Pipeline - No Mock Data)
+    // 2. Fetch Live Dashboard Data
     // -------------------------------------------------------------------------
     async function loadProviderDashboard() {
         showLoadingState();
@@ -121,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Failed to hydrate provider workspace:', error);
             if (window.Toast) {
-                window.Toast.error('Could not sync with live database. Please check your connection.');
+                window.Toast.error('Could not sync with live database. Displaying local workspace.');
             }
             renderInvitations();
             renderFilteredProjects();
@@ -129,25 +136,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function fetchInvitationsSafe() {
-        if (window.ProjectApi && typeof window.ProjectApi.getProviderInvitations === 'function') {
-            return await window.ProjectApi.getProviderInvitations();
+        let liveInvites = [];
+        try {
+            if (window.ProjectApi && typeof window.ProjectApi.getProviderInvitations === 'function') {
+                liveInvites = await window.ProjectApi.getProviderInvitations();
+            } else if (window.ApiClient && typeof window.ApiClient.get === 'function') {
+                const res = await window.ApiClient.get('/api/projects/invitations/provider');
+                liveInvites = res.data || res;
+            }
+        } catch (e) {
+            console.warn('Backend invitations query deferred:', e.message);
         }
-        if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-            const res = await window.ApiClient.get('/api/projects/invitations/provider');
-            return res.data || res;
-        }
-        return [];
+
+        // Merge with locally pending invitations created by clients in demo mode
+        const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
+        const myLocalInvites = localInvites.filter(inv => 
+            !inv.providerId || String(inv.providerId) === String(currentUser.id) || String(inv.providerEmail) === String(currentUser.email)
+        );
+
+        const combined = Array.isArray(liveInvites) ? [...liveInvites] : [];
+        myLocalInvites.forEach(localInv => {
+            if (!combined.some(c => String(c.id) === String(localInv.id))) {
+                combined.unshift(localInv);
+            }
+        });
+
+        return combined;
     }
 
     async function fetchProjectsSafe() {
-        if (window.ProjectApi && typeof window.ProjectApi.getProviderProjects === 'function') {
-            return await window.ProjectApi.getProviderProjects('ALL');
+        try {
+            if (window.ProjectApi && typeof window.ProjectApi.getProviderProjects === 'function') {
+                return await window.ProjectApi.getProviderProjects('ALL');
+            }
+            if (window.ApiClient && typeof window.ApiClient.get === 'function') {
+                const res = await window.ApiClient.get('/api/projects/provider?status=ALL');
+                return res.data || res;
+            }
+        } catch (e) {
+            console.warn('Backend provider projects query deferred:', e.message);
         }
-        if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-            const res = await window.ApiClient.get('/api/projects/provider?status=ALL');
-            return res.data || res;
-        }
-        return [];
+
+        const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
+        return localProjects.filter(p => String(p.assignedProviderId) === String(currentUser.id));
     }
 
     function showLoadingState() {
@@ -164,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 3. Compute Metrics (Dynamic Calculations)
+    // 3. Compute Metrics
     // -------------------------------------------------------------------------
     function updateMetrics() {
         const invitesCount = pendingInvitations.length;
@@ -174,7 +205,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const activeCount = providerProjects.filter(p => p.stage !== PROJECT_STAGES.COMPLETED).length;
         const completedCount = providerProjects.filter(p => p.stage === PROJECT_STAGES.COMPLETED).length;
         
-        // Scope Locked or Scoping count
         const scopeLockedCount = providerProjects.filter(p => 
             p.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
             (p.agreement && (p.agreement.status === 'LOCKED' || p.agreement.status === 'ACTIVE'))
@@ -191,7 +221,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     function renderInvitations() {
         if (!invitationsList || !noInvitesState) return;
-
         invitationsList.innerHTML = '';
 
         if (pendingInvitations.length === 0) {
@@ -239,7 +268,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             invitationsList.appendChild(inviteCard);
         });
 
-        // Attach action handlers
         invitationsList.querySelectorAll('.btn-review-invite').forEach(btn => {
             btn.addEventListener('click', () => {
                 const inviteId = btn.getAttribute('data-id');
@@ -254,7 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Render Active Engagements with Milestone Calculation & Scope Badging
+    // 5. Render Active Engagements
     // -------------------------------------------------------------------------
     function renderFilteredProjects() {
         if (!providerProjectsList || !noProviderProjectsState) return;
@@ -289,10 +317,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.style.flexDirection = 'column';
             card.style.justifyContent = 'space-between';
 
-            // Calculate Dynamic Milestone Progress
             const progress = calculateProjectProgress(project);
-
-            // Scope Lock Visual Badging
             const isScopeLocked = project.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
                 (project.agreement && (project.agreement.status === 'LOCKED' || project.agreement.status === 'ACTIVE'));
             
@@ -323,7 +348,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
 
                 <div class="project-card-footer mt-3" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 0.75rem;">
-                    <!-- Visual Progress Bar Engine -->
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted, #64748b); margin-bottom: 0.35rem;">
                         <span>Milestone Progress</span>
                         <strong>${progress}%</strong>
@@ -345,7 +369,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Dynamic Progress Calculator from Milestones
     function calculateProjectProgress(project) {
         if (project.stage === PROJECT_STAGES.COMPLETED) return 100;
         
@@ -363,7 +386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return Math.min(100, Math.max(0, project.progressPercentage));
         }
 
-        return 0; // Clean zero state when no milestones completed
+        return 0;
     }
 
     // -------------------------------------------------------------------------
@@ -379,7 +402,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await window.ApiClient.post(`/api/projects/${projectId}/invitations/respond`, { action });
             }
 
+            // Sync with local fallback invitations
+            let localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
+            const acceptedInvite = localInvites.find(inv => String(inv.id) === String(projectId));
+            localInvites = localInvites.filter(inv => String(inv.id) !== String(projectId));
+            localStorage.setItem('wb_local_invitations', JSON.stringify(localInvites));
+
             if (action === 'ACCEPT') {
+                if (acceptedInvite) {
+                    let localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
+                    acceptedInvite.stage = PROJECT_STAGES.REQUIREMENT_DISCUSSION;
+                    acceptedInvite.assignedProviderId = currentUser.id;
+                    localProjects.unshift(acceptedInvite);
+                    localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
+                }
+
                 if (window.Toast) window.Toast.success('Invitation accepted! Launching workspace...');
                 closeInvitationModal();
                 setTimeout(() => {
@@ -458,8 +495,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectedInviteForModal = null;
     }
 
+    function openPostServiceModal() {
+        if (postServiceModal) {
+            postServiceModal.classList.remove('hidden');
+        }
+    }
+
+    function closePostServiceModal() {
+        if (postServiceModal) {
+            postServiceModal.classList.add('hidden');
+            if (postServiceForm) postServiceForm.reset();
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // 8. Event Listeners & Stage Filter Pills
+    // 8. Event Listeners & Post Service Submission
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Stage Filter Pills
@@ -478,35 +528,101 @@ document.addEventListener('DOMContentLoaded', async () => {
                 refreshDashboardBtn.disabled = true;
                 refreshDashboardBtn.style.opacity = '0.6';
                 await loadProviderDashboard();
-                if (window.Toast) window.Toast.info('Dashboard synced with Neon DB.');
+                if (window.Toast) window.Toast.info('Dashboard synced.');
                 refreshDashboardBtn.disabled = false;
                 refreshDashboardBtn.style.opacity = '1';
             });
         }
 
-        // Modal Action Triggers
-        if (closeInvitationModalBtn) {
-            closeInvitationModalBtn.addEventListener('click', closeInvitationModal);
-        }
+        // Invitation Modal Triggers
+        if (closeInvitationModalBtn) closeInvitationModalBtn.addEventListener('click', closeInvitationModal);
         if (declineInviteBtn) {
             declineInviteBtn.addEventListener('click', () => {
-                if (selectedInviteForModal) {
-                    handleInvitationResponse(selectedInviteForModal.id, 'DECLINE');
-                }
+                if (selectedInviteForModal) handleInvitationResponse(selectedInviteForModal.id, 'DECLINE');
             });
         }
         if (acceptInviteBtn) {
             acceptInviteBtn.addEventListener('click', () => {
-                if (selectedInviteForModal) {
-                    handleInvitationResponse(selectedInviteForModal.id, 'ACCEPT');
-                }
+                if (selectedInviteForModal) handleInvitationResponse(selectedInviteForModal.id, 'ACCEPT');
             });
         }
-
-        // Close modal when clicking on backdrop
         if (invitationModal) {
             invitationModal.addEventListener('click', (e) => {
                 if (e.target === invitationModal) closeInvitationModal();
+            });
+        }
+
+        // Post Service Modal Triggers
+        if (btnOpenPostServiceModal) btnOpenPostServiceModal.addEventListener('click', openPostServiceModal);
+        if (closePostServiceModalBtn) closePostServiceModalBtn.addEventListener('click', closePostServiceModal);
+        if (cancelPostServiceBtn) cancelPostServiceBtn.addEventListener('click', closePostServiceModal);
+        if (postServiceModal) {
+            postServiceModal.addEventListener('click', (e) => {
+                if (e.target === postServiceModal) closePostServiceModal();
+            });
+        }
+
+        // Post Service Form Submit
+        if (postServiceForm) {
+            postServiceForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const title = (document.getElementById('serviceTitleInput')?.value || '').trim();
+                const category = document.getElementById('serviceCategorySelect')?.value || 'WEB_DEVELOPMENT';
+                const hourlyRate = Number(document.getElementById('serviceRateInput')?.value) || 50;
+                const deliveryDays = Number(document.getElementById('serviceDeliveryDaysInput')?.value) || 14;
+                const skillsText = (document.getElementById('serviceSkillsInput')?.value || '').trim();
+                const description = (document.getElementById('serviceDescriptionInput')?.value || '').trim();
+
+                if (!title || !description) {
+                    if (window.Toast) window.Toast.error('Please fill in service title and description.');
+                    return;
+                }
+
+                if (btnSubmitService) {
+                    btnSubmitService.disabled = true;
+                    btnSubmitService.textContent = 'Publishing...';
+                }
+
+                const newServicePayload = {
+                    id: Date.now(),
+                    userId: currentUser.id,
+                    userFullName: displayName,
+                    title: title,
+                    domain: document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || 'Full-Stack Web Development',
+                    category: category,
+                    hourlyRate: hourlyRate,
+                    deliveryDays: deliveryDays,
+                    skills: skillsText ? skillsText.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'Spring Boot'],
+                    bio: description,
+                    averageRating: 5.0,
+                    createdAt: new Date().toISOString()
+                };
+
+                // Store in shared local explore catalog
+                const existingServices = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
+                existingServices.unshift(newServicePayload);
+                localStorage.setItem('wb_posted_services', JSON.stringify(existingServices));
+
+                // Attempt backend post if API is live
+                try {
+                    if (window.ApiClient && typeof window.ApiClient.post === 'function') {
+                        await window.ApiClient.post('/api/profile/services', newServicePayload);
+                    }
+                } catch (err) {
+                    console.warn('Backend service publishing deferred, saved to explore catalog:', err.message);
+                }
+
+                if (window.Toast) {
+                    window.Toast.success('Service successfully published! Clients can now discover and invite you.');
+                }
+
+                closePostServiceModal();
+
+                if (btnSubmitService) {
+                    btnSubmitService.disabled = false;
+                    btnSubmitService.textContent = 'Publish to Explore';
+                }
             });
         }
     }
