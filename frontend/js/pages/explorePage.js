@@ -36,32 +36,46 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProviders();
 
     /**
-     * Fetch verified provider directory and merge provider-posted services.
+     * Fetch verified provider directory directly from Neon PostgreSQL via Render API.
      */
     async function loadProviders() {
-        const searchPath = config.ENDPOINTS?.PROFILE?.SEARCH_PROVIDERS || '/profile/providers/search';
         let remoteProviders = [];
+        let fetchSuccess = false;
 
         try {
-            let data = null;
-            try {
-                data = await window.ApiClient.get(searchPath);
-            } catch (err) {
-                data = await window.ApiClient.get('/profiles/providers/search');
+            if (window.ApiClient && typeof window.ApiClient.get === 'function') {
+                // Try primary endpoint mapped in ProfileController
+                let res = null;
+                try {
+                    res = await window.ApiClient.get('/profiles/providers/search');
+                } catch (e1) {
+                    res = await window.ApiClient.get('/profile/providers/search');
+                }
+
+                // Unwrap standard envelope { success, message, data: [...] }
+                if (res && Array.isArray(res.data)) {
+                    remoteProviders = res.data;
+                    fetchSuccess = true;
+                } else if (Array.isArray(res)) {
+                    remoteProviders = res;
+                    fetchSuccess = true;
+                } else if (res && Array.isArray(res.content)) {
+                    remoteProviders = res.content;
+                    fetchSuccess = true;
+                }
             }
-            remoteProviders = Array.isArray(data) ? data : (data?.content || []);
         } catch (error) {
-            console.warn('Backend provider query deferred, falling back to local catalog:', error.message);
+            console.warn('Backend provider query deferred:', error.message);
         }
 
-        if (remoteProviders.length === 0) {
+        // Only inject fallback mock providers if network genuinely failed or DB is completely unreachable
+        if (!fetchSuccess && remoteProviders.length === 0) {
             remoteProviders = getFallbackProviders();
         }
 
-        // Merge with newly posted services from Providers (stored in wb_posted_services)
+        // Merge with local newly posted services for optimistic instant UI
         const postedServices = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
         
-        // Map posted services into explore provider shape
         const formattedPosted = postedServices.map(svc => ({
             id: svc.id,
             userId: svc.userId || svc.id,
@@ -77,9 +91,25 @@ document.addEventListener('DOMContentLoaded', () => {
             isNewPost: true
         }));
 
-        // Put user-posted services first
+        // Normalize remote DB providers
+        const formattedRemote = remoteProviders.map(p => ({
+            id: p.id,
+            userId: p.userId || p.id,
+            fullName: p.userFullName || p.fullName || 'Verified Provider',
+            userFullName: p.userFullName || p.fullName || 'Verified Provider',
+            title: p.title || p.domain || 'Software Engineer',
+            domain: p.domain || p.title || 'Technical Delivery',
+            category: p.category || 'WEB_DEVELOPMENT',
+            averageRating: p.averageRating != null ? p.averageRating : 5.0,
+            hourlyRate: p.hourlyRate || 50,
+            bio: p.bio || 'Technical professional available on WorkBridge.',
+            skills: p.skills || [],
+            isNewPost: false
+        }));
+
+        // Deduplicate: Newly posted services take precedence
         const combined = [...formattedPosted];
-        remoteProviders.forEach(p => {
+        formattedRemote.forEach(p => {
             const pId = p.userId || p.id;
             if (!combined.some(c => String(c.userId || c.id) === String(pId))) {
                 combined.push(p);
@@ -123,10 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 .join(' ');
 
             const providerId = provider.userId || provider.id;
-            const providerName = provider.userFullName || provider.fullName || provider.name || 'Technical Team';
-            const domainTitle = provider.domain || provider.title || provider.category || 'Software Engineering';
-            const hourlyRate = provider.hourlyRate || provider.rate || 50;
-            const rating = Number(provider.averageRating || provider.rating || 5.0).toFixed(1);
+            const providerName = provider.userFullName || provider.fullName || 'Technical Partner';
+            const domainTitle = provider.domain || provider.title || 'Software Engineering';
+            const hourlyRate = provider.hourlyRate || 50;
+            const rating = Number(provider.averageRating || 5.0).toFixed(1);
             const newPill = provider.isNewPost ? `<span class="badge badge-primary">⚡ Newly Posted</span>` : '';
 
             card.innerHTML = `
@@ -166,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             providerGrid.appendChild(card);
         });
 
-        // Click listeners for "+ Start Project" buttons
+        // Wire click listeners for "+ Start Project"
         providerGrid.querySelectorAll('.btn-invite').forEach(btn => {
             btn.addEventListener('click', () => {
                 const providerId = btn.getAttribute('data-id');
@@ -185,9 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const minRating = parseFloat(minRatingFilter?.value) || 0;
 
         const filtered = allProviders.filter(p => {
-            const providerName = (p.userFullName || p.fullName || p.name || '').toLowerCase();
+            const providerName = (p.userFullName || p.fullName || '').toLowerCase();
             const bio = (p.bio || '').toLowerCase();
-            const domain = (p.domain || p.title || p.category || '').toLowerCase();
+            const domain = (p.domain || p.title || '').toLowerCase();
             const skills = parseSkills(p.skills).map(s => s.toLowerCase());
 
             const matchesQuery = !query || 
@@ -199,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const providerCat = (p.category || p.domain || '').toUpperCase();
             const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || providerCat.includes(selectedCategory);
 
-            const rating = parseFloat(p.averageRating || p.rating || 5.0);
+            const rating = parseFloat(p.averageRating || 5.0);
             const matchesRating = rating >= minRating;
 
             return matchesQuery && matchesCategory && matchesRating;
@@ -304,30 +334,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 createdAt: new Date().toISOString()
             };
 
-            // Always save to shared local invitations so Provider dashboard immediately receives it
-            const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
-            localInvites.unshift(invitationRecord);
-            localStorage.setItem('wb_local_invitations', JSON.stringify(localInvites));
-
-            // Also register into local projects list
-            const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
-            localProjects.unshift(invitationRecord);
-            localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
-
+            // 1. Dispatch directly to Neon DB via Render Web Service
             try {
-                // Try backend API dispatch if live
-                if (window.ProjectApi && typeof window.ProjectApi.createAndInvite === 'function') {
-                    await window.ProjectApi.createAndInvite({
-                        providerId,
-                        title,
-                        summary,
+                if (window.ApiClient && typeof window.ApiClient.post === 'function') {
+                    await window.ApiClient.post('/projects/invite', {
+                        assignedProviderId: Number(providerId) || providerId,
+                        title: title,
                         description: summary,
-                        budget: Number(budget)
+                        summary: summary,
+                        budget: Number(budget),
+                        category: 'WEB_DEVELOPMENT'
                     });
                 }
             } catch (error) {
                 console.warn('Backend invite sync deferred, registered in local invitation pipe:', error.message);
             }
+
+            // 2. Keep local cache for immediate optimistic rendering
+            const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
+            localInvites.unshift(invitationRecord);
+            localStorage.setItem('wb_local_invitations', JSON.stringify(localInvites));
+
+            const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
+            localProjects.unshift(invitationRecord);
+            localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
 
             if (window.Toast) {
                 window.Toast.success('Invitation sent! The provider has received your project proposal.');
