@@ -1,9 +1,9 @@
 /**
- * WORKBRIDGE - AUTHENTICATION PAGE CONTROLLER
+ * WORKBRIDGE - AUTHENTICATION PAGE CONTROLLER (SUPABASE CLOUD EDITION)
  * File: js/pages/authPage.js
  * 
- * Manages tab toggles, role-specific domain selectors, validation,
- * API requests, error state rendering, and return-URL preserved redirects.
+ * Direct cloud authentication backed by Supabase PostgreSQL `profiles` table.
+ * Supports cross-device real-time registration and login with no cold-start delays.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ADMIN: 'ADMIN'
     };
 
-    // If user is already logged in with a valid token, redirect immediately
+    // If user is already logged in with a valid session, redirect immediately
     if (window.AuthState && window.AuthState.isLoggedIn()) {
         const currentUser = window.AuthState.getUser();
         redirectToTarget(currentUser ? currentUser.role : null);
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     roleRadios.forEach(radio => {
         radio.addEventListener('change', syncRoleFields);
     });
-    syncRoleFields(); // Initial sync
+    syncRoleFields();
 
     // -------------------------------------------------------------------------
     // 2. Tab Switching Handlers
@@ -103,12 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function validateEmail(email) {
         if (!email) return false;
         const clean = email.trim();
-        // Simple & bulletproof: non-empty, minimum length, and contains '@'
         return clean.length >= 3 && clean.includes('@');
     }
 
     // -------------------------------------------------------------------------
-    // 4. Login Form Submission & Validation
+    // 4. Login Submission (Direct Supabase Cloud Query)
     // -------------------------------------------------------------------------
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -119,10 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
             const password = document.getElementById('loginPassword')?.value || '';
 
-            // Validation
+            // Input Validation
             let hasError = false;
             if (!validateEmail(email)) {
-                showFieldError('loginEmailError', 'Please enter your email or username (must contain @).');
+                showFieldError('loginEmailError', 'Please enter your email (must contain @).');
                 hasError = true;
             }
             if (!password) {
@@ -132,56 +131,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (hasError) return;
 
-            setButtonLoading(loginSubmitBtn, true, 'Signing in...');
+            setButtonLoading(loginSubmitBtn, true, 'Signing in to Supabase...');
 
             try {
-                // Try backend API first
-                const data = await window.AuthApi.login({ email, password });
-                const userObj = data.user || data;
-                const token = data.token || ('wb_session_' + Date.now());
-                const userRole = userObj?.role || null;
+                const sb = window.sbClient;
+                if (!sb) {
+                    throw new Error('Supabase client is not initialized. Please verify supabaseClient.js.');
+                }
+
+                // Query `profiles` table directly
+                const { data, error } = await sb
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+
+                if (error || !data) {
+                    throw new Error('No account found with this email. Please register first.');
+                }
+
+                if (data.password !== password) {
+                    throw new Error('Incorrect password. Please verify credentials.');
+                }
+
+                // Profile verified: construct session user
+                const sessionUser = {
+                    id: data.id,
+                    fullName: data.full_name,
+                    email: data.email,
+                    role: data.role,
+                    domain: data.domain,
+                    bio: data.bio,
+                    rating: data.rating
+                };
+
+                const sessionToken = 'wb_sb_token_' + data.id;
 
                 if (window.AuthState && window.AuthState.setSession) {
-                    window.AuthState.setSession(token, userObj);
+                    window.AuthState.setSession(sessionToken, sessionUser);
                 }
 
-                showAlert('Sign in successful! Redirecting...', 'success');
-                if (window.Toast) window.Toast.success('Welcome back to WorkBridge!');
+                showAlert('Sign in verified! Opening workspace...', 'success');
+                if (window.Toast) window.Toast.success(`Welcome back, ${sessionUser.fullName}!`);
 
                 setTimeout(() => {
-                    redirectToTarget(userRole);
-                }, 500);
+                    redirectToTarget(sessionUser.role);
+                }, 400);
 
-            } catch (error) {
-                // Backend fail / cold start fallback: check localStorage registered accounts
-                const localUsers = JSON.parse(localStorage.getItem('wb_local_users') || '[]');
-                const matchedUser = localUsers.find(u => u.email === email && u.password === password);
-
-                if (matchedUser) {
-                    const sessionUser = {
-                        id: matchedUser.id || Date.now(),
-                        fullName: matchedUser.fullName,
-                        email: matchedUser.email,
-                        role: matchedUser.role,
-                        domain: matchedUser.domain || null
-                    };
-                    const dummyToken = 'wb_local_jwt_' + Date.now();
-
-                    if (window.AuthState && window.AuthState.setSession) {
-                        window.AuthState.setSession(dummyToken, sessionUser);
-                    }
-
-                    showAlert('Sign in successful! Redirecting...', 'success');
-                    if (window.Toast) window.Toast.success('Welcome back to WorkBridge!');
-
-                    setTimeout(() => {
-                        redirectToTarget(sessionUser.role);
-                    }, 500);
-                } else {
-                    const msg = error.message || 'Invalid email or password. Please try again.';
-                    showAlert(msg, 'danger');
-                    if (window.Toast) window.Toast.error(msg);
-                }
+            } catch (err) {
+                console.error('Supabase Login Error:', err);
+                const msg = err.message || 'Login failed. Please check your credentials.';
+                showAlert(msg, 'danger');
+                if (window.Toast) window.Toast.error(msg);
             } finally {
                 setButtonLoading(loginSubmitBtn, false, 'Sign In to Workspace');
             }
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Register Form Submission & Validation
+    // 5. Register Submission (Direct Supabase Cloud Insert)
     // -------------------------------------------------------------------------
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
@@ -214,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!validateEmail(email)) {
-                showFieldError('regEmailError', 'Please enter an email address with @ (e.g. user@domain.com).');
+                showFieldError('regEmailError', 'Please enter a valid email address with @.');
                 hasError = true;
             }
 
@@ -230,67 +231,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (hasError) return;
 
-            setButtonLoading(registerSubmitBtn, true, 'Creating Account...');
-
-            // Always save a local copy for instant offline/cold-start login reliability
-            const localUsers = JSON.parse(localStorage.getItem('wb_local_users') || '[]');
-            const existingIdx = localUsers.findIndex(u => u.email === email);
-            const newUserData = {
-                id: Date.now(),
-                fullName,
-                email,
-                password,
-                role,
-                domain: role === ROLES.SERVICE_PROVIDER ? domain : null
-            };
-
-            if (existingIdx >= 0) {
-                localUsers[existingIdx] = newUserData;
-            } else {
-                localUsers.push(newUserData);
-            }
-            localStorage.setItem('wb_local_users', JSON.stringify(localUsers));
+            setButtonLoading(registerSubmitBtn, true, 'Creating Account in Cloud...');
 
             try {
-                // Attempt Backend Registration
-                const data = await window.AuthApi.register({
-                    fullName,
-                    email,
-                    password,
-                    role,
-                    domain: role === ROLES.SERVICE_PROVIDER ? domain : null
-                });
-
-                const userObj = data.user || data || newUserData;
-                const token = data.token || ('wb_session_' + Date.now());
-                const userRole = userObj?.role || role;
-
-                if (window.AuthState && window.AuthState.setSession) {
-                    window.AuthState.setSession(token, userObj);
+                const sb = window.sbClient;
+                if (!sb) {
+                    throw new Error('Supabase client is not initialized.');
                 }
 
-                showAlert('Account created successfully! Redirecting...', 'success');
+                // 1. Check if email already exists in profiles
+                const { data: existingUser } = await sb
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (existingUser) {
+                    throw new Error('An account with this email already exists. Please sign in instead.');
+                }
+
+                // 2. Insert new profile record
+                const newProfile = {
+                    email: email,
+                    full_name: fullName,
+                    password: password,
+                    role: role,
+                    domain: role === ROLES.SERVICE_PROVIDER ? domain : null,
+                    bio: role === ROLES.SERVICE_PROVIDER 
+                        ? `Verified technical service provider specializing in ${domain}.`
+                        : 'Technical project client on WorkBridge.',
+                    rating: 5.0
+                };
+
+                const { data: createdData, error: insertError } = await sb
+                    .from('profiles')
+                    .insert([newProfile])
+                    .select()
+                    .single();
+
+                if (insertError) {
+                    throw new Error(insertError.message || 'Failed to create profile in database.');
+                }
+
+                const sessionUser = {
+                    id: createdData.id,
+                    fullName: createdData.full_name,
+                    email: createdData.email,
+                    role: createdData.role,
+                    domain: createdData.domain,
+                    bio: createdData.bio,
+                    rating: createdData.rating
+                };
+
+                const sessionToken = 'wb_sb_token_' + createdData.id;
+
+                if (window.AuthState && window.AuthState.setSession) {
+                    window.AuthState.setSession(sessionToken, sessionUser);
+                }
+
+                showAlert('Account registered in cloud! Redirecting...', 'success');
                 if (window.Toast) window.Toast.success('Account successfully registered!');
 
                 setTimeout(() => {
-                    redirectToTarget(userRole);
+                    redirectToTarget(sessionUser.role);
                 }, 500);
 
-            } catch (error) {
-                // If backend is sleeping on Render, proceed with the registered local session
-                console.warn('Backend register delayed/failed, activating local session:', error.message);
-
-                const dummyToken = 'wb_local_jwt_' + Date.now();
-                if (window.AuthState && window.AuthState.setSession) {
-                    window.AuthState.setSession(dummyToken, newUserData);
-                }
-
-                showAlert('Account created! Redirecting to workspace...', 'success');
-                if (window.Toast) window.Toast.success('Account ready! Welcome to WorkBridge.');
-
-                setTimeout(() => {
-                    redirectToTarget(role);
-                }, 500);
+            } catch (err) {
+                console.error('Supabase Registration Error:', err);
+                const msg = err.message || 'Registration failed. Please try again.';
+                showAlert(msg, 'danger');
+                if (window.Toast) window.Toast.error(msg);
             } finally {
                 setButtonLoading(registerSubmitBtn, false, 'Create Account');
             }
@@ -298,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Utility & Helper Functions
+    // 6. Utility & Navigation Helpers
     // -------------------------------------------------------------------------
     function showFieldError(elementId, message) {
         const el = document.getElementById(elementId);
