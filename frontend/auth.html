@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sign In or Register for WorkBridge - Intelligent Collaboration Platform">
+    <meta name="description" content="Sign In or Register for WorkBridge - Intelligent Milestone &amp; Scope Collaboration Platform">
     <title>Authentication | WorkBridge</title>
     
     <!-- CSS Foundations -->
@@ -43,14 +43,15 @@
             <!-- ===================== LOGIN FORM ===================== -->
             <form id="loginForm" class="auth-form mt-3" novalidate>
                 <div class="form-group">
-                    <label for="loginEmail" class="form-label">Email or Username</label>
+                    <label for="loginEmail" class="form-label">Email Address</label>
                     <input 
-                        type="text" 
+                        type="email" 
                         id="loginEmail" 
                         name="email" 
                         class="form-control" 
-                        placeholder="you@company.com ya username" 
+                        placeholder="name@company.com" 
                         autocomplete="username"
+                        required
                     >
                     <span class="form-error" id="loginEmailError"></span>
                 </div>
@@ -66,6 +67,7 @@
                         class="form-control" 
                         placeholder="••••••••" 
                         autocomplete="current-password"
+                        required
                     >
                     <span class="form-error" id="loginPasswordError"></span>
                 </div>
@@ -80,7 +82,7 @@
                 
                 <!-- Role Selection -->
                 <div class="form-group">
-                    <label class="form-label">I want to join as a:</label>
+                    <label class="form-label">Account Type *</label>
                     <div class="role-selector-grid">
                         <label class="role-option">
                             <input type="radio" name="role" value="CLIENT" id="roleClientRadio" checked>
@@ -100,65 +102,70 @@
                 </div>
 
                 <div class="form-group mt-2">
-                    <label for="regFullName" class="form-label">Full Name / Organization Name</label>
+                    <label for="regFullName" class="form-label">Full Name / Organization Name *</label>
                     <input 
                         type="text" 
                         id="regFullName" 
                         name="fullName" 
                         class="form-control" 
-                        placeholder="e.g., Alex Chen or Apex Solutions" 
+                        placeholder="e.g. Alex Johnson or Apex Solutions" 
                         autocomplete="name"
+                        required
                     >
                     <span class="form-error" id="regFullNameError"></span>
                 </div>
 
                 <div class="form-group mt-2">
-                    <label for="regEmail" class="form-label">Email Address</label>
+                    <label for="regEmail" class="form-label">Email Address *</label>
                     <input 
-                        type="text" 
+                        type="email" 
                         id="regEmail" 
                         name="email" 
                         class="form-control" 
-                        placeholder="test@gmail.com ya koi bhi email" 
+                        placeholder="name@company.com" 
                         autocomplete="email"
+                        required
                     >
                     <span class="form-error" id="regEmailError"></span>
                 </div>
 
-                <!-- Provider Domain Specialization -->
+                <!-- Provider Domain Specialization (Auto toggled when Provider role is checked) -->
                 <div class="form-group mt-2 hidden" id="providerDomainGroup">
-                    <label for="regDomain" class="form-label">Primary Technical Domain</label>
+                    <label for="regDomain" class="form-label">Primary Technical Specialization *</label>
                     <select id="regDomain" name="domain" class="form-control">
                         <option value="Full-Stack Web Development">Full-Stack Web Development</option>
-                        <option value="Backend & Cloud Engineering">Backend &amp; Cloud Engineering</option>
+                        <option value="Backend Engineering &amp; Cloud">Backend Engineering &amp; Cloud</option>
+                        <option value="Frontend &amp; UI/UX Design">Frontend &amp; UI/UX Design</option>
                         <option value="Mobile App Development">Mobile App Development</option>
-                        <option value="AI & Data Engineering">AI &amp; Data Engineering</option>
-                        <option value="API Security & DevOps">API Security &amp; DevOps</option>
+                        <option value="DevOps &amp; Infrastructure">DevOps &amp; Infrastructure</option>
+                        <option value="AI &amp; Data Engineering">AI &amp; Data Engineering</option>
                     </select>
                 </div>
 
                 <div class="form-group mt-2">
-                    <label for="regPassword" class="form-label">Password</label>
+                    <label for="regPassword" class="form-label">Password *</label>
                     <input 
                         type="password" 
                         id="regPassword" 
                         name="password" 
                         class="form-control" 
-                        placeholder="Apna password daalein" 
+                        placeholder="Minimum 6 characters" 
                         autocomplete="new-password"
+                        required
                     >
                     <span class="form-error" id="regPasswordError"></span>
                 </div>
 
                 <div class="form-group mt-2">
-                    <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                    <label for="regConfirmPassword" class="form-label">Confirm Password *</label>
                     <input 
                         type="password" 
                         id="regConfirmPassword" 
                         name="confirmPassword" 
                         class="form-control" 
-                        placeholder="Wahi password dobara daalein" 
+                        placeholder="Re-enter password" 
                         autocomplete="new-password"
+                        required
                     >
                     <span class="form-error" id="regConfirmPasswordError"></span>
                 </div>
@@ -174,15 +181,14 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts Pipeline -->
+    <!-- Scripts Pipeline (Supabase Loaded FIRST before Application Controllers) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
     <script src="js/api/authApi.js"></script>
     <script src="js/components/toast.js"></script>
     <script src="js/pages/authPage.js"></script>
-    <!-- Supabase Core Engine -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/api/supabaseClient.js"></script>
 </body>
 </html>

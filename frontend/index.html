@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="WorkBridge - Intelligent Collaboration and Resource Management System. Turn project discussions into structured, agreed, and traceable collaboration.">
-    <title>WorkBridge | Intelligent Collaboration &amp; Resource Management</title>
+    <meta name="description" content="WorkBridge - Intelligent Collaboration and Scope Governance Platform. Transform scattered client discussions into structured, locked, and verifiable project execution.">
+    <title>WorkBridge | Milestone &amp; Scope Governance Platform</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -42,17 +42,17 @@
                 <div class="hero-content">
                     <div class="hero-badge-group mb-2">
                         <span class="badge badge-primary">Final-Year Engineering Project</span>
-                        <span class="badge badge-success ml-1">Neon Cloud DB Connected</span>
+                        <span class="badge badge-success ml-1" id="cloudEngineBadge">PostgreSQL Cloud Live</span>
                     </div>
                     <h1 class="hero-title">
                         Turn scattered project discussions into <span class="text-highlight">structured, locked reality.</span>
                     </h1>
                     <p class="hero-description">
-                        WorkBridge eliminates scope drift, lost files, and unclear agreements. A specialized collaboration workspace connecting clients and technology service providers with versioned requirements and digital project agreements.
+                        WorkBridge eliminates scope creep, lost credentials, and ambiguous commitments. A specialized engineering workspace connecting technical clients and verified service providers with immutable scope contracts and milestone proof verification.
                     </p>
                     <div class="hero-actions" id="heroActionContainer">
                         <a href="auth.html?mode=register" class="btn btn-primary btn-lg" id="heroPrimaryCta">Start a Project</a>
-                        <a href="provider-explore.html" class="btn btn-outline btn-lg">Explore Providers</a>
+                        <a href="provider-explore.html" class="btn btn-outline btn-lg" id="heroSecondaryCta">Explore Providers</a>
                     </div>
                 </div>
 
@@ -64,26 +64,26 @@
                             <span class="preview-dot dot-yellow"></span>
                             <span class="preview-dot dot-green"></span>
                         </div>
-                        <span class="preview-title">WorkBridge Engine v1.0</span>
+                        <span class="preview-title">Governance Engine v1.0</span>
                     </div>
                     <div class="preview-body">
                         <!-- Scope Lock Indicator (Core Feature A) -->
                         <div class="preview-item">
                             <span class="preview-label">Scope State</span>
-                            <span class="badge badge-success">🔒 Scope Locked (v1.0)</span>
+                            <span class="badge badge-success">🔒 Scope Locked (v1.0 Baseline)</span>
                         </div>
 
                         <!-- Mutual Sign-off Status -->
                         <div class="preview-item">
                             <span class="preview-label">Digital Sign-off</span>
-                            <span class="badge badge-primary">Mutually Accepted</span>
+                            <span class="badge badge-primary">Mutually Ratified &amp; Signed</span>
                         </div>
 
                         <!-- Visual Milestone Progress (Core Feature B) -->
                         <div class="preview-item flex-column-item">
                             <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 0.25rem;">
                                 <span class="preview-label">Milestone Progress (Weighted)</span>
-                                <strong class="text-highlight font-medium">75%</strong>
+                                <strong class="text-highlight font-medium">75% Verified</strong>
                             </div>
                             <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #f1f5f9); border-radius: 9999px; overflow: hidden;">
                                 <div style="width: 75%; height: 100%; background-color: var(--primary, #3b82f6);"></div>
@@ -93,12 +93,12 @@
                         <!-- AI Ambiguity Analyzer -->
                         <div class="preview-item">
                             <span class="preview-label">AI Ambiguity Audit</span>
-                            <span class="badge badge-subtle">Zero Conflicts Detected</span>
+                            <span class="badge badge-subtle">Zero Scope Contradictions</span>
                         </div>
 
                         <div class="preview-item">
                             <span class="preview-label">Dispute Prevention</span>
-                            <span class="text-success font-medium">100% Traceable</span>
+                            <span class="text-success font-medium">100% Cryptographically Traceable</span>
                         </div>
                     </div>
                 </div>
@@ -110,23 +110,23 @@
             <div class="container">
                 <div class="section-header text-center">
                     <h2 class="section-title">The Problem With Modern Tech Projects</h2>
-                    <p class="section-subtitle">Why traditional chats, generic task boards, and ad-hoc emails fail technology collaborations.</p>
+                    <p class="section-subtitle">Why traditional chat apps, ad-hoc spreadsheets, and generic task boards fail technology collaborations.</p>
                 </div>
                 <div class="grid grid-3">
                     <div class="card problem-card">
                         <div class="card-icon">⚠️</div>
                         <h3 class="card-title">Scope Creep &amp; Silent Edits</h3>
-                        <p class="card-text">Requirements change constantly inside informal chat threads without version history or mutual sign-off, creating conflict at delivery time.</p>
+                        <p class="card-text">Requirements change constantly inside informal message logs without version history or dual sign-off, creating severe conflict at delivery time.</p>
                     </div>
                     <div class="card problem-card">
                         <div class="card-icon">🗂️</div>
                         <h3 class="card-title">Scattered Resources</h3>
-                        <p class="card-text">Crucial UI files, architecture documents, credentials, and API references get lost deep in unstructured multi-day conversation logs.</p>
+                        <p class="card-text">Crucial UI Figma files, architecture schemas, API credentials, and server keys get buried deep in unstructured multi-day conversations.</p>
                     </div>
                     <div class="card problem-card">
                         <div class="card-icon">📑</div>
                         <h3 class="card-title">Ambiguous Agreements</h3>
-                        <p class="card-text">Milestones, timelines, and deliverables are rarely bound to an immutable digital agreement before development work begins.</p>
+                        <p class="card-text">Milestones, delivery dates, and acceptance criteria are rarely bound to an immutable digital agreement before technical building commences.</p>
                     </div>
                 </div>
             </div>
@@ -142,23 +142,23 @@
                 <div class="grid grid-2">
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 1</div>
-                        <h3 class="card-title">Smart Requirement Versioning</h3>
-                        <p class="card-text">Requirements are structured documents with full version tracking (v1.0, v2.0). Once locked by mutual agreement, neither party can make silent modifications without a formal Scope Amendment.</p>
+                        <h3 class="card-title">Smart Requirement Versioning (Engine A)</h3>
+                        <p class="card-text">Specifications are structured documents with automated version tracking (v1.0, v2.0). Once ratified, neither party can execute silent modifications without a formal Scope Amendment.</p>
                     </div>
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 2</div>
-                        <h3 class="card-title">Digital Project Agreements</h3>
-                        <p class="card-text">A transparent mutual project agreement defining deliverables, weighted milestones, and terms. Both client and provider review and lock terms before active building starts.</p>
+                        <h3 class="card-title">Digital Project Agreements &amp; SHA-256 Locking</h3>
+                        <p class="card-text">A transparent mutual project agreement defining deliverables, weighted milestones, and consideration. Both client and provider review and lock terms before active building starts.</p>
                     </div>
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 3</div>
-                        <h3 class="card-title">Unified Project Workspace</h3>
-                        <p class="card-text">A centralized workspace containing project-scoped discussions, an audit trail of finalized technical decisions, and a dedicated permanent resource vault.</p>
+                        <h3 class="card-title">Weighted Milestones &amp; Proof Verification (Engine B)</h3>
+                        <p class="card-text">Milestones hold explicit completion weights. Providers submit verified repository PRs or Figma links, and project progress advances only when the client signs off.</p>
                     </div>
                     <div class="card feature-card">
                         <div class="feature-badge">Pillar 4</div>
-                        <h3 class="card-title">AI Requirement Auditing &amp; Summaries</h3>
-                        <p class="card-text">On-demand AI auditing to detect missing technical details, ambiguous statements, or contradictions in requirements, plus one-click discussion summaries.</p>
+                        <h3 class="card-title">Centralized Vault &amp; Architectural Journal</h3>
+                        <p class="card-text">A dedicated permanent resource vault for design wireframes and specifications, combined with an immutable decision journal recorded directly alongside discussion threads.</p>
                     </div>
                 </div>
             </div>
@@ -170,7 +170,7 @@
         <div class="container footer-container">
             <div class="footer-brand">
                 <span class="logo-accent">Work</span>Bridge
-                <p class="footer-tagline">Intelligent Collaboration and Resource Management System</p>
+                <p class="footer-tagline">Intelligent Collaboration and Scope Governance Platform</p>
             </div>
             <div class="footer-meta">
                 <p>&copy; 2026 WorkBridge. Final Year Computer Science Project.</p>
@@ -178,25 +178,34 @@
         </div>
     </footer>
 
-    <!-- Shared Scripts -->
+    <!-- Shared Scripts (Supabase Loaded First) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
     <script src="js/components/navbar.js"></script>
     <script>
-        // Hero Dynamic CTA adaptation based on auth state
+        // Hero Dynamic CTA adaptation based on standardized AuthState
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.AuthState && window.AuthState.isAuthenticated()) {
-                const user = window.AuthState.getUser();
+            const auth = window.AuthState;
+            const isLoggedIn = auth && typeof auth.isLoggedIn === 'function' ? auth.isLoggedIn() : (auth && typeof auth.isAuthenticated === 'function' && auth.isAuthenticated());
+
+            if (isLoggedIn) {
+                const user = auth.getUser();
                 const heroPrimaryCta = document.getElementById('heroPrimaryCta');
+                const heroSecondaryCta = document.getElementById('heroSecondaryCta');
+
                 if (heroPrimaryCta && user) {
-                    heroPrimaryCta.textContent = 'Go to Your Dashboard';
+                    heroPrimaryCta.textContent = 'Go to Your Workspace';
                     if (user.role === 'SERVICE_PROVIDER') {
                         heroPrimaryCta.href = 'provider-dashboard.html';
+                        if (heroSecondaryCta) heroSecondaryCta.href = 'provider-explore.html';
                     } else if (user.role === 'ADMIN') {
                         heroPrimaryCta.href = 'admin-dashboard.html';
                     } else {
                         heroPrimaryCta.href = 'client-dashboard.html';
+                        if (heroSecondaryCta) heroSecondaryCta.href = 'provider-explore.html';
                     }
                 }
             }

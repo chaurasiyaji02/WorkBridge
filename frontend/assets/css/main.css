@@ -10,12 +10,13 @@
    1. CSS Custom Properties (Design Tokens)
    -------------------------------------------------------------------------- */
 :root {
-    /* Brand & Accent Palette (Modern Engineering Slate & Indigo-Blue) */
+    /* Brand & Accent Palette (Refined Engineering Slate & Electric Indigo-Blue) */
     --primary: #2563eb;
     --primary-hover: #1d4ed8;
     --primary-active: #1e40af;
     --primary-light: #eff6ff;
     --primary-border: #bfdbfe;
+    --primary-glow: rgba(37, 99, 235, 0.15);
     
     --secondary: #0f172a;
     --secondary-hover: #1e293b;
@@ -47,7 +48,7 @@
     --ai-purple-light: #f5f3ff;
     --ai-purple-border: #ddd6fe;
 
-    /* Neutrals & Clean Surfaces */
+    /* Neutrals & Clean Crisp Surfaces */
     --bg-page: #f8fafc;
     --bg-surface: #ffffff;
     --bg-surface-alt: #f1f5f9;
@@ -63,14 +64,16 @@
     --border-color: #e2e8f0;
     --border-subtle: #cbd5e1;
     --border-focus: #3b82f6;
-    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.2);
 
-    /* Elevation & Shadows */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* Elevation & Subtle Depth (Modern SaaS Style) */
+    --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+    --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+    --shadow-card-hover: 0 10px 20px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
     
     /* Radii */
     --radius-sm: 6px;
@@ -80,16 +83,16 @@
     --radius-full: 9999px;
 
     /* Typography Hierarchy */
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
     /* Layout Constraints & Viewports */
     --container-max: 1240px;
     --header-height: 64px;
-    --sidebar-width: 260px;
+    --sidebar-width: 270px;
     --viewport-height: 100dvh;
     
-    /* Animation Speeds */
+    /* Transitions */
     --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -130,11 +133,11 @@ img, picture, video, canvas, svg {
     height: auto;
 }
 
-/* Form Inputs Normalization: Minimum 16px to prevent iOS Safari auto-zoom */
+/* Form Inputs Normalization */
 input, button, textarea, select {
     font: inherit;
     color: inherit;
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 button {
@@ -143,7 +146,6 @@ button {
     border: none;
 }
 
-/* Accessible focus states */
 :focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
@@ -156,14 +158,13 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-main);
     font-weight: 700;
     line-height: 1.25;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
 }
 
-/* Fluid Heading scaling based on viewport width */
-h1 { font-size: clamp(1.75rem, 4vw + 0.5rem, 2.5rem); }
-h2 { font-size: clamp(1.4rem, 2.5vw + 0.5rem, 1.875rem); }
-h3 { font-size: clamp(1.15rem, 1.8vw + 0.4rem, 1.35rem); }
-h4 { font-size: clamp(1.02rem, 1.2vw + 0.3rem, 1.15rem); }
+h1 { font-size: clamp(1.75rem, 3.5vw + 0.5rem, 2.35rem); }
+h2 { font-size: clamp(1.35rem, 2.2vw + 0.4rem, 1.75rem); }
+h3 { font-size: clamp(1.1rem, 1.5vw + 0.35rem, 1.25rem); }
+h4 { font-size: clamp(0.98rem, 1vw + 0.25rem, 1.1rem); }
 
 p {
     margin-bottom: 0.5rem;
@@ -195,9 +196,9 @@ a:hover {
 .text-right { text-align: right; }
 
 .text-xs { font-size: 0.75rem; line-height: 1rem; }
-.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-.text-base { font-size: 1rem; line-height: 1.5rem; }
-.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-sm { font-size: 0.85rem; line-height: 1.25rem; }
+.text-base { font-size: 0.95rem; line-height: 1.45rem; }
+.text-lg { font-size: 1.1rem; line-height: 1.65rem; }
 
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
@@ -210,7 +211,7 @@ a:hover {
 }
 
 /* --------------------------------------------------------------------------
-   4. Spacing & Responsive Utility Classes
+   4. Spacing & Utility Classes
    -------------------------------------------------------------------------- */
 .m-0 { margin: 0 !important; }
 .mt-1 { margin-top: 0.25rem; }
@@ -225,6 +226,8 @@ a:hover {
 .mb-3 { margin-bottom: 1rem; }
 .mb-4 { margin-bottom: 1.5rem; }
 
+.ml-1 { margin-left: 0.25rem; }
+.ml-2 { margin-left: 0.5rem; }
 .ml-auto { margin-left: auto; }
 .mr-auto { margin-right: auto; }
 
@@ -232,6 +235,8 @@ a:hover {
 .p-2 { padding: 0.5rem; }
 .p-3 { padding: 1rem; }
 .p-4 { padding: 1.5rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.py-4 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
 
 /* Display & Layout Flex/Grid Utilities */
 .block { display: block; }
@@ -256,3 +261,22 @@ a:hover {
 
 .w-full { width: 100%; }
 .h-full { height: 100%; }
+
+/* Status Dots */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    display: inline-block;
+    flex-shrink: 0;
+}
+.dot-green { background-color: var(--success); box-shadow: 0 0 0 2px var(--success-bg); }
+.dot-yellow { background-color: var(--warning); box-shadow: 0 0 0 2px var(--warning-bg); }
+.dot-gray { background-color: var(--text-light); }
+
+/* Profile Divider */
+.profile-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 1rem 0;
+}

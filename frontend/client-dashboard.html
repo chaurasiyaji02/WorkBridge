@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Client Dashboard - WorkBridge Intelligent Collaboration System">
+    <meta name="description" content="Client Dashboard - WorkBridge Intelligent Collaboration &amp; Governance System">
     <title>Client Dashboard | WorkBridge</title>
     
     <!-- CSS Foundations -->
@@ -98,7 +98,7 @@
                     <h1 class="page-title">Client Command Center</h1>
                     <p class="text-muted">Manage your technology projects, review requirement versions, and track deliverables.</p>
                 </div>
-                <div class="header-action-group">
+                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-outline" id="refreshClientDashboardBtn" title="Sync live records">
                         <span class="btn-icon">🔄</span> Sync
                     </button>
@@ -146,8 +146,8 @@
             <!-- Pending Action Alerts Section -->
             <section id="pendingApprovalsSection" class="mt-4 hidden">
                 <div class="section-title-row">
-                    <div class="title-with-badge">
-                        <h3 class="section-heading text-warning">Action Required</h3>
+                    <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h3 class="section-heading text-warning" style="margin: 0;">Action Required</h3>
                         <span class="badge badge-warning" id="pendingApprovalsCountBadge">0 Pending</span>
                     </div>
                 </div>
@@ -159,8 +159,8 @@
             <!-- Projects Section -->
             <section id="activeProjectsSection" class="mt-4">
                 <div class="section-title-row">
-                    <div class="title-with-badge">
-                        <h3 class="section-heading">Your Projects</h3>
+                    <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h3 class="section-heading" style="margin: 0;">Your Projects</h3>
                         <span class="badge badge-subtle" id="projectsCountBadge">0 Total</span>
                     </div>
                     
@@ -214,20 +214,31 @@
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="projectCategoryInput" class="form-label">Domain / Category *</label>
-                        <select id="projectCategoryInput" class="form-control" required>
-                            <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
-                            <option value="BACKEND">Backend &amp; Cloud Microservices</option>
-                            <option value="FRONTEND">Frontend &amp; UI/UX Systems</option>
-                            <option value="MOBILE">Mobile App Development</option>
-                            <option value="DEVOPS">Cloud Architecture &amp; DevOps</option>
-                            <option value="AI">AI &amp; Machine Learning</option>
-                        </select>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                            <div>
+                                <label for="projectCategoryInput" class="form-label">Domain / Category *</label>
+                                <select id="projectCategoryInput" class="form-control" required>
+                                    <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
+                                    <option value="BACKEND">Backend &amp; Cloud Microservices</option>
+                                    <option value="FRONTEND">Frontend &amp; UI/UX Systems</option>
+                                    <option value="MOBILE">Mobile App Development</option>
+                                    <option value="DEVOPS">Cloud Architecture &amp; DevOps</option>
+                                    <option value="AI">AI &amp; Machine Learning</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="projectBudgetInput" class="form-label">Estimated Budget ($ USD)</label>
+                                <input type="number" id="projectBudgetInput" class="form-control" placeholder="e.g. 1500" min="50" value="1000">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="projectBudgetInput" class="form-label">Initial Estimated Budget ($ USD)</label>
-                        <input type="number" id="projectBudgetInput" class="form-control" placeholder="e.g. 1500" min="50" value="1000">
+                        <label for="projectAssignProviderSelect" class="form-label">Assign Verified Provider (Optional)</label>
+                        <select id="projectAssignProviderSelect" class="form-control">
+                            <option value="">Leave Open / Assign Later in Marketplace</option>
+                            <!-- Dynamically populated from profiles table -->
+                        </select>
                     </div>
 
                     <div class="form-group mt-2">

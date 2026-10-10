@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Explore and invite verified technology service providers on WorkBridge">
+    <meta name="description" content="Explore and invite verified technology service providers and packaged gigs on WorkBridge">
     <title>Explore Service Providers | WorkBridge</title>
     
     <!-- CSS Foundations -->
@@ -42,9 +42,9 @@
                     <h1 class="page-title">Explore Verified Service Providers</h1>
                     <p class="text-muted">Find specialized engineers, full-stack developers, and technical teams ready for milestone-locked engagements.</p>
                 </div>
-                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center;">
+                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-outline btn-sm" id="btnRefreshCatalog" title="Sync live services">
-                        <span class="btn-icon">🔄</span> Sync
+                        <span class="btn-icon">🔄</span> Sync Market
                     </button>
                     <span class="badge badge-success" id="providerVerificationNotice">🛡️ Verified Talent Only</span>
                 </div>
@@ -55,12 +55,12 @@
                 <form id="providerFilterForm" class="filter-grid">
                     
                     <div class="form-group mb-0">
-                        <label for="searchInput" class="form-label-sm">Search by Name or Skill</label>
+                        <label for="searchInput" class="form-label-sm">Search by Name, Skill or Tech Stack</label>
                         <input 
                             type="text" 
                             id="searchInput" 
                             class="form-control" 
-                            placeholder="e.g., Spring Boot, React, DevOps, AI"
+                            placeholder="e.g., Spring Boot, React, PostgreSQL, Docker"
                         >
                     </div>
 
@@ -97,14 +97,21 @@
 
             <!-- Results Section -->
             <section class="results-section mt-4">
-                <div class="section-title-row">
+                <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                     <div class="title-with-badge">
-                        <h3 class="section-heading">Available Providers &amp; Services</h3>
-                        <span id="resultsCount" class="badge badge-subtle">Loading providers...</span>
+                        <h3 class="section-heading" style="margin: 0;">Available Providers &amp; Services</h3>
+                        <span id="resultsCount" class="badge badge-subtle">Loading catalog...</span>
+                    </div>
+
+                    <!-- Marketplace Type Filter Pills -->
+                    <div class="filter-pill-group">
+                        <button type="button" class="filter-pill active" data-type="ALL">All Offerings</button>
+                        <button type="button" class="filter-pill" data-type="GIGS">Packaged Gigs</button>
+                        <button type="button" class="filter-pill" data-type="TALENT">Verified Engineers</button>
                     </div>
                 </div>
 
-                <!-- Provider Card Grid (Populated dynamically via JS) -->
+                <!-- Provider Card Grid (Populated dynamically via explorePage.js) -->
                 <div id="providerGrid" class="projects-list-grid mt-3">
                     <!-- Skeleton / Placeholder loading cards -->
                     <div class="card card-skeleton">
@@ -124,11 +131,11 @@
                     </div>
                 </div>
 
-                <!-- Empty State (Zero-state handling) -->
+                <!-- Empty State -->
                 <div id="emptyState" class="card empty-state text-center hidden">
                     <div class="empty-icon">🔍</div>
-                    <h3>No Providers Found</h3>
-                    <p class="text-muted">No verified providers matched your search parameters. Try clearing filters or using broader skill terms.</p>
+                    <h3>No Providers or Services Found</h3>
+                    <p class="text-muted">No verified offerings matched your current search parameters. Try clearing filters or searching for alternative tech stacks.</p>
                     <div class="empty-actions mt-3">
                         <button type="button" class="btn btn-outline" id="clearSearchStateBtn">Clear Filters</button>
                     </div>
@@ -138,7 +145,49 @@
         </div>
     </main>
 
-    <!-- Invite / Start Project Modal -->
+    <!-- Modal 1: Provider Profile & Capability Preview Modal -->
+    <div id="providerDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary" id="detailModalCategoryBadge">Technical Profile</span>
+                    <h3 class="modal-title mt-1" id="detailModalTitle">Provider Credentials</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeDetailModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="detailModalBody">
+                <div class="profile-header-summary mb-3" style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="profile-avatar avatar-provider" id="detailAvatar" style="width: 56px; height: 56px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">P</div>
+                    <div>
+                        <h4 style="margin: 0;" id="detailProviderName">Provider Name</h4>
+                        <div class="text-xs text-muted" id="detailProviderDomain">Software Engineering</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Professional Background &amp; Guarantees</label>
+                    <p class="text-sm text-muted" id="detailBio" style="line-height: 1.5;">Loading details...</p>
+                </div>
+
+                <div class="form-group mt-2">
+                    <label class="form-label">Verified Tech Stack</label>
+                    <div id="detailSkillsContainer" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+                </div>
+
+                <div class="meta-kv-group mt-3 p-2 border rounded" style="background: var(--bg-muted, #f8fafc);">
+                    <div class="kv-item"><span class="text-muted text-xs">Standard Hourly Rate:</span> <strong id="detailRate">$50/hr</strong></div>
+                    <div class="kv-item mt-1"><span class="text-muted text-xs">Standard Turnaround (SLA):</span> <strong id="detailDeliveryDays">14 Days</strong></div>
+                    <div class="kv-item mt-1"><span class="text-muted text-xs">Portfolio / Repo:</span> <a href="#" target="_blank" rel="noopener" id="detailPortfolioLink" style="font-size: 0.85rem; color: var(--primary);">View Public Profile</a></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDetailModalBtn">Close</button>
+                <button type="button" class="btn btn-primary" id="btnInviteFromDetail">➕ Invite to Scope Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Invite / Start Project Modal -->
     <div id="inviteModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalProviderTitle">
         <div class="modal-card">
             <div class="modal-header">
@@ -150,7 +199,6 @@
             </div>
             <form id="inviteProjectForm">
                 <div class="modal-body">
-                    <!-- Hidden attributes for pristine database mapping -->
                     <input type="hidden" id="selectedProviderId" name="providerId">
                     <input type="hidden" id="selectedProviderName" name="providerName">
                     <input type="hidden" id="selectedProviderDomain" name="providerDomain">
@@ -161,13 +209,13 @@
                             type="text" 
                             id="projectTitleInput" 
                             class="form-control" 
-                            placeholder="e.g., Cloud Inventory &amp; Supply Chain Microservice" 
+                            placeholder="e.g. Cloud Inventory &amp; Supply Chain Microservice" 
                             required
                         >
                     </div>
 
                     <div class="form-group mt-2">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
                             <div>
                                 <label for="projectCategorySelect" class="form-label">Project Domain *</label>
                                 <select id="projectCategorySelect" class="form-control" required>
@@ -200,13 +248,13 @@
                             id="projectSummaryInput" 
                             class="form-control" 
                             rows="4" 
-                            placeholder="Describe required technology stacks, expected deliverables, and estimated milestone timeline..." 
+                            placeholder="Describe required technology stacks, expected deliverables, and target milestone timeline..." 
                             required
                         ></textarea>
                     </div>
 
                     <p class="text-xs text-muted mt-2">
-                        🔒 Sending this invite initializes a collaborative Scope Workspace. Deliverables and milestones become immutable once both parties sign Agreement v1.0.
+                        🔒 Sending this invitation initiates a collaborative Scope Workspace. Deliverables and milestones become legally immutable once both parties sign Agreement v1.0.
                     </p>
                 </div>
 

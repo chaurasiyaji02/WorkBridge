@@ -3,8 +3,8 @@
  * File: js/pages/explorePage.js
  * 
  * Powered by direct Supabase PostgreSQL queries (`services` & `profiles` tables).
- * Supports real-time cross-device gig discovery, multi-criteria filtering,
- * and direct project invitation dispatching.
+ * Supports real-time gig discovery, provider profile credentials preview,
+ * dual filter toggling (Gigs vs Talent), and direct invitation dispatching.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -25,21 +25,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resetFilterBtn = document.getElementById('resetFilterBtn');
     const clearSearchStateBtn = document.getElementById('clearSearchStateBtn');
     const btnRefreshCatalog = document.getElementById('btnRefreshCatalog');
+    const filterPills = document.querySelectorAll('.filter-pill[data-type]');
+
+    // DOM Elements - Provider Profile Preview Modal
+    const providerDetailModal = document.getElementById('providerDetailModal');
+    const detailAvatar = document.getElementById('detailAvatar');
+    const detailProviderName = document.getElementById('detailProviderName');
+    const detailProviderDomain = document.getElementById('detailProviderDomain');
+    const detailBio = document.getElementById('detailBio');
+    const detailSkillsContainer = document.getElementById('detailSkillsContainer');
+    const detailRate = document.getElementById('detailRate');
+    const detailDeliveryDays = document.getElementById('detailDeliveryDays');
+    const detailPortfolioLink = document.getElementById('detailPortfolioLink');
+    const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
+    const cancelDetailModalBtn = document.getElementById('cancelDetailModalBtn');
+    const btnInviteFromDetail = document.getElementById('btnInviteFromDetail');
 
     // DOM Elements - Invitation Modal
     const inviteModal = document.getElementById('inviteModal');
     const inviteProjectForm = document.getElementById('inviteProjectForm');
     const selectedProviderIdInput = document.getElementById('selectedProviderId');
     const selectedProviderNameInput = document.getElementById('selectedProviderName');
+    const selectedProviderDomainInput = document.getElementById('selectedProviderDomain');
     const modalProviderTitle = document.getElementById('modalProviderTitle');
     const modalSubmitBtn = document.getElementById('modalSubmitBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const modalCancelBtn = document.getElementById('modalCancelBtn');
 
+    // In-memory Runtime State
     let allCatalogItems = [];
+    let currentFilterType = 'ALL';
+    let activePreviewItem = null;
 
     // Initialize Page
     await loadServicesCatalog();
+    setupEventListeners();
 
     // -------------------------------------------------------------------------
     // 1. Fetch Live Catalog directly from Supabase (`services` & `profiles`)
@@ -76,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rawServices = Array.isArray(servicesData) ? servicesData : [];
             const rawProfiles = Array.isArray(profilesData) ? profilesData : [];
 
-            // Format services posted via provider dashboard
+            // Format specialized services/gigs posted by providers
             const formattedServices = rawServices.map(svc => ({
                 id: svc.id,
                 providerId: svc.provider_id,
@@ -87,13 +107,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 hourlyRate: svc.hourly_rate || 50,
                 deliveryDays: svc.delivery_days || 14,
                 skills: parseSkills(svc.skills),
-                description: svc.description,
+                description: svc.description || 'Full technical service package with milestone-locked commitments.',
                 rating: Number(svc.average_rating || 5.0).toFixed(1),
                 createdAt: svc.created_at,
-                isLiveService: true
+                isLiveService: true,
+                type: 'GIGS'
             }));
 
-            // Format standalone provider profiles who haven't posted a specific gig yet
+            // Format standalone provider talent profiles
             const formattedProfiles = rawProfiles
                 .filter(prof => !formattedServices.some(s => s.providerId === prof.id))
                 .map(prof => ({
@@ -103,19 +124,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     title: prof.domain || 'Technical Service Provider',
                     domain: prof.domain || 'Software Engineering',
                     category: 'WEB_DEVELOPMENT',
-                    hourlyRate: 50,
+                    hourlyRate: prof.hourly_rate || 50,
                     deliveryDays: 14,
-                    skills: ['Full-Stack', 'APIs', 'Databases'],
+                    skills: parseSkills(prof.skills),
                     description: prof.bio || 'Verified provider on WorkBridge ready for milestone-locked technical delivery.',
                     rating: Number(prof.rating || 5.0).toFixed(1),
+                    githubUrl: prof.github_url || null,
+                    portfolioUrl: prof.portfolio_url || null,
                     createdAt: prof.created_at,
-                    isLiveService: false
+                    isLiveService: false,
+                    type: 'TALENT'
                 }));
 
-            // Combine both: Specific gigs first, then available provider profiles
             allCatalogItems = [...formattedServices, ...formattedProfiles];
-
-            renderCatalog(allCatalogItems);
+            applyFilters();
 
         } catch (error) {
             console.error('Failed to query Supabase catalog:', error);
@@ -157,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         providerGrid.innerHTML = '';
 
         if (resultsCount) {
-            resultsCount.textContent = `Showing ${items.length} verified technical offering${items.length === 1 ? '' : 's'}`;
+            resultsCount.textContent = `Showing ${items.length} verified offering${items.length === 1 ? '' : 's'}`;
         }
 
         if (items.length === 0) {
@@ -181,16 +203,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .join(' ');
 
             const serviceBadge = item.isLiveService 
-                ? `<span class="badge badge-success">⚡ Live Service Offering</span>`
-                : `<span class="badge badge-primary">Verified Provider</span>`;
+                ? `<span class="badge badge-success">⚡ Packaged Gig</span>`
+                : `<span class="badge badge-primary">Verified Engineer</span>`;
 
             card.innerHTML = `
                 <div>
                     <div class="provider-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
-                                <h3 class="card-title" style="font-size: 1.15rem; margin: 0;">
-                                    ${escapeHtml(item.providerName)}
+                                <h3 class="card-title btn-preview-profile" data-id="${item.providerId}" style="font-size: 1.15rem; margin: 0; cursor: pointer; color: var(--text-main);">
+                                    ${escapeHtml(item.providerName)} &nearr;
                                 </h3>
                                 ${serviceBadge}
                             </div>
@@ -215,19 +237,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="text-muted text-xs">Rate: <strong>$${item.hourlyRate}/hr</strong></span>
                         ${item.deliveryDays ? `<span class="text-muted text-xs ml-2">&bull; SLA: <strong>\${item.deliveryDays}d</strong></span>` : ''}
                     </div>
-                    <button type="button" class="btn btn-primary btn-sm btn-invite" 
-                        data-id="${item.providerId}" 
-                        data-name="${escapeHtml(item.providerName)}"
-                        data-domain="${escapeHtml(item.domain || item.title)}">
-                        + Start Project / Invite
-                    </button>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                        <button type="button" class="btn btn-outline btn-sm btn-preview-profile" data-id="${item.providerId}">
+                            Details
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm btn-invite" 
+                            data-id="${item.providerId}" 
+                            data-name="${escapeHtml(item.providerName)}"
+                            data-domain="${escapeHtml(item.domain || item.title)}">
+                            + Invite to Scope
+                        </button>
+                    </div>
                 </div>
             `;
 
             providerGrid.appendChild(card);
         });
 
-        // Wire click listeners for "+ Start Project / Invite"
+        // Wire click listeners for "+ Invite to Scope"
         providerGrid.querySelectorAll('.btn-invite').forEach(btn => {
             btn.addEventListener('click', () => {
                 const providerId = btn.getAttribute('data-id');
@@ -236,10 +263,76 @@ document.addEventListener('DOMContentLoaded', async () => {
                 handleInviteClick(providerId, providerName, providerDomain);
             });
         });
+
+        // Wire click listeners for "Details" / Name click
+        providerGrid.querySelectorAll('.btn-preview-profile').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pid = btn.getAttribute('data-id');
+                const item = allCatalogItems.find(i => String(i.providerId) === String(pid));
+                if (item) openDetailModal(item);
+            });
+        });
     }
 
     // -------------------------------------------------------------------------
-    // 3. Multi-Criteria Filtering Logic
+    // 3. Provider Details Preview Modal Logic
+    // -------------------------------------------------------------------------
+    function openDetailModal(item) {
+        if (!providerDetailModal) return;
+        activePreviewItem = item;
+
+        if (detailAvatar) detailAvatar.textContent = (item.providerName || 'P').charAt(0).toUpperCase();
+        if (detailProviderName) detailProviderName.textContent = item.providerName || 'Provider';
+        if (detailProviderDomain) detailProviderDomain.textContent = item.domain || item.title || 'Software Engineering';
+        if (detailBio) detailBio.textContent = item.description || 'Verified technology provider with milestone-locked delivery commitments.';
+        if (detailRate) detailRate.textContent = `$${item.hourlyRate || 50}/hr`;
+        if (detailDeliveryDays) detailDeliveryDays.textContent = `${item.deliveryDays || 14} Days SLA`;
+
+        if (detailSkillsContainer) {
+            detailSkillsContainer.innerHTML = item.skills
+                .map(s => `<span class="badge badge-subtle">${escapeHtml(s)}</span>`)
+                .join('');
+        }
+
+        if (detailPortfolioLink) {
+            const linkUrl = item.portfolioUrl || item.githubUrl;
+            if (linkUrl) {
+                detailPortfolioLink.href = linkUrl;
+                detailPortfolioLink.textContent = linkUrl;
+                detailPortfolioLink.style.display = 'inline';
+            } else {
+                detailPortfolioLink.textContent = 'Verified on WorkBridge Platform';
+                detailPortfolioLink.removeAttribute('href');
+            }
+        }
+
+        providerDetailModal.classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+        if (providerDetailModal) providerDetailModal.classList.add('hidden');
+        activePreviewItem = null;
+    }
+
+    if (closeDetailModalBtn) closeDetailModalBtn.addEventListener('click', closeDetailModal);
+    if (cancelDetailModalBtn) cancelDetailModalBtn.addEventListener('click', closeDetailModal);
+    if (providerDetailModal) {
+        providerDetailModal.addEventListener('click', (e) => {
+            if (e.target === providerDetailModal) closeDetailModal();
+        });
+    }
+
+    if (btnInviteFromDetail) {
+        btnInviteFromDetail.addEventListener('click', () => {
+            if (!activePreviewItem) return;
+            const item = activePreviewItem;
+            closeDetailModal();
+            handleInviteClick(item.providerId, item.providerName, item.domain);
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Multi-Criteria Filtering Logic
     // -------------------------------------------------------------------------
     function applyFilters() {
         const query = (searchInput?.value || '').toLowerCase().trim();
@@ -247,6 +340,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const minRating = parseFloat(minRatingFilter?.value) || 0;
 
         const filtered = allCatalogItems.filter(item => {
+            // Pill filter match
+            if (currentFilterType !== 'ALL' && item.type !== currentFilterType) {
+                return false;
+            }
+
             const providerName = (item.providerName || '').toLowerCase();
             const description = (item.description || '').toLowerCase();
             const title = (item.title || '').toLowerCase();
@@ -270,40 +368,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCatalog(filtered);
     }
 
-    if (filterForm) {
-        filterForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+    function setupEventListeners() {
+        // Pill Buttons
+        filterPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                filterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                currentFilterType = pill.getAttribute('data-type') || 'ALL';
+                applyFilters();
+            });
+        });
+
+        if (filterForm) {
+            filterForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                applyFilters();
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
+        if (minRatingFilter) minRatingFilter.addEventListener('change', applyFilters);
+
+        function resetFilters() {
+            if (searchInput) searchInput.value = '';
+            if (categoryFilter) categoryFilter.value = '';
+            if (minRatingFilter) minRatingFilter.value = '0';
+            currentFilterType = 'ALL';
+            filterPills.forEach(p => p.classList.toggle('active', p.getAttribute('data-type') === 'ALL'));
             applyFilters();
-        });
-    }
+        }
 
-    if (searchInput) searchInput.addEventListener('input', applyFilters);
-    if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
-    if (minRatingFilter) minRatingFilter.addEventListener('change', applyFilters);
+        if (resetFilterBtn) resetFilterBtn.addEventListener('click', resetFilters);
+        if (clearSearchStateBtn) clearSearchStateBtn.addEventListener('click', resetFilters);
 
-    function resetFilters() {
-        if (searchInput) searchInput.value = '';
-        if (categoryFilter) categoryFilter.value = '';
-        if (minRatingFilter) minRatingFilter.value = '0';
-        renderCatalog(allCatalogItems);
-    }
-
-    if (resetFilterBtn) resetFilterBtn.addEventListener('click', resetFilters);
-    if (clearSearchStateBtn) clearSearchStateBtn.addEventListener('click', resetFilters);
-
-    if (btnRefreshCatalog) {
-        btnRefreshCatalog.addEventListener('click', async () => {
-            btnRefreshCatalog.disabled = true;
-            btnRefreshCatalog.style.opacity = '0.6';
-            await loadServicesCatalog();
-            if (window.Toast) window.Toast.info('Catalog synced with cloud.');
-            btnRefreshCatalog.disabled = false;
-            btnRefreshCatalog.style.opacity = '1';
-        });
+        if (btnRefreshCatalog) {
+            btnRefreshCatalog.addEventListener('click', async () => {
+                btnRefreshCatalog.disabled = true;
+                btnRefreshCatalog.style.opacity = '0.6';
+                await loadServicesCatalog();
+                if (window.Toast) window.Toast.info('Marketplace synchronized.');
+                btnRefreshCatalog.disabled = false;
+                btnRefreshCatalog.style.opacity = '1';
+            });
+        }
     }
 
     // -------------------------------------------------------------------------
-    // 4. Project Invitation Modal & Direct Supabase Insertion
+    // 5. Project Invitation Modal & Direct Supabase Insertion
     // -------------------------------------------------------------------------
     function handleInviteClick(providerId, providerName, providerDomain) {
         const isLoggedIn = window.AuthState ? window.AuthState.isLoggedIn() : false;
@@ -324,11 +436,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (selectedProviderIdInput) selectedProviderIdInput.value = providerId;
         if (selectedProviderNameInput) selectedProviderNameInput.value = providerName;
+        if (selectedProviderDomainInput) selectedProviderDomainInput.value = providerDomain || '';
         if (modalProviderTitle) modalProviderTitle.textContent = `Invite ${providerName} to Scope Project`;
 
         const categorySelect = document.getElementById('projectCategorySelect');
         if (categorySelect && providerDomain) {
-            categorySelect.value = providerDomain.includes('BACKEND') ? 'BACKEND' : 'WEB_DEVELOPMENT';
+            const domainUpper = providerDomain.toUpperCase();
+            if (domainUpper.includes('BACKEND')) categorySelect.value = 'BACKEND';
+            else if (domainUpper.includes('FRONTEND')) categorySelect.value = 'FRONTEND';
+            else if (domainUpper.includes('MOBILE')) categorySelect.value = 'MOBILE';
+            else if (domainUpper.includes('DEVOPS')) categorySelect.value = 'DEVOPS';
+            else if (domainUpper.includes('AI')) categorySelect.value = 'AI';
+            else categorySelect.value = 'WEB_DEVELOPMENT';
         }
 
         if (inviteModal) {
@@ -352,7 +471,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Submit Invitation -> Directly Insert into Supabase `projects`
+    // 6. Submit Invitation -> Directly Insert into Supabase `projects`
     // -------------------------------------------------------------------------
     if (inviteProjectForm) {
         inviteProjectForm.addEventListener('submit', async (e) => {
@@ -452,7 +571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof skills === 'string' && skills.trim()) {
             return skills.split(',').map(s => s.trim()).filter(Boolean);
         }
-        return ['Java', 'Spring Boot', 'JavaScript'];
+        return ['Java', 'Spring Boot', 'PostgreSQL', 'JavaScript'];
     }
 
     function escapeHtml(str) {

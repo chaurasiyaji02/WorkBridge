@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Manage your WorkBridge profile details and technical capabilities.">
+    <meta name="description" content="Manage your WorkBridge account profile details and specialized capabilities.">
     <title>Profile Settings | WorkBridge</title>
     
     <!-- CSS Foundations -->
@@ -34,85 +34,138 @@
     </header>
 
     <main class="page-main">
-        <div class="container" style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+        <div class="container" style="max-width: 860px; margin: 0 auto; padding: 2rem 1rem;">
             
             <!-- Breadcrumbs -->
             <div class="project-meta-breadcrumbs mb-2">
                 <a href="javascript:history.back()" class="text-link" id="backToDashboardLink">&larr; Back to Dashboard</a>
                 <span class="breadcrumb-separator">/</span>
                 <span class="badge badge-subtle">Settings</span>
+                <span class="badge badge-primary ml-1" id="roleIndicatorBadge">Loading Role...</span>
             </div>
 
             <!-- Page Title -->
             <div class="dashboard-header-row mb-3">
                 <div>
                     <h1 class="page-title">Profile &amp; Capability Settings</h1>
-                    <p class="text-muted">Update your display details, technical domain, and offering portfolio.</p>
-                </div>
-                <div>
-                    <span class="badge badge-primary" id="roleIndicatorBadge">Loading Role...</span>
+                    <p class="text-muted">Customize your public identity, domain specializations, and verification credentials.</p>
                 </div>
             </div>
 
             <!-- Profile Settings Card -->
             <div class="card mt-3">
                 <form id="profileSettingsForm">
+
+                    <!-- Avatar & Identity Row -->
+                    <div class="profile-header-summary mb-3" style="display: flex; align-items: center; gap: 1.25rem;">
+                        <div class="profile-avatar avatar-provider" id="settingsAvatarPreview" style="width: 64px; height: 64px; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">
+                            U
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;" id="settingsHeaderName">Account Name</h3>
+                            <span class="text-xs text-muted" id="settingsRoleSubtext">WorkBridge Verified Member</span>
+                        </div>
+                    </div>
                     
-                    <!-- Identity Section -->
-                    <div class="form-group">
-                        <label for="profileFullName" class="form-label">Full Name / Organization Name *</label>
-                        <input type="text" id="profileFullName" class="form-control" placeholder="e.g., Alex Johnson or TechNova Solutions" required>
-                    </div>
+                    <!-- Basic Identity Section -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                        <div class="form-group">
+                            <label for="profileFullName" class="form-label">Full Name / Display Name *</label>
+                            <input type="text" id="profileFullName" class="form-control" placeholder="e.g. Alex Johnson or Apex Systems" required>
+                        </div>
 
-                    <div class="form-group mt-2">
-                        <label for="profileEmail" class="form-label">Account Email</label>
-                        <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.7; cursor: not-allowed;">
-                        <span class="text-xs text-muted">Email is tied to your account authentication and cannot be changed.</span>
+                        <div class="form-group">
+                            <label for="profileEmail" class="form-label">Account Email (Immutable)</label>
+                            <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.7; cursor: not-allowed;">
+                        </div>
                     </div>
 
                     <!-- ========================================== -->
-                    <!-- PROVIDER SPECIALIZED FIELDS (Dynamic)      -->
+                    <!-- CLIENT-SPECIFIC FIELDS                     -->
                     <!-- ========================================== -->
-                    <div id="providerSpecializedFields" class="hidden">
-                        
+                    <div id="clientSpecializedFields" class="hidden mt-3">
                         <div class="profile-divider my-3"></div>
-                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🛠️ Provider Technical Services &amp; Domain</h4>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🏢 Client Organization &amp; Project Preferences</h4>
 
-                        <div class="form-group mt-2">
-                            <label for="providerDomainSelect" class="form-label">Primary Technical Domain *</label>
-                            <select id="providerDomainSelect" class="form-control">
-                                <option value="Full-Stack Web Development">Full-Stack Web Development</option>
-                                <option value="Backend Engineering & Cloud">Backend Engineering &amp; Cloud</option>
-                                <option value="Frontend & UI/UX Design">Frontend &amp; UI/UX Design</option>
-                                <option value="Mobile App Development">Mobile App Development</option>
-                                <option value="AI & Data Engineering">AI &amp; Data Engineering</option>
-                                <option value="DevOps & Infrastructure">DevOps &amp; Infrastructure</option>
-                                <option value="Security Architecture & Audit">Security Architecture &amp; Audit</option>
-                            </select>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                            <div class="form-group">
+                                <label for="clientCompanyNameInput" class="form-label">Company / Brand Name</label>
+                                <input type="text" id="clientCompanyNameInput" class="form-control" placeholder="e.g. Acme Health Technologies">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="clientIndustrySelect" class="form-label">Primary Industry</label>
+                                <select id="clientIndustrySelect" class="form-control">
+                                    <option value="Software & IT">Software &amp; IT</option>
+                                    <option value="Fintech & Banking">Fintech &amp; Banking</option>
+                                    <option value="Healthcare & Bio">Healthcare &amp; Bio</option>
+                                    <option value="E-Commerce & Retail">E-Commerce &amp; Retail</option>
+                                    <option value="EdTech & Education">EdTech &amp; Education</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-group mt-2">
-                            <label for="providerSkillsInput" class="form-label">Key Skills &amp; Frameworks (Comma separated)</label>
-                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="e.g., Spring Boot, React, PostgreSQL, Docker, AWS">
+                            <label for="clientWebsiteInput" class="form-label">Company Website / Project Link</label>
+                            <input type="url" id="clientWebsiteInput" class="form-control" placeholder="https://example.com">
                         </div>
-
-                        <div class="form-group mt-2">
-                            <label for="providerHourlyRateInput" class="form-label">Standard Rate ($ USD / hr or project base)</label>
-                            <input type="number" id="providerHourlyRateInput" class="form-control" placeholder="e.g., 45" min="0">
-                        </div>
-
                     </div>
 
-                    <!-- Common Bio / Company Summary -->
-                    <div class="form-group mt-2">
-                        <label for="profileBioInput" class="form-label" id="bioLabel">About / Professional Bio</label>
-                        <textarea id="profileBioInput" class="form-control" rows="4" placeholder="Describe your experience, technical background, past projects, or collaboration expectations..."></textarea>
+                    <!-- ========================================== -->
+                    <!-- PROVIDER-SPECIFIC FIELDS                   -->
+                    <!-- ========================================== -->
+                    <div id="providerSpecializedFields" class="hidden mt-3">
+                        <div class="profile-divider my-3"></div>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🛠️ Provider Technical Domain &amp; Offerings</h4>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                            <div class="form-group">
+                                <label for="providerDomainSelect" class="form-label">Primary Specialization Domain *</label>
+                                <select id="providerDomainSelect" class="form-control">
+                                    <option value="Full-Stack Web Development">Full-Stack Web Development</option>
+                                    <option value="Backend Engineering & Cloud">Backend Engineering &amp; Cloud</option>
+                                    <option value="Frontend & UI/UX Design">Frontend &amp; UI/UX Design</option>
+                                    <option value="Mobile App Development">Mobile App Development</option>
+                                    <option value="AI & Data Engineering">AI &amp; Data Engineering</option>
+                                    <option value="DevOps & Infrastructure">DevOps &amp; Infrastructure</option>
+                                    <option value="Security Architecture & Audit">Security Architecture &amp; Audit</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="providerHourlyRateInput" class="form-label">Base Hourly Rate ($ USD / hr)</label>
+                                <input type="number" id="providerHourlyRateInput" class="form-control" placeholder="50" min="10" value="50">
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-2">
+                            <label for="providerSkillsInput" class="form-label">Key Skills &amp; Tech Stack (Comma-separated) *</label>
+                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="Spring Boot, Java 21, PostgreSQL, React, Docker, JWT">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
+                            <div class="form-group">
+                                <label for="providerGithubInput" class="form-label">GitHub / Repository Profile</label>
+                                <input type="url" id="providerGithubInput" class="form-control" placeholder="https://github.com/username">
+                            </div>
+                            <div class="form-group">
+                                <label for="providerPortfolioInput" class="form-label">Portfolio / Live Deployment Link</label>
+                                <input type="url" id="providerPortfolioInput" class="form-control" placeholder="https://myportfolio.dev">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Common Professional Bio -->
+                    <div class="form-group mt-3">
+                        <label for="profileBioInput" class="form-label" id="bioLabel">About / Professional Overview *</label>
+                        <textarea id="profileBioInput" class="form-control" rows="4" placeholder="Describe your experience, technical guarantees, and collaboration standards..." required></textarea>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="modal-footer mt-4" style="padding-top: 1rem; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 0.75rem;">
                         <button type="button" class="btn btn-secondary" id="btnCancelProfile">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="btnSaveProfile">Save Changes</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveProfile">Save Profile Changes</button>
                     </div>
 
                 </form>
@@ -124,10 +177,11 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts Pipeline -->
+    <!-- Scripts Pipeline (Supabase First) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
-    <script src="js/api/apiClient.js"></script>
     <script src="js/components/navbar.js"></script>
     <script src="js/components/toast.js"></script>
     <script src="js/pages/profileSettingsPage.js"></script>

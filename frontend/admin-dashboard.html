@@ -50,7 +50,7 @@
                 <div class="profile-divider"></div>
                 <div class="profile-stat-row">
                     <span class="text-muted">Cloud DB:</span>
-                    <strong class="text-success">Neon Live</strong>
+                    <strong class="text-success" id="adminDbStatus">PostgreSQL Cloud Live</strong>
                 </div>
             </div>
 
@@ -73,9 +73,9 @@
                     <h1 class="page-title">Platform Governance</h1>
                     <p class="text-muted">Monitor platform health, verify service providers, and resolve safety flags.</p>
                 </div>
-                <div class="header-action-group">
+                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center;">
                     <button type="button" class="btn btn-outline" id="refreshAdminBtn" title="Sync live records">
-                        <span class="btn-icon">🔄</span> Sync
+                        <span class="btn-icon">🔄</span> Sync Live
                     </button>
                 </div>
             </div>
@@ -118,11 +118,11 @@
 
                 <div class="card mt-3">
                     <h3 class="card-title">System Status &amp; Integrity</h3>
-                    <p class="text-muted text-sm mt-1">WorkBridge engine operating with stateless JWT and Neon PostgreSQL cloud storage.</p>
+                    <p class="text-muted text-sm mt-1">WorkBridge engine operating with stateless token verification and Supabase PostgreSQL storage.</p>
                     <div class="meta-kv-group mt-3">
-                        <div class="kv-item"><span class="text-muted">Spring Security:</span> <strong class="text-success">Active (Stateless JWT)</strong></div>
-                        <div class="kv-item mt-1"><span class="text-muted">Scope Version Engine:</span> <strong class="text-success">Enforced (v1.0 Immutable)</strong></div>
-                        <div class="kv-item mt-1"><span class="text-muted">API Host:</span> <strong>Render Web Service</strong></div>
+                        <div class="kv-item"><span class="text-muted">Security Engine:</span> <strong class="text-success">Active (Role-Based Access)</strong></div>
+                        <div class="kv-item mt-1"><span class="text-muted">Scope Version Engine:</span> <strong class="text-success">Enforced (SHA-256 Protocol)</strong></div>
+                        <div class="kv-item mt-1"><span class="text-muted">Persistence Layer:</span> <strong>Supabase Cloud PostgreSQL</strong></div>
                     </div>
                 </div>
             </section>
@@ -141,9 +141,9 @@
                         <thead>
                             <tr>
                                 <th>Provider Name</th>
-                                <th>Category</th>
+                                <th>Category / Domain</th>
                                 <th>Skills</th>
-                                <th>Rating</th>
+                                <th>Reputation</th>
                                 <th>Status</th>
                                 <th class="text-right">Action</th>
                             </tr>
@@ -229,6 +229,10 @@
             </div>
             <div class="modal-body" id="adminActionModalBody">
                 <p id="adminModalMessage">Confirm resolution for this governance item.</p>
+                <div class="form-group mt-2">
+                    <label for="adminActionNotes" class="form-label">Resolution / Audit Log Notes</label>
+                    <textarea id="adminActionNotes" class="form-control" rows="3" placeholder="Enter reason or compliance remarks..."></textarea>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancelAdminModalBtn">Cancel</button>
@@ -240,7 +244,9 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts Pipeline (Strict Dependency Order) -->
+    <!-- Scripts Pipeline (Supabase First) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
@@ -249,7 +255,6 @@
     <script src="js/components/toast.js"></script>
     <script src="js/pages/adminDashboardPage.js"></script>
     <script>
-        // Inline lightweight tab switcher & route guard for Admin
         document.addEventListener('DOMContentLoaded', () => {
             const { ROLES } = window.APP_CONFIG || { ROLES: { ADMIN: 'ADMIN' } };
             if (window.AuthState && typeof window.AuthState.requireAuth === 'function') {
@@ -271,7 +276,6 @@
                 });
             });
         });
-        
     </script>
 </body>
 </html>

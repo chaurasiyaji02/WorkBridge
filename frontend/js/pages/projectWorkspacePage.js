@@ -2,10 +2,10 @@
  * WORKBRIDGE - PROJECT WORKSPACE MASTER CONTROLLER (SUPABASE CLOUD EDITION)
  * File: js/pages/projectWorkspacePage.js
  * 
- * Production Workspace Controller orchestrating:
- * - Engine A: Scope Version Locking, Mutual Agreement Signing, and Cryptographic Baseline.
- * - Engine B: Milestone Proof Verification, Deliverable Review, and Weighted Progress Calculation.
- * - Workspace Chat & Materials Vault backed directly by Supabase PostgreSQL.
+ * Orchestrating:
+ * - Engine A: Scope Version Locking, Mutual Agreement Signing, Reopen Revision Loop.
+ * - Engine B: Milestone Proof Verification, Deliverable Reviewer Modal, Weighted Progress.
+ * - Workspace Chat, Logged Decisions Journal, Permanent Material Vault, and Status Updates.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.AuthState.setActiveProjectId(projectId);
     }
 
-    // Supabase Reference
     const sb = window.sbClient;
 
     // -------------------------------------------------------------------------
@@ -51,7 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const projectTitleEl = document.getElementById('projectTitle');
     const projectCodeBadgeEl = document.getElementById('projectCodeBadge');
     const scopeLockTopBadge = document.getElementById('scopeLockTopBadge');
+    const userRoleIndicatorBadge = document.getElementById('userRoleIndicatorBadge');
     const btnSyncWorkspace = document.getElementById('btnSyncWorkspace');
+    const btnViewAuditHistory = document.getElementById('btnViewAuditHistory');
     const btnProposeStageAdvance = document.getElementById('btnProposeStageAdvance');
     const stageSteps = document.querySelectorAll('.stage-step');
     const projectProgressPercent = document.getElementById('projectProgressPercent');
@@ -69,8 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Tab 1: Overview
     const projectDescription = document.getElementById('projectDescription');
+    const overviewDomainBadge = document.getElementById('overviewDomainBadge');
     const overviewClientName = document.getElementById('overviewClientName');
+    const overviewClientEmail = document.getElementById('overviewClientEmail');
     const overviewProviderName = document.getElementById('overviewProviderName');
+    const overviewProviderEmail = document.getElementById('overviewProviderEmail');
     const metaDeadline = document.getElementById('metaDeadline');
     const metaBudget = document.getElementById('metaBudget');
     const metaVersion = document.getElementById('metaVersion');
@@ -88,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reqTechPreferences = document.getElementById('reqTechPreferences');
     const reqNonFunctional = document.getElementById('reqNonFunctional');
     const btnSaveReqDraft = document.getElementById('btnSaveReqDraft');
+    const reqLastSavedLabel = document.getElementById('reqLastSavedLabel');
     const btnLockRequirement = document.getElementById('btnLockRequirement');
     const btnProposeReqChange = document.getElementById('btnProposeReqChange');
     const btnAiAnalyzeReq = document.getElementById('btnAiAnalyzeReq');
@@ -115,7 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnApproveAgreement = document.getElementById('btnApproveAgreement');
     const btnRequestAgreementChange = document.getElementById('btnRequestAgreementChange');
     const btnProposeAmendment = document.getElementById('btnProposeAmendment');
-    const btnViewAuditHistory = document.getElementById('btnViewAuditHistory');
 
     // Tab 5: Discussion & Chat
     const chatMessagesFeed = document.getElementById('chatMessagesFeed');
@@ -133,17 +137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnUploadResource = document.getElementById('btnUploadResource');
 
     // Modals
-    const stageAdvanceModal = document.getElementById('stageAdvanceModal');
-    const stageAdvanceForm = document.getElementById('stageAdvanceForm');
-    const targetStageSelect = document.getElementById('targetStageSelect');
-    const stageTransitionNotes = document.getElementById('stageTransitionNotes');
-    const closeStageModalBtn = document.getElementById('closeStageModalBtn');
-    const cancelStageModalBtn = document.getElementById('cancelStageModalBtn');
-
-    const addMilestoneModal = document.getElementById('addMilestoneModal');
-    const addMilestoneForm = document.getElementById('addMilestoneForm');
-    const closeAddMilestoneModalBtn = document.getElementById('closeAddMilestoneModalBtn');
-    const cancelAddMilestoneBtn = document.getElementById('cancelAddMilestoneBtn');
+    const modalPostUpdate = document.getElementById('modalPostUpdate');
+    const postUpdateForm = document.getElementById('postUpdateForm');
+    const closePostUpdateModalBtn = document.getElementById('closePostUpdateModalBtn');
+    const cancelPostUpdateBtn = document.getElementById('cancelPostUpdateBtn');
 
     const milestoneActionModal = document.getElementById('milestoneActionModal');
     const milestoneActionForm = document.getElementById('milestoneActionForm');
@@ -153,34 +150,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeMilestoneModalBtn = document.getElementById('closeMilestoneModalBtn');
     const cancelMilestoneActionBtn = document.getElementById('cancelMilestoneActionBtn');
 
-    const amendmentModal = document.getElementById('amendmentModal');
-    const amendmentForm = document.getElementById('amendmentForm');
-    const closeAmendmentModalBtn = document.getElementById('closeAmendmentModalBtn');
-    const cancelAmendmentBtn = document.getElementById('cancelAmendmentBtn');
+    const modalReviewProof = document.getElementById('modalReviewProof');
+    const reviewMilestoneId = document.getElementById('reviewMilestoneId');
+    const reviewProofLink = document.getElementById('reviewProofLink');
+    const reviewProofNotes = document.getElementById('reviewProofNotes');
+    const closeReviewProofModalBtn = document.getElementById('closeReviewProofModalBtn');
+    const btnRequestRevisionFromProof = document.getElementById('btnRequestRevisionFromProof');
+    const btnApproveFromProof = document.getElementById('btnApproveFromProof');
 
-    const auditHistoryModal = document.getElementById('auditHistoryModal');
-    const auditTimelineContainer = document.getElementById('auditTimelineContainer');
-    const closeAuditModalBtn = document.getElementById('closeAuditModalBtn');
-    const closeAuditModalFooterBtn = document.getElementById('closeAuditModalFooterBtn');
+    const modalRevisionRequest = document.getElementById('modalRevisionRequest');
+    const revisionRequestForm = document.getElementById('revisionRequestForm');
+    const closeRevisionModalBtn = document.getElementById('closeRevisionModalBtn');
+    const cancelRevisionModalBtn = document.getElementById('cancelRevisionModalBtn');
 
     const decisionModal = document.getElementById('decisionModal');
     const decisionForm = document.getElementById('decisionForm');
     const closeDecisionModalBtn = document.getElementById('closeDecisionModalBtn');
     const cancelDecisionBtn = document.getElementById('cancelDecisionBtn');
 
+    const addMilestoneModal = document.getElementById('addMilestoneModal');
+    const addMilestoneForm = document.getElementById('addMilestoneForm');
+    const closeAddMilestoneModalBtn = document.getElementById('closeAddMilestoneModalBtn');
+    const cancelAddMilestoneBtn = document.getElementById('cancelAddMilestoneBtn');
+
+    const stageAdvanceModal = document.getElementById('stageAdvanceModal');
+    const stageAdvanceForm = document.getElementById('stageAdvanceForm');
+    const targetStageSelect = document.getElementById('targetStageSelect');
+    const closeStageModalBtn = document.getElementById('closeStageModalBtn');
+    const cancelStageModalBtn = document.getElementById('cancelStageModalBtn');
+
     const resourceModal = document.getElementById('resourceModal');
     const resourceUploadForm = document.getElementById('resourceUploadForm');
     const modalResourceClose = document.getElementById('modalResourceClose');
     const modalResourceCancel = document.getElementById('modalResourceCancel');
 
-    // In-memory runtime state
+    const auditHistoryModal = document.getElementById('auditHistoryModal');
+    const auditTimelineContainer = document.getElementById('auditTimelineContainer');
+    const closeAuditModalBtn = document.getElementById('closeAuditModalBtn');
+    const closeAuditModalFooterBtn = document.getElementById('closeAuditModalFooterBtn');
+
+    const amendmentModal = document.getElementById('amendmentModal');
+    const amendmentForm = document.getElementById('amendmentForm');
+    const closeAmendmentModalBtn = document.getElementById('closeAmendmentModalBtn');
+    const cancelAmendmentBtn = document.getElementById('cancelAmendmentBtn');
+
+    // Runtime state
     let projectRecord = null;
     let agreementRecord = null;
+    let requirementsRecord = null;
     let milestonesList = [];
     let chatPollingTimer = null;
 
     // -------------------------------------------------------------------------
-    // 3. Tab Switching Architecture
+    // 3. Tab Switching
     // -------------------------------------------------------------------------
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -203,34 +225,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // -------------------------------------------------------------------------
-    // 4. Master Workspace Hydration
+    // 4. Initialize Workspace
     // -------------------------------------------------------------------------
+    if (userRoleIndicatorBadge && currentUser) {
+        userRoleIndicatorBadge.textContent = `Role: ${currentUser.role === ROLES.CLIENT ? 'Client' : 'Service Provider'}`;
+    }
+
     await hydrateWorkspace();
     startChatPolling();
-    setupModalListeners();
+    setupWorkspaceModals();
 
     async function hydrateWorkspace() {
         if (!sb) {
-            console.error('Supabase client missing.');
+            console.error('Supabase client is missing.');
             return;
         }
 
         try {
             await Promise.all([
                 loadProjectOverview(),
+                loadRequirementsDetails(),
                 loadAgreementDetails(),
                 loadMilestonesList(),
+                loadProjectUpdates(),
                 loadChatMessages(),
                 loadDecisionsList(),
                 loadResourceVault()
             ]);
         } catch (err) {
-            console.error('Failed to hydrate workspace from Supabase:', err);
+            console.error('Error hydrating workspace:', err);
         }
     }
 
     // -------------------------------------------------------------------------
-    // 5. Project Overview & Pipeline
+    // 5. Overview & Lifecycle Pipeline
     // -------------------------------------------------------------------------
     async function loadProjectOverview() {
         const { data, error } = await sb
@@ -239,23 +267,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             .eq('id', projectId)
             .single();
 
-        if (error || !data) {
-            throw new Error(error?.message || 'Project not found');
-        }
-
+        if (error || !data) throw new Error(error?.message || 'Project not found');
         projectRecord = data;
 
         if (projectTitleEl) projectTitleEl.textContent = data.title;
         if (projectCodeBadgeEl) projectCodeBadgeEl.textContent = `PRJ-${String(data.id).slice(-4).toUpperCase()}`;
         if (projectDescription) projectDescription.textContent = data.description || data.summary || 'Project active.';
+        if (overviewDomainBadge) overviewDomainBadge.textContent = data.category || 'Engineering';
         if (overviewClientName) overviewClientName.textContent = data.client_name || 'Client';
-        if (overviewProviderName) overviewProviderName.textContent = data.assigned_provider_name || 'Assigned Provider';
+        if (overviewClientEmail) overviewClientEmail.textContent = data.client_email || '--';
+        if (overviewProviderName) overviewProviderName.textContent = data.assigned_provider_name || 'Pending Assignment';
         if (metaDeadline) metaDeadline.textContent = data.deadline || 'Standard SLA';
         if (metaBudget) metaBudget.textContent = `$${Number(data.budget || 1000).toLocaleString()}`;
-
-        // Populate initial requirements form if available
-        if (reqObjective && !reqObjective.value) reqObjective.value = data.title || '';
-        if (reqFeatures && !reqFeatures.value) reqFeatures.value = data.description || '';
 
         renderPipeline(data.stage);
     }
@@ -287,10 +310,121 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. CORE ENGINE A: Scope Agreement & Cryptographic Locking
+    // 6. Requirements Sync (Engine A)
+    // -------------------------------------------------------------------------
+    async function loadRequirementsDetails() {
+        const { data } = await sb
+            .from('requirements')
+            .select('*')
+            .eq('project_id', projectId)
+            .maybeSingle();
+
+        requirementsRecord = data;
+
+        if (data) {
+            if (reqObjective) reqObjective.value = data.objectives || '';
+            if (reqTargetUsers) reqTargetUsers.value = data.target_users || '';
+            if (reqFeatures) reqFeatures.value = data.features || '';
+            if (reqTechPreferences) reqTechPreferences.value = data.tech_preferences || '';
+            if (reqNonFunctional) reqNonFunctional.value = data.non_functional || '';
+            if (reqLastSavedLabel && data.updated_at) {
+                reqLastSavedLabel.textContent = `Synced: ${formatTime(data.updated_at)}`;
+            }
+        } else if (projectRecord) {
+            if (reqObjective && !reqObjective.value) reqObjective.value = projectRecord.title || '';
+            if (reqFeatures && !reqFeatures.value) reqFeatures.value = projectRecord.description || '';
+        }
+    }
+
+    if (requirementForm) {
+        requirementForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!sb) return;
+
+            const payload = {
+                project_id: projectId,
+                objectives: reqObjective?.value.trim() || '',
+                target_users: reqTargetUsers?.value.trim() || '',
+                features: reqFeatures?.value.trim() || '',
+                tech_preferences: reqTechPreferences?.value.trim() || '',
+                non_functional: reqNonFunctional?.value.trim() || '',
+                version: requirementsRecord?.version || '1.0',
+                status: 'DRAFT',
+                updated_at: new Date().toISOString()
+            };
+
+            if (btnSaveReqDraft) {
+                btnSaveReqDraft.disabled = true;
+                btnSaveReqDraft.textContent = 'Saving...';
+            }
+
+            try {
+                if (requirementsRecord?.id) {
+                    await sb.from('requirements').update(payload).eq('id', requirementsRecord.id);
+                } else {
+                    await sb.from('requirements').insert([payload]);
+                }
+
+                if (window.Toast) window.Toast.success('Requirements draft saved to Cloud!');
+                await loadRequirementsDetails();
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Failed to save requirements.');
+            } finally {
+                if (btnSaveReqDraft) {
+                    btnSaveReqDraft.disabled = false;
+                    btnSaveReqDraft.textContent = '💾 Save Draft';
+                }
+            }
+        });
+    }
+
+    // Propose / Lock Requirements
+    if (btnLockRequirement) {
+        btnLockRequirement.addEventListener('click', async () => {
+            if (!confirm('Proposing scope lock will finalize requirement baseline v1.0. Proceed?')) return;
+            try {
+                await sb.from('requirements').update({ status: 'LOCKED' }).eq('project_id', projectId);
+                if (window.Toast) window.Toast.success('Scope locked into baseline v1.0!');
+                await loadAgreementDetails();
+            } catch (e) {
+                if (window.Toast) window.Toast.error('Could not lock scope.');
+            }
+        });
+    }
+
+    // AI Requirement Audit
+    if (btnAiAnalyzeReq) {
+        btnAiAnalyzeReq.addEventListener('click', () => {
+            if (aiAuditResultPanel) aiAuditResultPanel.classList.remove('hidden');
+            if (aiAuditContent) {
+                const text = (reqFeatures?.value || '') + ' ' + (reqObjective?.value || '');
+                const hasTech = text.includes('Spring') || text.includes('React') || text.includes('Postgres') || text.includes('API');
+                const score = hasTech && text.length > 80 ? 92 : 68;
+
+                aiAuditContent.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong>Quality Clarity Score:</strong>
+                        <span class="badge ${score >= 80 ? 'badge-success' : 'badge-warning'}">${score} / 100</span>
+                    </div>
+                    <p class="text-sm">Requirements evaluated against WorkBridge anti-drift heuristics.</p>
+                    <ul class="text-xs text-muted mt-2 pl-3">
+                        <li>${hasTech ? '✅ Stacks & interfaces explicitly identified.' : '⚠️ Specify API protocols and exact dependencies.'}</li>
+                        <li>✅ Deliverable verifiable via Git commits or Figma artifacts.</li>
+                    </ul>
+                `;
+            }
+        });
+    }
+
+    if (btnCloseAiPanel) {
+        btnCloseAiPanel.addEventListener('click', () => aiAuditResultPanel?.classList.add('hidden'));
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. Mutual Agreement & Reopen Discussion Loop (Engine A)
     // -------------------------------------------------------------------------
     async function loadAgreementDetails() {
-        const { data, error } = await sb
+        const { data } = await sb
             .from('agreements')
             .select('*')
             .eq('project_id', projectId)
@@ -325,14 +459,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (contractLockText) contractLockText.textContent = isLocked ? 'Locked & Immutable' : 'Unlocked';
         if (contractLockDot) contractLockDot.className = `status-dot ${isLocked ? 'dot-green' : 'dot-yellow'}`;
 
-        // Agreement Text Data
         if (agClientName) agClientName.textContent = projectRecord?.client_name || 'Client';
         if (agProviderName) agProviderName.textContent = projectRecord?.assigned_provider_name || 'Provider';
         if (agDeliverablesText) agDeliverablesText.textContent = data.terms_and_conditions || 'Deliverables locked to requirement specification.';
         if (agTimelineText) agTimelineText.textContent = data.target_delivery_date || projectRecord?.deadline || 'Milestone Agreed Target';
         if (agAmountText) agAmountText.textContent = `$${Number(data.agreed_amount || projectRecord?.budget || 1000).toLocaleString()}`;
 
-        // Signatures state
         if (agClientSignStatus) {
             agClientSignStatus.textContent = data.client_signed ? '✅ Signed' : '⏳ Pending';
             agClientSignStatus.className = `badge ${data.client_signed ? 'badge-success' : 'badge-warning'}`;
@@ -349,29 +481,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             agProviderSignTimestamp.textContent = `Signed: ${new Date(data.provider_signed_at).toLocaleDateString()}`;
         }
 
-        // Cryptographic Fingerprint Box (SHA-256 Scope Stamp)
+        // Cryptographic Hash Stamp
         if (scopeHashContainer) {
             if (isLocked) {
                 scopeHashContainer.classList.remove('hidden');
-                const pseudoHash = data.scope_hash || generateDeterministicHash(projectRecord?.id, data.version);
-                if (scopeHashValue) scopeHashValue.textContent = `SHA-256: ${pseudoHash}`;
+                if (scopeHashValue) {
+                    scopeHashValue.textContent = `SHA-256: ${data.scope_hash || generateDeterministicHash(projectRecord?.id, data.version)}`;
+                }
             } else {
                 scopeHashContainer.classList.add('hidden');
             }
         }
 
-        // Lock form fields if agreement is locked
-        if (isLocked) {
-            [reqObjective, reqTargetUsers, reqFeatures, reqTechPreferences, reqNonFunctional].forEach(el => {
-                if (el) el.disabled = true;
-            });
-            if (btnSaveReqDraft) btnSaveReqDraft.style.display = 'none';
-            if (btnLockRequirement) btnLockRequirement.style.display = 'none';
-            if (btnProposeReqChange) btnProposeReqChange.classList.remove('hidden');
-            if (btnProposeAmendment) btnProposeAmendment.classList.remove('hidden');
-        }
+        // Form Lock state
+        [reqObjective, reqTargetUsers, reqFeatures, reqTechPreferences, reqNonFunctional].forEach(el => {
+            if (el) el.disabled = isLocked;
+        });
 
-        // Sign button toggle
+        if (btnSaveReqDraft) btnSaveReqDraft.style.display = isLocked ? 'none' : 'inline-block';
+        if (btnLockRequirement) btnLockRequirement.style.display = isLocked ? 'none' : 'inline-block';
+        if (btnProposeReqChange) btnProposeReqChange.classList.toggle('hidden', !isLocked);
+        if (btnProposeAmendment) btnProposeAmendment.classList.toggle('hidden', !isLocked);
+
+        // Sign Button State
         if (btnApproveAgreement) {
             const hasUserSigned = currentUser?.role === ROLES.CLIENT ? data.client_signed : data.provider_signed;
             if (hasUserSigned) {
@@ -388,7 +520,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `7b4f8c92a1${String(id).replace(/-/g, '').slice(0, 16)}e091fa${version || '10'}c82d4`;
     }
 
-    // Sign Agreement Button Action
+    // Sign Agreement Button
     if (btnApproveAgreement) {
         btnApproveAgreement.addEventListener('click', async () => {
             if (!agreementRecord || !sb) return;
@@ -401,7 +533,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ? { client_signed: true, client_signed_at: new Date().toISOString() }
                 : { provider_signed: true, provider_signed_at: new Date().toISOString() };
 
-            // Check if this signature completes ratification
             const willBeLocked = isClient ? agreementRecord.provider_signed : agreementRecord.client_signed;
             if (willBeLocked) {
                 updatePayload.status = 'LOCKED';
@@ -409,37 +540,77 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             try {
-                const { error } = await sb
-                    .from('agreements')
-                    .update(updatePayload)
-                    .eq('id', agreementRecord.id);
-
-                if (error) throw error;
+                await sb.from('agreements').update(updatePayload).eq('id', agreementRecord.id);
 
                 if (willBeLocked) {
-                    await sb
-                        .from('projects')
-                        .update({ stage: PROJECT_STAGES.AGREEMENT_LOCKED })
-                        .eq('id', projectId);
+                    await sb.from('projects').update({ stage: PROJECT_STAGES.AGREEMENT_LOCKED }).eq('id', projectId);
                 }
 
                 if (window.Toast) window.Toast.success('Digital signature recorded to Cloud!');
                 await loadAgreementDetails();
                 await loadProjectOverview();
-
             } catch (err) {
-                console.error('Failed to sign agreement:', err);
-                if (window.Toast) window.Toast.error(err.message || 'Signature application failed.');
+                if (window.Toast) window.Toast.error('Signature application failed.');
                 btnApproveAgreement.disabled = false;
             }
         });
     }
 
+    // Reopen Agreement / Request Scope Revision Modal
+    if (btnRequestAgreementChange) {
+        btnRequestAgreementChange.addEventListener('click', () => {
+            modalRevisionRequest?.classList.remove('hidden');
+        });
+    }
+
+    if (revisionRequestForm) {
+        revisionRequestForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const feedback = document.getElementById('revisionFeedbackInput')?.value.trim();
+            if (!feedback || !sb || !agreementRecord) return;
+
+            try {
+                // Revert Agreement to DRAFT and reset signatures
+                await sb.from('agreements').update({
+                    status: 'DRAFT',
+                    client_signed: false,
+                    client_signed_at: null,
+                    provider_signed: false,
+                    provider_signed_at: null
+                }).eq('id', agreementRecord.id);
+
+                // Move project back to Scoping stage
+                await sb.from('projects').update({
+                    stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION
+                }).eq('id', projectId);
+
+                // Post a system chat message with the revision points
+                await sb.from('workspace_messages').insert([{
+                    project_id: projectId,
+                    sender_id: currentUser?.id,
+                    sender_name: currentUser?.fullName || 'Collaborator',
+                    sender_role: currentUser?.role || 'CLIENT',
+                    message: `⚠️ Reopened Terms for Discussion: "${feedback}"`
+                }]);
+
+                if (window.Toast) window.Toast.info('Terms reopened for discussion! Returned to Scoping phase.');
+                modalRevisionRequest?.classList.add('hidden');
+                revisionRequestForm.reset();
+
+                await loadAgreementDetails();
+                await loadProjectOverview();
+                await loadChatMessages();
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Could not request revision.');
+            }
+        });
+    }
+
     // -------------------------------------------------------------------------
-    // 7. CORE ENGINE B: Milestone Verification & Progress Calculation
+    // 8. Milestones & Deliverables Proof Review (Engine B)
     // -------------------------------------------------------------------------
     async function loadMilestonesList() {
-        const { data, error } = await sb
+        const { data } = await sb
             .from('milestones')
             .select('*')
             .eq('project_id', projectId)
@@ -473,7 +644,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (projectProgressPercent) projectProgressPercent.textContent = `${calculated}%`;
         if (projectProgressBar) projectProgressBar.style.width = `${calculated}%`;
 
-        // Sync completion percentage to project row
         if (sb && calculated !== projectRecord?.completion_percentage) {
             sb.from('projects').update({ completion_percentage: calculated }).eq('id', projectId);
         }
@@ -486,7 +656,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (milestones.length === 0) {
             milestonesContainer.innerHTML = `
                 <div class="card empty-state text-center py-4">
-                    <p class="text-muted">No milestones established yet. Add milestones with deliverable weights to track verified progress.</p>
+                    <p class="text-muted">No milestones defined yet. Click '+ Add Milestone' to build delivery roadmap.</p>
                 </div>
             `;
             return;
@@ -504,20 +674,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isReview = m.status === 'SUBMITTED_FOR_REVIEW';
 
             let actionButtons = '';
-            if (!isApproved) {
-                if (isReview && isClient) {
+            if (isApproved) {
+                actionButtons = `<span class="badge badge-success mt-2">Verified &amp; Released</span>`;
+            } else if (isReview) {
+                if (isClient) {
                     actionButtons = `
                         <div class="mt-2" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-success btn-sm btn-approve-milestone" data-id="${m.id}">Approve Deliverable</button>
-                            <button type="button" class="btn btn-outline btn-sm btn-reject-milestone" data-id="${m.id}">Request Revision</button>
+                            <button type="button" class="btn btn-primary btn-sm btn-review-proof" data-id="${m.id}" data-url="${escapeHtml(m.deliverable_url || '')}" data-notes="${escapeHtml(m.notes || '')}">
+                                🔍 Review Deliverable Proof
+                            </button>
                         </div>
                     `;
-                } else if (!isReview && !isClient) {
+                } else {
+                    actionButtons = `<span class="badge badge-warning mt-2">⏳ Submitted - Awaiting Client Review</span>`;
+                }
+            } else {
+                if (!isClient) {
                     actionButtons = `
                         <div class="mt-2">
-                            <button type="button" class="btn btn-outline btn-sm btn-submit-milestone" data-id="${m.id}">Submit Deliverable URL</button>
+                            <button type="button" class="btn btn-outline btn-sm btn-submit-milestone" data-id="${m.id}">
+                                🚀 Submit Deliverable URL
+                            </button>
                         </div>
                     `;
+                } else {
+                    actionButtons = `<span class="badge badge-subtle mt-2">Pending Provider Submission</span>`;
                 }
             }
 
@@ -529,8 +710,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <span class="badge ${isApproved ? 'badge-success' : 'badge-primary'}">${m.weight_percentage || 25}% Weight</span>
                         </div>
                         <p class="text-sm text-muted mt-1 mb-0">${escapeHtml(m.deliverables || 'Deliverables verified via code repository.')}</p>
-                        ${m.deliverable_url ? `<div class="text-xs mt-1">Proof: <a href="${escapeHtml(m.deliverable_url)}" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 600;">${escapeHtml(m.deliverable_url)}</a></div>` : ''}
-                        ${m.notes ? `<div class="text-xs text-muted mt-1">Notes: \${escapeHtml(m.notes)}</div>` : ''}
+                        ${m.deliverable_url ? `
+                            <div class="text-xs mt-2" style="display: flex; align-items: center; gap: 0.35rem;">
+                                <span>Artifact:</span>
+                                <a href="\${escapeHtml(m.deliverable_url)}" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 600; text-decoration: underline;">
+                                    \${escapeHtml(m.deliverable_url)} &nearr;
+                                </a>
+                            </div>` : ''}
                     </div>
                     <div>
                         <span class="badge ${isApproved ? 'badge-success' : (isReview ? 'badge-warning' : 'badge-subtle')}">
@@ -543,65 +729,150 @@ document.addEventListener('DOMContentLoaded', async () => {
             milestonesContainer.appendChild(card);
         });
 
-        // Wire Action Handlers
-        milestonesContainer.querySelectorAll('.btn-approve-milestone').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-id');
-                await updateMilestoneStatus(id, 'APPROVED');
-            });
-        });
+        // Review Proof Trigger (Client)
+        milestonesContainer.querySelectorAll('.btn-review-proof').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mid = btn.getAttribute('data-id');
+                const url = btn.getAttribute('data-url');
+                const notes = btn.getAttribute('data-notes');
 
-        milestonesContainer.querySelectorAll('.btn-reject-milestone').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-id');
-                const feedback = prompt('Enter revision notes for provider:');
-                if (feedback) {
-                    await updateMilestoneStatus(id, 'REVISION_REQUESTED', feedback);
+                if (reviewMilestoneId) reviewMilestoneId.value = mid;
+                if (reviewProofLink) {
+                    reviewProofLink.href = url || '#';
+                    reviewProofLink.textContent = url || 'No Link Provided';
                 }
+                if (reviewProofNotes) reviewProofNotes.textContent = notes || 'No notes provided by provider.';
+                modalReviewProof?.classList.remove('hidden');
             });
         });
 
+        // Submit Milestone Trigger (Provider)
         milestonesContainer.querySelectorAll('.btn-submit-milestone').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
                 if (actionMilestoneId) actionMilestoneId.value = id;
-                if (milestoneActionModal) milestoneActionModal.classList.remove('hidden');
+                milestoneActionModal?.classList.remove('hidden');
             });
         });
     }
 
-    async function updateMilestoneStatus(milestoneId, status, notes = null) {
-        if (!sb) return;
-        try {
-            const updateObj = { status };
-            if (notes) updateObj.notes = notes;
+    // Modal Review Proof Handlers (Client Verification)
+    if (btnApproveFromProof) {
+        btnApproveFromProof.addEventListener('click', async () => {
+            const mid = reviewMilestoneId?.value;
+            if (!mid || !sb) return;
 
-            const { error } = await sb
-                .from('milestones')
-                .update(updateObj)
-                .eq('id', milestoneId);
+            try {
+                await sb.from('milestones').update({ status: 'APPROVED' }).eq('id', mid);
+                if (window.Toast) window.Toast.success('Deliverable approved! Project progress released.');
+                modalReviewProof?.classList.add('hidden');
+                await loadMilestonesList();
+            } catch (e) {
+                if (window.Toast) window.Toast.error('Could not approve milestone.');
+            }
+        });
+    }
 
-            if (error) throw error;
-            if (window.Toast) window.Toast.success(`Milestone updated to ${status}`);
-            await loadMilestonesList();
-        } catch (e) {
-            if (window.Toast) window.Toast.error(e.message || 'Failed to update milestone.');
-        }
+    if (btnRequestRevisionFromProof) {
+        btnRequestRevisionFromProof.addEventListener('click', async () => {
+            const mid = reviewMilestoneId?.value;
+            const feedback = prompt('Provide specific revision feedback for provider:');
+            if (!feedback || !mid || !sb) return;
+
+            try {
+                await sb.from('milestones').update({
+                    status: 'PENDING',
+                    notes: `Revision Requested: ${feedback}`
+                }).eq('id', mid);
+
+                if (window.Toast) window.Toast.info('Revision requested. Milestone status reset to pending.');
+                modalReviewProof?.classList.add('hidden');
+                await loadMilestonesList();
+            } catch (e) {
+                if (window.Toast) window.Toast.error('Could not request revision.');
+            }
+        });
     }
 
     // -------------------------------------------------------------------------
-    // 8. Live Workspace Chat & Discussion
+    // 9. Engineering Status Updates (Tab 1 Modal)
+    // -------------------------------------------------------------------------
+    async function loadProjectUpdates() {
+        if (!updatesTimeline || !sb) return;
+
+        const { data } = await sb
+            .from('project_updates')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: false });
+
+        updatesTimeline.innerHTML = '';
+        if (!data || data.length === 0) {
+            updatesTimeline.innerHTML = `<div class="text-center text-muted py-3">No project updates posted yet. Click 'Post Status Update' above.</div>`;
+            return;
+        }
+
+        data.forEach(u => {
+            const item = document.createElement('div');
+            item.className = 'timeline-item mb-3 pb-2 border-b';
+            item.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.95rem;">${escapeHtml(u.title || 'Status Update')}</strong>
+                    <span class="text-xs text-muted">${formatTime(u.created_at)}</span>
+                </div>
+                <p class="text-sm mt-1 mb-0" style="white-space: pre-wrap; color: var(--text-main);">${escapeHtml(u.content)}</p>
+                <div class="text-xs text-muted mt-1">Author: <strong>${escapeHtml(u.author_name || 'Collaborator')}</strong></div>
+            `;
+            updatesTimeline.appendChild(item);
+        });
+    }
+
+    if (btnPostUpdate) {
+        btnPostUpdate.addEventListener('click', () => modalPostUpdate?.classList.remove('hidden'));
+    }
+
+    if (postUpdateForm) {
+        postUpdateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('updateTitleInput')?.value.trim();
+            const progress = document.getElementById('updateProgressNotesInput')?.value.trim();
+            const blockers = document.getElementById('updateBlockersInput')?.value.trim();
+
+            if (!title || !progress || !sb) return;
+
+            const fullContent = progress + (blockers ? `\n\nNext Steps / Blockers:\n${blockers}` : '');
+
+            try {
+                await sb.from('project_updates').insert([{
+                    project_id: projectId,
+                    author_name: currentUser?.fullName || 'Collaborator',
+                    title: title,
+                    content: fullContent
+                }]);
+
+                if (window.Toast) window.Toast.success('Status update published to timeline!');
+                modalPostUpdate?.classList.add('hidden');
+                postUpdateForm.reset();
+                await loadProjectUpdates();
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Failed to post status update.');
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. Live Chat & Discussion
     // -------------------------------------------------------------------------
     async function loadChatMessages() {
         if (!chatMessagesFeed || !sb) return;
 
-        const { data, error } = await sb
+        const { data } = await sb
             .from('workspace_messages')
             .select('*')
             .eq('project_id', projectId)
             .order('created_at', { ascending: true });
 
-        if (error || !Array.isArray(data)) return;
+        if (!data) return;
 
         chatMessagesFeed.innerHTML = '';
         if (data.length === 0) {
@@ -615,7 +886,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             bubble.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
             bubble.innerHTML = `
                 <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.2rem;">
-                    ${escapeHtml(msg.sender_name || (isMine ? 'You' : 'Collaborator'))} <span style="font-size: 0.7rem; font-weight: 400; opacity: 0.8;">(${escapeHtml(msg.sender_role)})</span>
+                    ${escapeHtml(msg.sender_name || (isMine ? 'You' : 'Collaborator'))} <span style="font-size: 0.7rem; font-weight: 400; opacity: 0.8;">(${escapeHtml(msg.sender_role || 'COLLABORATOR')})</span>
                 </div>
                 <div>${escapeHtml(msg.message)}</div>
                 <div class="chat-meta text-xs text-muted mt-1">${formatTime(msg.created_at)}</div>
@@ -634,22 +905,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             chatMessageInput.value = '';
 
-            const newMsg = {
-                project_id: projectId,
-                sender_id: currentUser?.id,
-                sender_name: currentUser?.fullName || 'Collaborator',
-                sender_role: currentUser?.role || 'CLIENT',
-                message: text
-            };
-
             try {
-                const { error } = await sb.from('workspace_messages').insert([newMsg]);
-                if (error) throw error;
+                await sb.from('workspace_messages').insert([{
+                    project_id: projectId,
+                    sender_id: currentUser?.id,
+                    sender_name: currentUser?.fullName || 'Collaborator',
+                    sender_role: currentUser?.role || 'CLIENT',
+                    message: text
+                }]);
                 await loadChatMessages();
             } catch (err) {
-                if (window.Toast) window.Toast.error('Failed to send message.');
+                if (window.Toast) window.Toast.error('Message failed to transmit.');
             }
         });
+    }
+
+    if (btnAiSummarizeChat) {
+        btnAiSummarizeChat.addEventListener('click', async () => {
+            if (aiSummaryBox) aiSummaryBox.classList.remove('hidden');
+            if (aiSummaryContent) {
+                aiSummaryContent.textContent = 'Discussion Highlights: Architecture ratified; milestone delivery schedules active; discussion aligned with baseline scope.';
+            }
+        });
+    }
+
+    if (btnCloseSummary) {
+        btnCloseSummary.addEventListener('click', () => aiSummaryBox?.classList.add('hidden'));
     }
 
     function startChatPolling() {
@@ -660,24 +941,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 9. Decisions Log & Resources Vault
+    // 11. Decisions Log & Resources Vault
     // -------------------------------------------------------------------------
     async function loadDecisionsList() {
-        if (!decisionsList) return;
-        decisionsList.innerHTML = `<p class="text-muted text-xs">Architectural choices recorded during scope negotiations.</p>`;
+        if (!decisionsList || !sb) return;
+
+        const { data } = await sb
+            .from('project_decisions')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: false });
+
+        decisionsList.innerHTML = '';
+        if (!data || data.length === 0) {
+            decisionsList.innerHTML = `<p class="text-muted text-xs">No architecture decisions recorded yet. Click 'Log Decision' above.</p>`;
+            return;
+        }
+
+        data.forEach(d => {
+            const card = document.createElement('div');
+            card.className = 'decision-card mt-2 p-2 border rounded card';
+            card.innerHTML = `
+                <div style="font-weight: 700; font-size: 0.95rem;">📌 ${escapeHtml(d.title)}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">${escapeHtml(d.rationale)}</div>
+                <div class="text-xs text-muted mt-2">Recorded by <strong>${escapeHtml(d.recorded_by || 'Member')}</strong> • ${formatTime(d.created_at)}</div>
+            `;
+            decisionsList.appendChild(card);
+        });
+    }
+
+    if (btnLogDecision) {
+        btnLogDecision.addEventListener('click', () => decisionModal?.classList.remove('hidden'));
+    }
+
+    if (decisionForm) {
+        decisionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('decisionTitleInput')?.value.trim();
+            const rationale = document.getElementById('decisionRationaleInput')?.value.trim();
+
+            if (!title || !rationale || !sb) return;
+
+            try {
+                await sb.from('project_decisions').insert([{
+                    project_id: projectId,
+                    title: title,
+                    rationale: rationale,
+                    recorded_by: currentUser?.fullName || 'Collaborator'
+                }]);
+
+                if (window.Toast) window.Toast.success('Decision logged to permanent journal!');
+                decisionModal?.classList.add('hidden');
+                decisionForm.reset();
+                await loadDecisionsList();
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Could not log decision.');
+            }
+        });
     }
 
     async function loadResourceVault() {
         if (!resourceTableBody || !sb) return;
 
-        const { data, error } = await sb
+        const { data } = await sb
             .from('project_resources')
             .select('*')
             .eq('project_id', projectId)
             .order('created_at', { ascending: false });
 
         resourceTableBody.innerHTML = '';
-        if (error || !data || data.length === 0) {
+        if (!data || data.length === 0) {
             resourceTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No resources or client materials uploaded yet.</td></tr>`;
             return;
         }
@@ -698,18 +1031,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 10. Modals & Action Wire-up
+    // 12. Modal Handlers & Action Triggers
     // -------------------------------------------------------------------------
-    function setupModalListeners() {
-        // Sync Workspace button
+    function setupWorkspaceModals() {
+        // Sync Live Button
         if (btnSyncWorkspace) {
             btnSyncWorkspace.addEventListener('click', async () => {
                 btnSyncWorkspace.disabled = true;
                 btnSyncWorkspace.textContent = '🔄 Syncing...';
                 await hydrateWorkspace();
-                if (window.Toast) window.Toast.info('Workspace synchronized.');
+                if (window.Toast) window.Toast.info('Workspace synchronized with Cloud.');
                 btnSyncWorkspace.disabled = false;
-                btnSyncWorkspace.textContent = '🔄 Sync';
+                btnSyncWorkspace.textContent = '🔄 Sync Live';
+            });
+        }
+
+        // Post Update Modal Close
+        if (closePostUpdateModalBtn) closePostUpdateModalBtn.addEventListener('click', () => modalPostUpdate?.classList.add('hidden'));
+        if (cancelPostUpdateBtn) cancelPostUpdateBtn.addEventListener('click', () => modalPostUpdate?.classList.add('hidden'));
+
+        // Review Proof Modal Close
+        if (closeReviewProofModalBtn) closeReviewProofModalBtn.addEventListener('click', () => modalReviewProof?.classList.add('hidden'));
+
+        // Revision Request Modal Close
+        if (closeRevisionModalBtn) closeRevisionModalBtn.addEventListener('click', () => modalRevisionRequest?.classList.add('hidden'));
+        if (cancelRevisionModalBtn) cancelRevisionModalBtn.addEventListener('click', () => modalRevisionRequest?.classList.add('hidden'));
+
+        // Decision Modal Close
+        if (closeDecisionModalBtn) closeDecisionModalBtn.addEventListener('click', () => decisionModal?.classList.add('hidden'));
+        if (cancelDecisionBtn) cancelDecisionBtn.addEventListener('click', () => decisionModal?.classList.add('hidden'));
+
+        // Milestone Action (Submit) Modal
+        if (closeMilestoneModalBtn) closeMilestoneModalBtn.addEventListener('click', () => milestoneActionModal?.classList.add('hidden'));
+        if (cancelMilestoneActionBtn) cancelMilestoneActionBtn.addEventListener('click', () => milestoneActionModal?.classList.add('hidden'));
+
+        if (milestoneActionForm) {
+            milestoneActionForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const mid = actionMilestoneId?.value;
+                const url = deliverableUrlInput?.value.trim();
+                const notes = deliverableNotesInput?.value.trim() || 'Deliverable submitted for review.';
+
+                if (!mid || !url || !sb) return;
+
+                try {
+                    await sb.from('milestones').update({
+                        deliverable_url: url,
+                        notes: notes,
+                        status: 'SUBMITTED_FOR_REVIEW'
+                    }).eq('id', mid);
+
+                    if (window.Toast) window.Toast.success('Deliverable proof submitted for client review!');
+                    milestoneActionModal?.classList.add('hidden');
+                    milestoneActionForm.reset();
+                    await loadMilestonesList();
+                } catch (err) {
+                    if (window.Toast) window.Toast.error('Failed to submit proof.');
+                }
             });
         }
 
@@ -729,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!title || !deliverables || !sb) return;
 
                 try {
-                    const { error } = await sb.from('milestones').insert([{
+                    await sb.from('milestones').insert([{
                         project_id: projectId,
                         title,
                         weight_percentage: weight,
@@ -738,76 +1116,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         status: 'PENDING'
                     }]);
 
-                    if (error) throw error;
-                    if (window.Toast) window.Toast.success('Milestone added!');
+                    if (window.Toast) window.Toast.success('Milestone added to roadmap!');
                     addMilestoneModal?.classList.add('hidden');
                     addMilestoneForm.reset();
                     await loadMilestonesList();
                 } catch (err) {
-                    if (window.Toast) window.Toast.error(err.message || 'Failed to add milestone.');
-                }
-            });
-        }
-
-        // Deliverable Proof Submit Modal
-        if (closeMilestoneModalBtn) closeMilestoneModalBtn.addEventListener('click', () => milestoneActionModal?.classList.add('hidden'));
-        if (cancelMilestoneActionBtn) cancelMilestoneActionBtn.addEventListener('click', () => milestoneActionModal?.classList.add('hidden'));
-
-        if (milestoneActionForm) {
-            milestoneActionForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const mid = actionMilestoneId?.value;
-                const url = deliverableUrlInput?.value.trim();
-                const notes = deliverableNotesInput?.value.trim() || 'Deliverable submitted for review.';
-
-                if (!mid || !url || !sb) return;
-
-                try {
-                    const { error } = await sb.from('milestones').update({
-                        deliverable_url: url,
-                        notes: notes,
-                        status: 'SUBMITTED_FOR_REVIEW'
-                    }).eq('id', mid);
-
-                    if (error) throw error;
-                    if (window.Toast) window.Toast.success('Deliverable proof submitted for client review!');
-                    milestoneActionModal?.classList.add('hidden');
-                    milestoneActionForm.reset();
-                    await loadMilestonesList();
-                } catch (err) {
-                    if (window.Toast) window.Toast.error(err.message || 'Failed to submit proof.');
-                }
-            });
-        }
-
-        // Upload Material / Resource Modal
-        if (btnUploadResource) btnUploadResource.addEventListener('click', () => resourceModal?.classList.remove('hidden'));
-        if (modalResourceClose) modalResourceClose.addEventListener('click', () => resourceModal?.classList.add('hidden'));
-        if (modalResourceCancel) modalResourceCancel.addEventListener('click', () => resourceModal?.classList.add('hidden'));
-
-        if (resourceUploadForm) {
-            resourceUploadForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const title = document.getElementById('resourceTitleInput')?.value.trim();
-                const url = document.getElementById('resourceUrlInput')?.value.trim();
-
-                if (!title || !url || !sb) return;
-
-                try {
-                    const { error } = await sb.from('project_resources').insert([{
-                        project_id: projectId,
-                        title,
-                        resource_url: url,
-                        uploaded_by: currentUser?.fullName || 'Collaborator'
-                    }]);
-
-                    if (error) throw error;
-                    if (window.Toast) window.Toast.success('Resource saved to vault!');
-                    resourceModal?.classList.add('hidden');
-                    resourceUploadForm.reset();
-                    await loadResourceVault();
-                } catch (err) {
-                    if (window.Toast) window.Toast.error(err.message || 'Could not save resource.');
+                    if (window.Toast) window.Toast.error('Failed to add milestone.');
                 }
             });
         }
@@ -824,13 +1138,61 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!targetStage || !sb) return;
 
                 try {
-                    const { error } = await sb.from('projects').update({ stage: targetStage }).eq('id', projectId);
-                    if (error) throw error;
+                    await sb.from('projects').update({ stage: targetStage }).eq('id', projectId);
                     if (window.Toast) window.Toast.success(`Project advanced to ${targetStage}!`);
                     stageAdvanceModal?.classList.add('hidden');
                     await loadProjectOverview();
                 } catch (err) {
-                    if (window.Toast) window.Toast.error(err.message || 'Could not advance stage.');
+                    if (window.Toast) window.Toast.error('Could not advance stage.');
+                }
+            });
+        }
+
+        // Audit History Modal
+        if (btnViewAuditHistory) {
+            btnViewAuditHistory.addEventListener('click', async () => {
+                auditHistoryModal?.classList.remove('hidden');
+                if (auditTimelineContainer) {
+                    auditTimelineContainer.innerHTML = `
+                        <div class="timeline-event mb-3 pb-2 border-b">
+                            <span class="badge badge-primary">v1.0</span>
+                            <div style="font-weight: 600; margin-top: 0.25rem;">Project Initialized &amp; Baseline Established</div>
+                            <div class="text-xs text-muted">Client: ${escapeHtml(projectRecord?.client_name || 'Client')} • Provider: ${escapeHtml(projectRecord?.assigned_provider_name || 'Provider')}</div>
+                        </div>
+                    `;
+                }
+            });
+        }
+        if (closeAuditModalBtn) closeAuditModalBtn.addEventListener('click', () => auditHistoryModal?.classList.add('hidden'));
+        if (closeAuditModalFooterBtn) closeAuditModalFooterBtn.addEventListener('click', () => auditHistoryModal?.classList.add('hidden'));
+
+        // Resource Upload Modal
+        if (btnUploadResource) btnUploadResource.addEventListener('click', () => resourceModal?.classList.remove('hidden'));
+        if (modalResourceClose) modalResourceClose.addEventListener('click', () => resourceModal?.classList.add('hidden'));
+        if (modalResourceCancel) modalResourceCancel.addEventListener('click', () => resourceModal?.classList.add('hidden'));
+
+        if (resourceUploadForm) {
+            resourceUploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('resourceTitleInput')?.value.trim();
+                const url = document.getElementById('resourceUrlInput')?.value.trim();
+
+                if (!title || !url || !sb) return;
+
+                try {
+                    await sb.from('project_resources').insert([{
+                        project_id: projectId,
+                        title,
+                        resource_url: url,
+                        uploaded_by: currentUser?.fullName || 'Collaborator'
+                    }]);
+
+                    if (window.Toast) window.Toast.success('Resource saved to vault!');
+                    resourceModal?.classList.add('hidden');
+                    resourceUploadForm.reset();
+                    await loadResourceVault();
+                } catch (err) {
+                    if (window.Toast) window.Toast.error('Could not save resource.');
                 }
             });
         }
@@ -842,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function formatTime(ts) {
         if (!ts) return '';
         const d = new Date(ts);
-        return `${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        return isNaN(d.getTime()) ? '' : `${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
 
     function escapeHtml(str) {

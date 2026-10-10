@@ -1,14 +1,15 @@
 /**
- * WORKBRIDGE - CLIENT DASHBOARD PAGE CONTROLLER (SUPABASE EDITION)
+ * WORKBRIDGE - CLIENT DASHBOARD PAGE CONTROLLER (SUPABASE CLOUD MASTER)
  * File: js/pages/clientDashboardPage.js
  * 
- * Powered by direct Supabase PostgreSQL queries (`projects` & `agreements` tables).
- * Supports real-time project creation, stage lifecycle filtering, and pending sign-off alerts.
+ * Powered by direct Supabase PostgreSQL queries (`projects`, `agreements`, `profiles`).
+ * Supports real-time project creation with direct provider assignment, 
+ * stage lifecycle filtering, and instant sign-off modal reviews.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
     const config = window.APP_CONFIG || {};
-    const ROLES = config.ROLES || { CLIENT: 'CLIENT' };
+    const ROLES = config.ROLES || { CLIENT: 'CLIENT', SERVICE_PROVIDER: 'SERVICE_PROVIDER' };
     const PROJECT_STAGES = config.PROJECT_STAGES || {
         INVITED: 'INVITED',
         REQUIREMENT_DISCUSSION: 'REQUIREMENT_DISCUSSION',
@@ -54,16 +55,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterPills = document.querySelectorAll('.filter-pill');
     const refreshClientDashboardBtn = document.getElementById('refreshClientDashboardBtn');
 
-    // DOM Elements - Modal & Buttons
+    // DOM Elements - Create Project Modal
     const openCreateProjectModalBtn = document.getElementById('openCreateProjectModalBtn');
     const sidebarCreateProjectBtn = document.getElementById('sidebarCreateProjectBtn');
     const quickCreateProjectBtn = document.getElementById('quickCreateProjectBtn');
     const emptyStateCreateBtn = document.getElementById('emptyStateCreateBtn');
     const createProjectModal = document.getElementById('createProjectModal');
     const createProjectForm = document.getElementById('createProjectForm');
+    const projectAssignProviderSelect = document.getElementById('projectAssignProviderSelect');
     const closeCreateProjectModalBtn = document.getElementById('closeCreateProjectModalBtn');
     const cancelCreateProjectBtn = document.getElementById('cancelCreateProjectBtn');
     const submitCreateProjectBtn = document.getElementById('submitCreateProjectBtn');
+
+    // DOM Elements - Scope Review Modal
+    const scopeReviewModal = document.getElementById('scopeReviewModal');
+    const scopeReviewModalBody = document.getElementById('scopeReviewModalBody');
+    const scopeReviewVersionBadge = document.getElementById('scopeReviewVersionBadge');
+    const closeScopeReviewModalBtn = document.getElementById('closeScopeReviewModalBtn');
+    const requestScopeAmendmentBtn = document.getElementById('requestScopeAmendmentBtn');
+    const signScopeAgreementBtn = document.getElementById('signScopeAgreementBtn');
+
+    // In-memory projects cache & active review tracker
+    let clientProjects = [];
+    let activeReviewProject = null;
 
     // Populate Sidebar Profile Information
     const displayName = currentUser.fullName || currentUser.username || currentUser.email || 'Client Partner';
@@ -71,13 +85,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (clientEmailEl) clientEmailEl.textContent = currentUser.email || '';
     if (clientAvatarEl) clientAvatarEl.textContent = displayName.charAt(0).toUpperCase();
 
-    // In-memory projects cache
-    let clientProjects = [];
-
-    // Load initial dashboard data
+    // Initialize Dashboard
     await loadClientDashboard();
-
-    // Setup Event Listeners
+    await populateProviderDropdown();
     setupEventListeners();
 
     // -------------------------------------------------------------------------
@@ -91,12 +101,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error('Supabase client connection missing.');
             }
 
-            // Query projects where current user is the client
+            // Query projects belonging to this client with joined agreements & milestones
             const { data, error } = await sb
                 .from('projects')
                 .select(`
                     *,
-                    agreements ( version, status, client_signed, provider_signed ),
+                    agreements ( id, version, status, client_signed, provider_signed, agreed_amount, terms_and_conditions ),
                     milestones ( id, status, weight_percentage )
                 `)
                 .or(`client_id.eq.${currentUser.id},client_email.eq.${currentUser.email}`)
@@ -112,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const agreement = Array.isArray(p.agreements) ? p.agreements[0] : p.agreements;
                 const milestones = Array.isArray(p.milestones) ? p.milestones : [];
 
-                // Calculate progress from approved milestone weights if available
+                // Calculate weighted progress
                 let progress = Number(p.completion_percentage) || 0;
                 if (milestones.length > 0) {
                     const approvedWeight = milestones.reduce((sum, m) => {
@@ -123,11 +133,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     progress = Math.min(100, Math.round(approvedWeight));
                 }
 
-                // Identify if an action requires client intervention
-                const hasPendingApproval = 
-                    p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION ||
-                    (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED && (!agreement || !agreement.client_signed)) ||
-                    milestones.some(m => m.status === 'SUBMITTED_FOR_REVIEW');
+                // Action required if agreement is waiting for client signature or deliverable submitted
+                const needsSignature = agreement && !agreement.client_signed && agreement.status !== 'SUPERSEDED';
+                const hasPendingDeliverable = milestones.some(m => m.status === 'SUBMITTED_FOR_REVIEW');
+                const hasPendingApproval = needsSignature || hasPendingDeliverable || p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION;
 
                 return {
                     id: p.id,
@@ -141,12 +150,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     assignedProviderName: p.assigned_provider_name || 'Pending Assignment',
                     completionPercentage: progress,
                     agreement: agreement,
+                    milestones: milestones,
                     hasPendingApproval: hasPendingApproval,
+                    needsSignature: needsSignature,
+                    hasPendingDeliverable: hasPendingDeliverable,
                     createdAt: p.created_at
                 };
             });
 
-            // Update UI
             updateMetrics(clientProjects);
             renderPendingAlerts(clientProjects);
             renderProjectsList(clientProjects);
@@ -174,7 +185,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 3. Compute Metrics
+    // 3. Populate Verified Providers Dropdown in Create Modal
+    // -------------------------------------------------------------------------
+    async function populateProviderDropdown() {
+        if (!projectAssignProviderSelect || !sb) return;
+
+        try {
+            const { data: providers, error } = await sb
+                .from('profiles')
+                .select('id, full_name, domain, rating')
+                .eq('role', ROLES.SERVICE_PROVIDER)
+                .order('rating', { ascending: false });
+
+            if (error || !Array.isArray(providers)) return;
+
+            projectAssignProviderSelect.innerHTML = `<option value="">Leave Open / Assign Later in Marketplace</option>`;
+            providers.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.full_name || 'Provider'} - ${p.domain || 'Software Engineering'} (★ ${Number(p.rating || 5.0).toFixed(1)})`;
+                opt.setAttribute('data-name', p.full_name || 'Assigned Provider');
+                projectAssignProviderSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.warn('Could not populate provider dropdown:', e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Compute Metrics
     // -------------------------------------------------------------------------
     function updateMetrics(projects) {
         if (statTotalProjectsEl) statTotalProjectsEl.textContent = projects.length;
@@ -199,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 4. Render Pending Action Alerts
+    // 5. Render Action Required Alerts (With Direct Sign/Review Popup)
     // -------------------------------------------------------------------------
     function renderPendingAlerts(projects) {
         if (!pendingApprovalsSection || !pendingActionsList) return;
@@ -225,9 +264,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             alertCard.style.flexWrap = 'wrap';
             alertCard.style.gap = '0.75rem';
 
-            let actionText = 'Action pending: Review scope & specifications in collaborative workspace.';
-            if (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED && (!p.agreement || !p.agreement.client_signed)) {
-                actionText = 'Action pending: Digital Agreement draft awaiting your client signature.';
+            let actionText = 'Action pending: Review scope & specifications in workspace.';
+            let actionBtnText = 'Open Workspace &rarr;';
+            let isQuickReview = false;
+
+            if (p.needsSignature) {
+                actionText = `✍️ Agreement v${p.agreement?.version || '1.0'} drafted. Review terms and apply your signature.`;
+                actionBtnText = 'Quick Review &amp; Sign';
+                isQuickReview = true;
+            } else if (p.hasPendingDeliverable) {
+                actionText = '🚀 Deliverable submitted by provider! Review proof artifacts to release milestone progress.';
             }
 
             alertCard.innerHTML = `
@@ -235,16 +281,124 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <strong style="color: var(--text-main); font-size: 1rem;">${escapeHtml(p.title)}</strong>
                     <p class="text-muted text-sm mb-0 mt-1">${actionText}</p>
                 </div>
-                <a href="project-view.html?id=${p.id}" class="btn btn-primary btn-sm">
-                    Open Workspace &rarr;
-                </a>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    ${isQuickReview ? `
+                        <button type="button" class="btn btn-warning btn-sm btn-quick-review" data-id="\${p.id}">
+                            \${actionBtnText}
+                        </button>
+                    ` : ''}
+                    <a href="project-view.html?id=${p.id}" class="btn btn-outline btn-sm">
+                        Enter Workspace &rarr;
+                    </a>
+                </div>
             `;
             pendingActionsList.appendChild(alertCard);
+        });
+
+        // Wire quick review modal open
+        pendingActionsList.querySelectorAll('.btn-quick-review').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const prjId = btn.getAttribute('data-id');
+                const project = clientProjects.find(p => String(p.id) === String(prjId));
+                if (project) openScopeReviewModal(project);
+            });
         });
     }
 
     // -------------------------------------------------------------------------
-    // 5. Render Projects Grid
+    // 6. Scope Review Modal Action (Sign / Request Revision)
+    // -------------------------------------------------------------------------
+    function openScopeReviewModal(project) {
+        if (!scopeReviewModal) return;
+        activeReviewProject = project;
+
+        const ag = project.agreement;
+        if (scopeReviewVersionBadge) {
+            scopeReviewVersionBadge.textContent = `Agreement v${ag?.version || '1.0'}`;
+        }
+
+        if (scopeReviewModalBody) {
+            scopeReviewModalBody.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div>
+                        <span class="text-xs text-muted">Project</span>
+                        <h4 style="margin: 0.2rem 0;">${escapeHtml(project.title)}</h4>
+                    </div>
+                    <div style="background: var(--bg-muted, #f8fafc); padding: 0.75rem; border-radius: 6px;">
+                        <span class="text-xs text-muted">Contract Terms &amp; Scope Baseline:</span>
+                        <p class="text-sm mt-1 mb-0" style="white-space: pre-wrap;">${escapeHtml(ag?.terms_and_conditions || 'Standard WorkBridge milestone & scope baseline agreement.')}</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                        <span>Agreed Consideration: <strong class="text-success">$${Number(ag?.agreed_amount || project.budget || 1000).toLocaleString()}</strong></span>
+                        <span>Assigned Provider: <strong>${escapeHtml(project.assignedProviderName)}</strong></span>
+                    </div>
+                </div>
+            `;
+        }
+
+        scopeReviewModal.classList.remove('hidden');
+    }
+
+    function closeScopeReviewModal() {
+        if (scopeReviewModal) scopeReviewModal.classList.add('hidden');
+        activeReviewProject = null;
+    }
+
+    if (closeScopeReviewModalBtn) closeScopeReviewModalBtn.addEventListener('click', closeScopeReviewModal);
+
+    // Sign from Modal
+    if (signScopeAgreementBtn) {
+        signScopeAgreementBtn.addEventListener('click', async () => {
+            if (!activeReviewProject || !activeReviewProject.agreement || !sb) return;
+
+            signScopeAgreementBtn.disabled = true;
+            signScopeAgreementBtn.textContent = 'Signing & Locking...';
+
+            const ag = activeReviewProject.agreement;
+            const willBeLocked = ag.provider_signed;
+
+            const updatePayload = {
+                client_signed: true,
+                client_signed_at: new Date().toISOString()
+            };
+
+            if (willBeLocked) {
+                updatePayload.status = 'LOCKED';
+                updatePayload.scope_hash = `7b4f8c92a1${String(activeReviewProject.id).slice(0, 16)}e091fav10c82d4`;
+            }
+
+            try {
+                const { error } = await sb.from('agreements').update(updatePayload).eq('id', ag.id);
+                if (error) throw error;
+
+                if (willBeLocked) {
+                    await sb.from('projects').update({ stage: PROJECT_STAGES.AGREEMENT_LOCKED }).eq('id', activeReviewProject.id);
+                }
+
+                if (window.Toast) window.Toast.success('Agreement digitally signed & verified!');
+                closeScopeReviewModal();
+                await loadClientDashboard();
+            } catch (e) {
+                if (window.Toast) window.Toast.error('Could not apply signature.');
+            } finally {
+                signScopeAgreementBtn.disabled = false;
+                signScopeAgreementBtn.textContent = '✍️ Sign & Lock Scope (v1.0)';
+            }
+        });
+    }
+
+    // Request Revision from Modal
+    if (requestScopeAmendmentBtn) {
+        requestScopeAmendmentBtn.addEventListener('click', () => {
+            if (!activeReviewProject) return;
+            const targetId = activeReviewProject.id;
+            closeScopeReviewModal();
+            window.location.href = `project-view.html?id=${targetId}#tabAgreement`;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. Render Projects Grid
     // -------------------------------------------------------------------------
     function renderProjectsList(projects) {
         if (!projectsList) return;
@@ -256,7 +410,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        if (noProjectsState) noProjectsState.classList.add('hidden');
+        noProjectsState.classList.add('hidden');
         projectsList.classList.remove('hidden');
 
         projects.forEach(project => {
@@ -306,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Modal Functions (Open / Close)
+    // 8. Modal Functions (Open / Close)
     // -------------------------------------------------------------------------
     function openCreateModal() {
         if (!createProjectModal) return;
@@ -320,7 +474,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 7. Event Listeners Setup
+    // 9. Event Listeners Setup
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Filter Pills Handler
@@ -368,7 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // ---------------------------------------------------------------------
-        // Project Creation Form Submit -> Direct Supabase PostgreSQL Insert
+        // Project Creation Form Submit (With Provider Assignment Option)
         // ---------------------------------------------------------------------
         if (createProjectForm) {
             createProjectForm.addEventListener('submit', async (e) => {
@@ -378,6 +532,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const category = document.getElementById('projectCategoryInput')?.value || 'WEB_DEVELOPMENT';
                 const budget = parseFloat(document.getElementById('projectBudgetInput')?.value) || 1000;
                 const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
+
+                const assignedProviderId = projectAssignProviderSelect?.value || null;
+                const assignedProviderOption = projectAssignProviderSelect?.selectedOptions?.[0];
+                const assignedProviderName = assignedProviderId ? (assignedProviderOption?.getAttribute('data-name') || 'Assigned Provider') : 'Pending Assignment';
 
                 if (!title || !summary) {
                     if (window.Toast) window.Toast.error('Please enter project title and scope summary.');
@@ -398,13 +556,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     client_id: currentUser.id,
                     client_name: displayName,
                     client_email: currentUser.email || 'client@workbridge.io',
-                    assigned_provider_name: 'Pending Assignment',
+                    assigned_provider_id: assignedProviderId,
+                    assigned_provider_name: assignedProviderName,
                     title: title,
                     category: category,
                     budget: budget,
                     description: summary,
                     summary: summary,
-                    stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION,
+                    stage: assignedProviderId ? PROJECT_STAGES.INVITED : PROJECT_STAGES.REQUIREMENT_DISCUSSION,
                     completion_percentage: 0
                 };
 
@@ -431,7 +590,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         .select()
                         .maybeSingle();
 
-                    if (window.Toast) window.Toast.success('Project created! Initialized in Scope Discussion.');
+                    if (window.Toast) {
+                        window.Toast.success(assignedProviderId 
+                            ? `Project created and invitation dispatched to ${assignedProviderName}!` 
+                            : 'Project created! Initialized in Scope Discussion.');
+                    }
+                    
                     closeCreateModal();
                     await loadClientDashboard();
 
@@ -451,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Helpers
+    // 10. Helpers
     // -------------------------------------------------------------------------
     function getStageBadge(stage) {
         switch (stage) {

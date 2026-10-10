@@ -3,7 +3,7 @@
  * File: js/pages/authPage.js
  * 
  * Direct cloud authentication backed by Supabase PostgreSQL `profiles` table.
- * Supports cross-device real-time registration and login with no cold-start delays.
+ * Supports cross-device real-time registration and login with zero cold-start delay.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Input Validation
             let hasError = false;
             if (!validateEmail(email)) {
-                showFieldError('loginEmailError', 'Please enter your email (must contain @).');
+                showFieldError('loginEmailError', 'Please enter your email address.');
                 hasError = true;
             }
             if (!password) {
@@ -162,7 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     role: data.role,
                     domain: data.domain,
                     bio: data.bio,
-                    rating: data.rating
+                    rating: data.rating,
+                    companyName: data.company_name,
+                    industry: data.industry,
+                    websiteUrl: data.website_url,
+                    hourlyRate: data.hourly_rate,
+                    skills: data.skills,
+                    githubUrl: data.github_url,
+                    portfolioUrl: data.portfolio_url
                 };
 
                 const sessionToken = 'wb_sb_token_' + data.id;
@@ -215,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!validateEmail(email)) {
-                showFieldError('regEmailError', 'Please enter a valid email address with @.');
+                showFieldError('regEmailError', 'Please enter a valid email address.');
                 hasError = true;
             }
 
@@ -250,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('An account with this email already exists. Please sign in instead.');
                 }
 
-                // 2. Insert new profile record
+                // 2. Insert new profile record (NO automatic service post created here)
                 const newProfile = {
                     email: email,
                     full_name: fullName,
@@ -260,7 +267,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     bio: role === ROLES.SERVICE_PROVIDER 
                         ? `Verified technical service provider specializing in ${domain}.`
                         : 'Technical project client on WorkBridge.',
-                    rating: 5.0
+                    rating: 5.0,
+                    hourly_rate: role === ROLES.SERVICE_PROVIDER ? 50 : null,
+                    skills: role === ROLES.SERVICE_PROVIDER ? ['Java', 'Spring Boot', 'PostgreSQL', 'JavaScript'] : []
                 };
 
                 const { data: createdData, error: insertError } = await sb
@@ -280,7 +289,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     role: createdData.role,
                     domain: createdData.domain,
                     bio: createdData.bio,
-                    rating: createdData.rating
+                    rating: createdData.rating,
+                    hourlyRate: createdData.hourly_rate,
+                    skills: createdData.skills
                 };
 
                 const sessionToken = 'wb_sb_token_' + createdData.id;

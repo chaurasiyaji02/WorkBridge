@@ -3,7 +3,8 @@
  * File: js/pages/providerDashboardPage.js
  * 
  * Powered by direct Supabase PostgreSQL queries.
- * Real-time cross-device service publishing, invitations, and active project tracking.
+ * Manages provider route guards, live incoming invitations, active projects,
+ * real-time published service offerings (gigs), and cloud-synchronized creation.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const providerCategoryEl = document.getElementById('providerCategory');
     const capacitySubtextEl = document.getElementById('capacitySubtext');
     const activeCapacityBadgeEl = document.getElementById('activeCapacityBadge');
+    const sidebarPostServiceBtn = document.getElementById('sidebarPostServiceBtn');
 
     // DOM Elements - Metrics
     const metricInvitesCount = document.getElementById('metricInvitesCount');
@@ -53,8 +55,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const noInvitesState = document.getElementById('noInvitesState');
     const providerProjectsList = document.getElementById('providerProjectsList');
     const noProviderProjectsState = document.getElementById('noProviderProjectsState');
+    const emptyStatePostServiceBtn = document.getElementById('emptyStatePostServiceBtn');
     const filterPills = document.querySelectorAll('.filter-pill');
     const refreshDashboardBtn = document.getElementById('refreshDashboardBtn');
+
+    // DOM Elements - My Published Gigs Section
+    const myServicesGrid = document.getElementById('myServicesGrid');
+    const noServicesState = document.getElementById('noServicesState');
+    const myServicesCountBadge = document.getElementById('myServicesCountBadge');
+    const btnQuickPostService = document.getElementById('btnQuickPostService');
 
     // DOM Elements - Review Invitation Modal
     const invitationModal = document.getElementById('invitationModal');
@@ -87,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // In-memory State
     let pendingInvitations = [];
     let providerProjects = [];
+    let publishedServices = [];
     let activeFilter = 'ALL';
     let selectedInviteForModal = null;
 
@@ -131,6 +141,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (prjErr) console.warn('Supabase projects query warning:', prjErr.message);
 
+            // 3. Fetch services/gigs published by this provider
+            const { data: rawServices, error: svcErr } = await sb
+                .from('services')
+                .select('*')
+                .eq('provider_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            if (svcErr) console.warn('Supabase services query warning:', svcErr.message);
+
             pendingInvitations = (rawInvites || []).map(p => ({
                 id: p.id,
                 title: p.title,
@@ -158,9 +177,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 milestones: p.milestones || []
             }));
 
+            publishedServices = Array.isArray(rawServices) ? rawServices : [];
+
             updateMetrics();
             renderInvitations();
             renderFilteredProjects();
+            renderPublishedServices();
 
             if (capacitySubtextEl && activeCapacityBadgeEl) {
                 const activeCount = providerProjects.filter(p => p.stage !== PROJECT_STAGES.COMPLETED).length;
@@ -182,6 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             renderInvitations();
             renderFilteredProjects();
+            renderPublishedServices();
         }
     }
 
@@ -218,6 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (metricCompletedProjects) metricCompletedProjects.textContent = completedCount;
         if (metricDraftAgreements) metricDraftAgreements.textContent = scopeLockedCount;
         if (activeProjectsCountBadge) activeProjectsCountBadge.textContent = `${providerProjects.length} Total`;
+        if (myServicesCountBadge) myServicesCountBadge.textContent = `${publishedServices.length} Active Gigs`;
     }
 
     // -------------------------------------------------------------------------
@@ -373,6 +397,64 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // -------------------------------------------------------------------------
+    // 6. Render My Published Services / Gigs
+    // -------------------------------------------------------------------------
+    function renderPublishedServices() {
+        if (!myServicesGrid || !noServicesState) return;
+        myServicesGrid.innerHTML = '';
+
+        if (publishedServices.length === 0) {
+            noServicesState.classList.remove('hidden');
+            myServicesGrid.classList.add('hidden');
+            return;
+        }
+
+        noServicesState.classList.add('hidden');
+        myServicesGrid.classList.remove('hidden');
+
+        publishedServices.forEach(svc => {
+            const card = document.createElement('div');
+            card.className = 'card service-item-card';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.justifyContent = 'space-between';
+
+            const skillsArr = Array.isArray(svc.skills) 
+                ? svc.skills 
+                : (typeof svc.skills === 'string' ? svc.skills.split(',').map(s => s.trim()) : []);
+
+            const skillsBadges = skillsArr.slice(0, 4)
+                .map(s => `<span class="badge badge-subtle">${escapeHtml(s)}</span>`)
+                .join(' ');
+
+            card.innerHTML = `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.35rem;">
+                        <span class="badge badge-success">Live on Explore</span>
+                        <strong class="text-primary" style="font-size: 0.95rem;">$${svc.hourly_rate || 50}/hr</strong>
+                    </div>
+                    <h3 class="card-title" style="font-size: 1.1rem; margin-top: 0.25rem;">
+                        ${escapeHtml(svc.title)}
+                    </h3>
+                    <p class="card-text text-sm mt-1" style="color: var(--text-muted, #64748b); min-height: 38px;">
+                        ${escapeHtml(svc.description || 'Full technical service package.')}
+                    </p>
+                    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                        ${skillsBadges || '<span class="text-xs text-muted">Technical Delivery</span>'}
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-2" style="border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
+                    <span>SLA: <strong>${svc.delivery_days || 14} Days</strong></span>
+                    <a href="provider-explore.html" class="text-link">View in Marketplace &rarr;</a>
+                </div>
+            `;
+
+            myServicesGrid.appendChild(card);
+        });
+    }
+
     function calculateProjectProgress(project) {
         if (project.stage === PROJECT_STAGES.COMPLETED) return 100;
         
@@ -390,7 +472,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Invitation Processing Handlers (Accept / Decline via Supabase)
+    // 7. Invitation Processing Handlers (Accept / Decline via Supabase)
     // -------------------------------------------------------------------------
     async function handleInvitationResponse(projectId, action) {
         if (!projectId || !sb) return;
@@ -453,7 +535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 7. Modal Handlers
+    // 8. Modal Handlers
     // -------------------------------------------------------------------------
     function openInvitationModal(invite) {
         if (!invitationModal) return;
@@ -524,7 +606,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Event Listeners & Live Cloud Service Publishing to Supabase
+    // 9. Event Listeners & Live Cloud Service Publishing to Supabase
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Stage Filter Pills
@@ -567,8 +649,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Post Service Modal Triggers
+        // Post Service Modal Triggers (Wiring all buttons)
         if (btnOpenPostServiceModal) btnOpenPostServiceModal.addEventListener('click', openPostServiceModal);
+        if (sidebarPostServiceBtn) sidebarPostServiceBtn.addEventListener('click', openPostServiceModal);
+        if (btnQuickPostService) btnQuickPostService.addEventListener('click', openPostServiceModal);
+        if (emptyStatePostServiceBtn) emptyStatePostServiceBtn.addEventListener('click', openPostServiceModal);
+
         if (closePostServiceModalBtn) closePostServiceModalBtn.addEventListener('click', closePostServiceModal);
         if (cancelPostServiceBtn) cancelPostServiceBtn.addEventListener('click', closePostServiceModal);
         if (postServiceModal) {
@@ -625,17 +711,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 };
 
                 try {
-                    // Direct insertion into Supabase PostgreSQL
-                    const { data, error } = await sb
+                    const { error } = await sb
                         .from('services')
-                        .insert([newServiceRow])
-                        .select()
-                        .single();
+                        .insert([newServiceRow]);
 
                     if (error) throw error;
 
                     if (window.Toast) {
-                        window.Toast.success('Service published to Cloud! Visible on all devices immediately.');
+                        window.Toast.success('Service published! Live in Explore and active gigs.');
                     }
 
                     closePostServiceModal();
@@ -649,7 +732,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } finally {
                     if (btnSubmitService) {
                         btnSubmitService.disabled = false;
-                        btnSubmitService.textContent = 'Publish to Explore';
+                        btnSubmitService.textContent = 'Publish to Explore Market';
                     }
                 }
             });
@@ -657,7 +740,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 9. Helpers
+    // 10. Helpers
     // -------------------------------------------------------------------------
     function getStageBadge(stage) {
         switch (stage) {
