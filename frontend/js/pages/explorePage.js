@@ -1,14 +1,18 @@
 /**
- * WORKBRIDGE - PROVIDER DISCOVERY PAGE CONTROLLER
+ * WORKBRIDGE - PROVIDER DISCOVERY PAGE CONTROLLER (SUPABASE EDITION)
  * File: js/pages/explorePage.js
  * 
- * Manages provider catalog queries, dynamically posted services/gigs,
- * multi-criteria filtering (search, category, rating), and project invitations.
+ * Powered by direct Supabase PostgreSQL queries (`services` & `profiles` tables).
+ * Supports real-time cross-device gig discovery, multi-criteria filtering,
+ * and direct project invitation dispatching.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const config = window.APP_CONFIG || {};
     const ROLES = config.ROLES || { CLIENT: 'CLIENT', SERVICE_PROVIDER: 'SERVICE_PROVIDER' };
+
+    // Supabase Client Reference
+    const sb = window.sbClient;
 
     // DOM Elements - Filtering & Grid
     const providerGrid = document.getElementById('providerGrid');
@@ -20,118 +24,143 @@ document.addEventListener('DOMContentLoaded', () => {
     const minRatingFilter = document.getElementById('minRatingFilter');
     const resetFilterBtn = document.getElementById('resetFilterBtn');
     const clearSearchStateBtn = document.getElementById('clearSearchStateBtn');
+    const btnRefreshCatalog = document.getElementById('btnRefreshCatalog');
 
     // DOM Elements - Invitation Modal
     const inviteModal = document.getElementById('inviteModal');
     const inviteProjectForm = document.getElementById('inviteProjectForm');
     const selectedProviderIdInput = document.getElementById('selectedProviderId');
+    const selectedProviderNameInput = document.getElementById('selectedProviderName');
     const modalProviderTitle = document.getElementById('modalProviderTitle');
     const modalSubmitBtn = document.getElementById('modalSubmitBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const modalCancelBtn = document.getElementById('modalCancelBtn');
 
-    let allProviders = [];
+    let allCatalogItems = [];
 
     // Initialize Page
-    loadProviders();
+    await loadServicesCatalog();
 
-    /**
-     * Fetch verified provider directory directly from Neon PostgreSQL via Render API.
-     */
-    async function loadProviders() {
-        let remoteProviders = [];
-        let fetchSuccess = false;
+    // -------------------------------------------------------------------------
+    // 1. Fetch Live Catalog directly from Supabase (`services` & `profiles`)
+    // -------------------------------------------------------------------------
+    async function loadServicesCatalog() {
+        showLoadingSkeleton();
 
         try {
-            if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-                // Try primary endpoint mapped in ProfileController
-                let res = null;
-                try {
-                    res = await window.ApiClient.get('/profiles/providers/search');
-                } catch (e1) {
-                    res = await window.ApiClient.get('/profile/providers/search');
-                }
-
-                // Unwrap standard envelope { success, message, data: [...] }
-                if (res && Array.isArray(res.data)) {
-                    remoteProviders = res.data;
-                    fetchSuccess = true;
-                } else if (Array.isArray(res)) {
-                    remoteProviders = res;
-                    fetchSuccess = true;
-                } else if (res && Array.isArray(res.content)) {
-                    remoteProviders = res.content;
-                    fetchSuccess = true;
-                }
+            if (!sb) {
+                throw new Error('Supabase client connection missing.');
             }
+
+            // 1. Query all services posted by providers
+            const { data: servicesData, error: servicesErr } = await sb
+                .from('services')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (servicesErr) {
+                console.warn('Supabase services query error:', servicesErr.message);
+            }
+
+            // 2. Query verified profiles with role = SERVICE_PROVIDER
+            const { data: profilesData, error: profilesErr } = await sb
+                .from('profiles')
+                .select('*')
+                .eq('role', 'SERVICE_PROVIDER')
+                .order('created_at', { ascending: false });
+
+            if (profilesErr) {
+                console.warn('Supabase profiles query error:', profilesErr.message);
+            }
+
+            const rawServices = Array.isArray(servicesData) ? servicesData : [];
+            const rawProfiles = Array.isArray(profilesData) ? profilesData : [];
+
+            // Format services posted via provider dashboard
+            const formattedServices = rawServices.map(svc => ({
+                id: svc.id,
+                providerId: svc.provider_id,
+                providerName: svc.provider_name || 'Verified Provider',
+                title: svc.title,
+                domain: svc.domain || svc.title,
+                category: svc.category || 'WEB_DEVELOPMENT',
+                hourlyRate: svc.hourly_rate || 50,
+                deliveryDays: svc.delivery_days || 14,
+                skills: parseSkills(svc.skills),
+                description: svc.description,
+                rating: Number(svc.average_rating || 5.0).toFixed(1),
+                createdAt: svc.created_at,
+                isLiveService: true
+            }));
+
+            // Format standalone provider profiles who haven't posted a specific gig yet
+            const formattedProfiles = rawProfiles
+                .filter(prof => !formattedServices.some(s => s.providerId === prof.id))
+                .map(prof => ({
+                    id: prof.id,
+                    providerId: prof.id,
+                    providerName: prof.full_name || 'Verified Engineer',
+                    title: prof.domain || 'Technical Service Provider',
+                    domain: prof.domain || 'Software Engineering',
+                    category: 'WEB_DEVELOPMENT',
+                    hourlyRate: 50,
+                    deliveryDays: 14,
+                    skills: ['Full-Stack', 'APIs', 'Databases'],
+                    description: prof.bio || 'Verified provider on WorkBridge ready for milestone-locked technical delivery.',
+                    rating: Number(prof.rating || 5.0).toFixed(1),
+                    createdAt: prof.created_at,
+                    isLiveService: false
+                }));
+
+            // Combine both: Specific gigs first, then available provider profiles
+            allCatalogItems = [...formattedServices, ...formattedProfiles];
+
+            renderCatalog(allCatalogItems);
+
         } catch (error) {
-            console.warn('Backend provider query deferred:', error.message);
-        }
-
-        // Only inject fallback mock providers if network genuinely failed or DB is completely unreachable
-        if (!fetchSuccess && remoteProviders.length === 0) {
-            remoteProviders = getFallbackProviders();
-        }
-
-        // Merge with local newly posted services for optimistic instant UI
-        const postedServices = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
-        
-        const formattedPosted = postedServices.map(svc => ({
-            id: svc.id,
-            userId: svc.userId || svc.id,
-            fullName: svc.userFullName || 'Specialized Provider',
-            userFullName: svc.userFullName || 'Specialized Provider',
-            title: svc.title,
-            domain: svc.domain || svc.title,
-            category: svc.category || 'WEB_DEVELOPMENT',
-            averageRating: svc.averageRating || 5.0,
-            hourlyRate: svc.hourlyRate || 50,
-            bio: svc.bio || 'Verified service package with milestone guarantees.',
-            skills: svc.skills || ['Full-Stack', 'Cloud'],
-            isNewPost: true
-        }));
-
-        // Normalize remote DB providers
-        const formattedRemote = remoteProviders.map(p => ({
-            id: p.id,
-            userId: p.userId || p.id,
-            fullName: p.userFullName || p.fullName || 'Verified Provider',
-            userFullName: p.userFullName || p.fullName || 'Verified Provider',
-            title: p.title || p.domain || 'Software Engineer',
-            domain: p.domain || p.title || 'Technical Delivery',
-            category: p.category || 'WEB_DEVELOPMENT',
-            averageRating: p.averageRating != null ? p.averageRating : 5.0,
-            hourlyRate: p.hourlyRate || 50,
-            bio: p.bio || 'Technical professional available on WorkBridge.',
-            skills: p.skills || [],
-            isNewPost: false
-        }));
-
-        // Deduplicate: Newly posted services take precedence
-        const combined = [...formattedPosted];
-        formattedRemote.forEach(p => {
-            const pId = p.userId || p.id;
-            if (!combined.some(c => String(c.userId || c.id) === String(pId))) {
-                combined.push(p);
+            console.error('Failed to query Supabase catalog:', error);
+            if (window.Toast) {
+                window.Toast.error('Could not sync explore catalog with cloud database.');
             }
-        });
-
-        allProviders = combined;
-        renderProviders(allProviders);
+            renderCatalog([]);
+        }
     }
 
-    /**
-     * Render Provider & Service Cards to the Grid.
-     */
-    function renderProviders(providers) {
+    function showLoadingSkeleton() {
+        if (!providerGrid) return;
+        providerGrid.innerHTML = `
+            <div class="card card-skeleton">
+                <div class="skeleton-line w-75"></div>
+                <div class="skeleton-line w-50 mt-2"></div>
+                <div class="skeleton-box mt-3"></div>
+            </div>
+            <div class="card card-skeleton">
+                <div class="skeleton-line w-75"></div>
+                <div class="skeleton-line w-50 mt-2"></div>
+                <div class="skeleton-box mt-3"></div>
+            </div>
+            <div class="card card-skeleton">
+                <div class="skeleton-line w-75"></div>
+                <div class="skeleton-line w-50 mt-2"></div>
+                <div class="skeleton-box mt-3"></div>
+            </div>
+        `;
+        providerGrid.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. Render Cards to Grid
+    // -------------------------------------------------------------------------
+    function renderCatalog(items) {
         if (!providerGrid) return;
         providerGrid.innerHTML = '';
 
         if (resultsCount) {
-            resultsCount.textContent = `Showing ${providers.length} verified technical provider${providers.length === 1 ? '' : 's'}`;
+            resultsCount.textContent = `Showing ${items.length} verified technical offering${items.length === 1 ? '' : 's'}`;
         }
 
-        if (providers.length === 0) {
+        if (items.length === 0) {
             if (emptyState) emptyState.classList.remove('hidden');
             providerGrid.classList.add('hidden');
             return;
@@ -140,44 +169,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (emptyState) emptyState.classList.add('hidden');
         providerGrid.classList.remove('hidden');
 
-        providers.forEach(provider => {
+        items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'card provider-card';
             card.style.display = 'flex';
             card.style.flexDirection = 'column';
             card.style.justifyContent = 'space-between';
 
-            const skillsList = parseSkills(provider.skills);
-            const skillsBadges = skillsList.slice(0, 5)
+            const skillsBadges = item.skills.slice(0, 5)
                 .map(skill => `<span class="badge badge-subtle">${escapeHtml(skill)}</span>`)
                 .join(' ');
 
-            const providerId = provider.userId || provider.id;
-            const providerName = provider.userFullName || provider.fullName || 'Technical Partner';
-            const domainTitle = provider.domain || provider.title || 'Software Engineering';
-            const hourlyRate = provider.hourlyRate || 50;
-            const rating = Number(provider.averageRating || 5.0).toFixed(1);
-            const newPill = provider.isNewPost ? `<span class="badge badge-primary">⚡ Newly Posted</span>` : '';
+            const serviceBadge = item.isLiveService 
+                ? `<span class="badge badge-success">⚡ Live Service Offering</span>`
+                : `<span class="badge badge-primary">Verified Provider</span>`;
 
             card.innerHTML = `
                 <div>
                     <div class="provider-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
                         <div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
                                 <h3 class="card-title" style="font-size: 1.15rem; margin: 0;">
-                                    ${escapeHtml(providerName)}
+                                    ${escapeHtml(item.providerName)}
                                 </h3>
-                                ${newPill}
+                                ${serviceBadge}
                             </div>
-                            <span class="badge badge-subtle">${escapeHtml(domainTitle)}</span>
+                            <span class="badge badge-subtle">${escapeHtml(item.title)}</span>
                         </div>
                         <div class="rating-badge" style="font-weight: 700; color: var(--primary, #3b82f6); font-size: 0.95rem;">
-                            ★ ${rating}
+                            ★ ${item.rating}
                         </div>
                     </div>
 
-                    <p class="card-text mt-3 text-sm" style="color: var(--text-muted); min-height: 48px; line-height: 1.5;">
-                        ${escapeHtml(provider.bio || 'Verified service provider offering structured technical delivery on WorkBridge.')}
+                    <p class="card-text mt-3 text-sm" style="color: var(--text-muted, #64748b); min-height: 48px; line-height: 1.5;">
+                        ${escapeHtml(item.description)}
                     </p>
 
                     <div class="provider-skills-list mt-3" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
@@ -185,10 +210,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
 
-                <div class="provider-card-footer mt-4" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
-                    <span class="text-muted text-xs">Rate: <strong>$${hourlyRate}/hr</strong></span>
-                    <button type="button" class="btn btn-primary btn-sm btn-invite" data-id="${providerId}" data-name="${escapeHtml(providerName)}">
-                        + Start Project
+                <div class="provider-card-footer mt-4" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <span class="text-muted text-xs">Rate: <strong>$${item.hourlyRate}/hr</strong></span>
+                        ${item.deliveryDays ? `<span class="text-muted text-xs ml-2">&bull; SLA: <strong>\${item.deliveryDays}d</strong></span>` : ''}
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm btn-invite" 
+                        data-id="${item.providerId}" 
+                        data-name="${escapeHtml(item.providerName)}"
+                        data-domain="${escapeHtml(item.domain || item.title)}">
+                        + Start Project / Invite
                     </button>
                 </div>
             `;
@@ -196,46 +227,47 @@ document.addEventListener('DOMContentLoaded', () => {
             providerGrid.appendChild(card);
         });
 
-        // Wire click listeners for "+ Start Project"
+        // Wire click listeners for "+ Start Project / Invite"
         providerGrid.querySelectorAll('.btn-invite').forEach(btn => {
             btn.addEventListener('click', () => {
                 const providerId = btn.getAttribute('data-id');
                 const providerName = btn.getAttribute('data-name');
-                handleInviteClick(providerId, providerName);
+                const providerDomain = btn.getAttribute('data-domain');
+                handleInviteClick(providerId, providerName, providerDomain);
             });
         });
     }
 
-    /**
-     * Multi-criteria filtering logic.
-     */
+    // -------------------------------------------------------------------------
+    // 3. Multi-Criteria Filtering Logic
+    // -------------------------------------------------------------------------
     function applyFilters() {
         const query = (searchInput?.value || '').toLowerCase().trim();
         const selectedCategory = (categoryFilter?.value || '').toUpperCase().trim();
         const minRating = parseFloat(minRatingFilter?.value) || 0;
 
-        const filtered = allProviders.filter(p => {
-            const providerName = (p.userFullName || p.fullName || '').toLowerCase();
-            const bio = (p.bio || '').toLowerCase();
-            const domain = (p.domain || p.title || '').toLowerCase();
-            const skills = parseSkills(p.skills).map(s => s.toLowerCase());
+        const filtered = allCatalogItems.filter(item => {
+            const providerName = (item.providerName || '').toLowerCase();
+            const description = (item.description || '').toLowerCase();
+            const title = (item.title || '').toLowerCase();
+            const skills = item.skills.map(s => s.toLowerCase());
 
             const matchesQuery = !query || 
                 providerName.includes(query) || 
-                bio.includes(query) || 
-                domain.includes(query) || 
+                description.includes(query) || 
+                title.includes(query) || 
                 skills.some(s => s.includes(query));
 
-            const providerCat = (p.category || p.domain || '').toUpperCase();
-            const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || providerCat.includes(selectedCategory);
+            const itemCategory = (item.category || '').toUpperCase();
+            const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || itemCategory.includes(selectedCategory);
 
-            const rating = parseFloat(p.averageRating || 5.0);
+            const rating = parseFloat(item.rating || 5.0);
             const matchesRating = rating >= minRating;
 
             return matchesQuery && matchesCategory && matchesRating;
         });
 
-        renderProviders(filtered);
+        renderCatalog(filtered);
     }
 
     if (filterForm) {
@@ -253,16 +285,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (searchInput) searchInput.value = '';
         if (categoryFilter) categoryFilter.value = '';
         if (minRatingFilter) minRatingFilter.value = '0';
-        renderProviders(allProviders);
+        renderCatalog(allCatalogItems);
     }
 
     if (resetFilterBtn) resetFilterBtn.addEventListener('click', resetFilters);
     if (clearSearchStateBtn) clearSearchStateBtn.addEventListener('click', resetFilters);
 
+    if (btnRefreshCatalog) {
+        btnRefreshCatalog.addEventListener('click', async () => {
+            btnRefreshCatalog.disabled = true;
+            btnRefreshCatalog.style.opacity = '0.6';
+            await loadServicesCatalog();
+            if (window.Toast) window.Toast.info('Catalog synced with cloud.');
+            btnRefreshCatalog.disabled = false;
+            btnRefreshCatalog.style.opacity = '1';
+        });
+    }
+
     // -------------------------------------------------------------------------
-    // Project Invitation Modal & Submission
+    // 4. Project Invitation Modal & Direct Supabase Insertion
     // -------------------------------------------------------------------------
-    function handleInviteClick(providerId, providerName) {
+    function handleInviteClick(providerId, providerName, providerDomain) {
         const isLoggedIn = window.AuthState ? window.AuthState.isLoggedIn() : false;
 
         if (!isLoggedIn) {
@@ -280,19 +323,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (selectedProviderIdInput) selectedProviderIdInput.value = providerId;
-        if (modalProviderTitle) modalProviderTitle.textContent = `Invite ${providerName} to Collaborate`;
+        if (selectedProviderNameInput) selectedProviderNameInput.value = providerName;
+        if (modalProviderTitle) modalProviderTitle.textContent = `Invite ${providerName} to Scope Project`;
 
-        if (window.Modal) {
-            window.Modal.open('inviteModal');
-        } else if (inviteModal) {
+        const categorySelect = document.getElementById('projectCategorySelect');
+        if (categorySelect && providerDomain) {
+            categorySelect.value = providerDomain.includes('BACKEND') ? 'BACKEND' : 'WEB_DEVELOPMENT';
+        }
+
+        if (inviteModal) {
             inviteModal.classList.remove('hidden');
         }
     }
 
     function closeInviteModal() {
-        if (window.Modal) {
-            window.Modal.close('inviteModal', true);
-        } else if (inviteModal) {
+        if (inviteModal) {
             inviteModal.classList.add('hidden');
             if (inviteProjectForm) inviteProjectForm.reset();
         }
@@ -300,91 +345,114 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeInviteModal);
     if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeInviteModal);
+    if (inviteModal) {
+        inviteModal.addEventListener('click', (e) => {
+            if (e.target === inviteModal) closeInviteModal();
+        });
+    }
 
+    // -------------------------------------------------------------------------
+    // 5. Submit Invitation -> Directly Insert into Supabase `projects`
+    // -------------------------------------------------------------------------
     if (inviteProjectForm) {
         inviteProjectForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const providerId = selectedProviderIdInput ? selectedProviderIdInput.value : null;
+            const providerName = selectedProviderNameInput ? selectedProviderNameInput.value : 'Assigned Provider';
             const title = (document.getElementById('projectTitleInput')?.value || '').trim();
+            const category = document.getElementById('projectCategorySelect')?.value || 'WEB_DEVELOPMENT';
             const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
-            const budget = document.getElementById('projectBudgetInput')?.value || 1500;
+            const budget = parseFloat(document.getElementById('projectBudgetInput')?.value) || 1500;
 
             if (!title || !summary) {
                 if (window.Toast) window.Toast.error('Please enter a project title and initial scope summary.');
                 return;
             }
 
+            if (!sb) {
+                if (window.Toast) window.Toast.error('Database connection not available.');
+                return;
+            }
+
             if (modalSubmitBtn) {
                 modalSubmitBtn.disabled = true;
-                modalSubmitBtn.textContent = 'Dispatching Invitation...';
+                modalSubmitBtn.textContent = 'Dispatching to Cloud...';
             }
 
             const currentUser = window.AuthState ? window.AuthState.getUser() : null;
-            const invitationRecord = {
-                id: Date.now(),
-                providerId: providerId,
-                clientName: currentUser?.fullName || currentUser?.email || 'Verified Client',
-                clientEmail: currentUser?.email || 'client@workbridge.io',
+
+            const newProjectRow = {
+                client_id: currentUser?.id,
+                client_name: currentUser?.fullName || 'Verified Client',
+                client_email: currentUser?.email || 'client@workbridge.io',
+                assigned_provider_id: providerId,
+                assigned_provider_name: providerName,
                 title: title,
-                summary: summary,
+                category: category,
+                budget: budget,
                 description: summary,
-                budget: Number(budget),
+                summary: summary,
                 stage: 'INVITED',
-                createdAt: new Date().toISOString()
+                completion_percentage: 0
             };
 
-            // 1. Dispatch directly to Neon DB via Render Web Service
             try {
-                if (window.ApiClient && typeof window.ApiClient.post === 'function') {
-                    await window.ApiClient.post('/projects/invite', {
-                        assignedProviderId: Number(providerId) || providerId,
-                        title: title,
-                        description: summary,
-                        summary: summary,
-                        budget: Number(budget),
-                        category: 'WEB_DEVELOPMENT'
-                    });
+                // Direct insert into Supabase `projects` table
+                const { data, error } = await sb
+                    .from('projects')
+                    .insert([newProjectRow])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Create initial agreement stub in draft state
+                await sb
+                    .from('agreements')
+                    .insert([{
+                        project_id: data.id,
+                        version: '1.0',
+                        status: 'DRAFT',
+                        agreed_amount: budget,
+                        terms_and_conditions: 'Mutual scope baseline governed by WorkBridge milestone protocol.'
+                    }])
+                    .select()
+                    .maybeSingle();
+
+                if (window.Toast) {
+                    window.Toast.success(`Invitation dispatched! ${providerName} can now review your proposal.`);
                 }
-            } catch (error) {
-                console.warn('Backend invite sync deferred, registered in local invitation pipe:', error.message);
+
+                closeInviteModal();
+
+                setTimeout(() => {
+                    window.location.href = 'client-dashboard.html';
+                }, 600);
+
+            } catch (err) {
+                console.error('Failed to dispatch invitation to Supabase:', err);
+                if (window.Toast) {
+                    window.Toast.error(err.message || 'Could not send invitation. Please try again.');
+                }
+            } finally {
+                if (modalSubmitBtn) {
+                    modalSubmitBtn.disabled = false;
+                    modalSubmitBtn.textContent = 'Send Invitation';
+                }
             }
-
-            // 2. Keep local cache for immediate optimistic rendering
-            const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
-            localInvites.unshift(invitationRecord);
-            localStorage.setItem('wb_local_invitations', JSON.stringify(localInvites));
-
-            const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
-            localProjects.unshift(invitationRecord);
-            localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
-
-            if (window.Toast) {
-                window.Toast.success('Invitation sent! The provider has received your project proposal.');
-            }
-
-            closeInviteModal();
-
-            if (modalSubmitBtn) {
-                modalSubmitBtn.disabled = false;
-                modalSubmitBtn.textContent = 'Send Invitation';
-            }
-
-            setTimeout(() => {
-                window.location.href = `client-dashboard.html`;
-            }, 800);
         });
     }
 
     // -------------------------------------------------------------------------
-    // Utilities & Fallback Data
+    // Utilities
     // -------------------------------------------------------------------------
     function parseSkills(skills) {
         if (Array.isArray(skills)) return skills;
         if (typeof skills === 'string' && skills.trim()) {
             return skills.split(',').map(s => s.trim()).filter(Boolean);
         }
-        return [];
+        return ['Java', 'Spring Boot', 'JavaScript'];
     }
 
     function escapeHtml(str) {
@@ -394,43 +462,5 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
-    }
-
-    function getFallbackProviders() {
-        return [
-            {
-                id: 1,
-                userId: 1,
-                fullName: 'Apex Tech Solutions',
-                domain: 'Full-Stack Web Development',
-                category: 'FULL_STACK',
-                averageRating: 4.9,
-                hourlyRate: 65,
-                bio: 'Specialized enterprise engineering team delivering high-performance Java 21, Spring Boot microservices, and modern web applications.',
-                skills: ['Spring Boot', 'Java 21', 'REST APIs', 'PostgreSQL', 'JavaScript']
-            },
-            {
-                id: 2,
-                userId: 2,
-                fullName: 'DevCore Systems',
-                domain: 'Cloud Architecture & DevOps',
-                category: 'DEVOPS',
-                averageRating: 4.8,
-                hourlyRate: 75,
-                bio: 'High-throughput transactional systems, automated deployment pipelines, Docker containerization, and database optimization.',
-                skills: ['Java', 'Spring Security', 'Docker', 'PostgreSQL', 'Redis']
-            },
-            {
-                id: 3,
-                userId: 3,
-                fullName: 'Kavya Infotech',
-                domain: 'Frontend & UI/UX Systems',
-                category: 'FRONTEND',
-                averageRating: 5.0,
-                hourlyRate: 55,
-                bio: 'Accessible, responsive user interface architecture with optimized client-side state handling and component frameworks.',
-                skills: ['HTML5', 'CSS3', 'JavaScript', 'Responsive UI', 'Figma']
-            }
-        ];
     }
 });

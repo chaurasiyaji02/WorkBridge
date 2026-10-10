@@ -42,7 +42,10 @@
                     <h1 class="page-title">Explore Verified Service Providers</h1>
                     <p class="text-muted">Find specialized engineers, full-stack developers, and technical teams ready for milestone-locked engagements.</p>
                 </div>
-                <div class="header-action-group">
+                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnRefreshCatalog" title="Sync live services">
+                        <span class="btn-icon">🔄</span> Sync
+                    </button>
                     <span class="badge badge-success" id="providerVerificationNotice">🛡️ Verified Talent Only</span>
                 </div>
             </div>
@@ -65,13 +68,12 @@
                         <label for="categoryFilter" class="form-label-sm">Domain / Category</label>
                         <select id="categoryFilter" class="form-control">
                             <option value="">All Categories</option>
-                            <option value="FULL_STACK">Full Stack Development</option>
-                            <option value="BACKEND">Backend Engineering</option>
-                            <option value="FRONTEND">Frontend &amp; Web</option>
+                            <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
+                            <option value="BACKEND">Backend &amp; Cloud Microservices</option>
+                            <option value="FRONTEND">Frontend &amp; UI/UX Systems</option>
                             <option value="MOBILE">Mobile App Development</option>
-                            <option value="AI_DATA">AI &amp; Data Engineering</option>
-                            <option value="DEVOPS">DevOps &amp; Cloud Infrastructure</option>
-                            <option value="SECURITY">API Security &amp; Audit</option>
+                            <option value="DEVOPS">Cloud Architecture &amp; DevOps</option>
+                            <option value="AI">AI &amp; Machine Learning</option>
                         </select>
                     </div>
 
@@ -97,7 +99,7 @@
             <section class="results-section mt-4">
                 <div class="section-title-row">
                     <div class="title-with-badge">
-                        <h3 class="section-heading">Available Providers</h3>
+                        <h3 class="section-heading">Available Providers &amp; Services</h3>
                         <span id="resultsCount" class="badge badge-subtle">Loading providers...</span>
                     </div>
                 </div>
@@ -148,7 +150,10 @@
             </div>
             <form id="inviteProjectForm">
                 <div class="modal-body">
+                    <!-- Hidden attributes for pristine database mapping -->
                     <input type="hidden" id="selectedProviderId" name="providerId">
+                    <input type="hidden" id="selectedProviderName" name="providerName">
+                    <input type="hidden" id="selectedProviderDomain" name="providerDomain">
                     
                     <div class="form-group">
                         <label for="projectTitleInput" class="form-label">Project Title *</label>
@@ -156,20 +161,37 @@
                             type="text" 
                             id="projectTitleInput" 
                             class="form-control" 
-                            placeholder="e.g., Cloud Inventory & Supply Chain Microservice" 
+                            placeholder="e.g., Cloud Inventory &amp; Supply Chain Microservice" 
                             required
                         >
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="projectBudgetInput" class="form-label">Estimated Initial Budget ($ USD)</label>
-                        <input 
-                            type="number" 
-                            id="projectBudgetInput" 
-                            class="form-control" 
-                            placeholder="e.g., 2000"
-                            min="0"
-                        >
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div>
+                                <label for="projectCategorySelect" class="form-label">Project Domain *</label>
+                                <select id="projectCategorySelect" class="form-control" required>
+                                    <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
+                                    <option value="BACKEND">Backend Engineering</option>
+                                    <option value="FRONTEND">Frontend &amp; UI/UX</option>
+                                    <option value="MOBILE">Mobile Applications</option>
+                                    <option value="DEVOPS">Cloud &amp; DevOps</option>
+                                    <option value="AI">AI &amp; Data</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="projectBudgetInput" class="form-label">Estimated Budget ($ USD) *</label>
+                                <input 
+                                    type="number" 
+                                    id="projectBudgetInput" 
+                                    class="form-control" 
+                                    placeholder="2000" 
+                                    min="50" 
+                                    value="1500" 
+                                    required
+                                >
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group mt-2">
@@ -178,13 +200,13 @@
                             id="projectSummaryInput" 
                             class="form-control" 
                             rows="4" 
-                            placeholder="Describe required technology stacks, expected deliverables, and estimated milestone timeline..."
+                            placeholder="Describe required technology stacks, expected deliverables, and estimated milestone timeline..." 
                             required
                         ></textarea>
                     </div>
 
                     <p class="text-xs text-muted mt-2">
-                        🔒 Sending this invite initiates a collaborative Scope Workspace. Deliverables and milestones become immutable once both parties sign Agreement v1.0.
+                        🔒 Sending this invite initializes a collaborative Scope Workspace. Deliverables and milestones become immutable once both parties sign Agreement v1.0.
                     </p>
                 </div>
 
@@ -199,7 +221,9 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts Pipeline (Strict Dependency Order) -->
+    <!-- Scripts Pipeline (Supabase First) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>

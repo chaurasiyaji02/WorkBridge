@@ -1,9 +1,9 @@
 /**
- * WORKBRIDGE - SERVICE PROVIDER DASHBOARD CONTROLLER
+ * WORKBRIDGE - SERVICE PROVIDER DASHBOARD CONTROLLER (SUPABASE EDITION)
  * File: js/pages/providerDashboardPage.js
  * 
- * Manages provider route guards, incoming project invitations (review/accept/decline),
- * active project milestone tracking, and cloud-synchronized service publishing.
+ * Powered by direct Supabase PostgreSQL queries.
+ * Real-time cross-device service publishing, invitations, and active project tracking.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const currentUser = window.AuthState ? window.AuthState.getUser() : null;
     if (!currentUser) return;
+
+    // Supabase Reference
+    const sb = window.sbClient;
 
     // DOM Elements - Profile & Sidebar
     const providerNameEl = document.getElementById('providerName');
@@ -94,19 +97,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // -------------------------------------------------------------------------
-    // 2. Fetch Live Dashboard Data
+    // 2. Fetch Live Dashboard Data directly from Supabase
     // -------------------------------------------------------------------------
     async function loadProviderDashboard() {
         showLoadingState();
 
         try {
-            const [invitesData, projectsData] = await Promise.all([
-                fetchInvitationsSafe(),
-                fetchProjectsSafe()
-            ]);
+            if (!sb) {
+                throw new Error('Supabase client connection missing.');
+            }
 
-            pendingInvitations = Array.isArray(invitesData) ? invitesData : [];
-            providerProjects = Array.isArray(projectsData) ? projectsData : [];
+            // 1. Fetch pending invitations for this provider
+            const { data: rawInvites, error: invitesErr } = await sb
+                .from('projects')
+                .select('*')
+                .eq('stage', 'INVITED')
+                .or(`assigned_provider_id.eq.${currentUser.id},assigned_provider_name.eq.${currentUser.fullName}`)
+                .order('created_at', { ascending: false });
+
+            if (invitesErr) console.warn('Supabase invitations query warning:', invitesErr.message);
+
+            // 2. Fetch active and completed projects for this provider
+            const { data: rawProjects, error: prjErr } = await sb
+                .from('projects')
+                .select(`
+                    *,
+                    agreements ( version, status ),
+                    milestones ( id, weight_percentage, status )
+                `)
+                .neq('stage', 'INVITED')
+                .or(`assigned_provider_id.eq.${currentUser.id},assigned_provider_name.eq.${currentUser.fullName}`)
+                .order('created_at', { ascending: false });
+
+            if (prjErr) console.warn('Supabase projects query warning:', prjErr.message);
+
+            pendingInvitations = (rawInvites || []).map(p => ({
+                id: p.id,
+                title: p.title,
+                category: p.category,
+                budget: p.budget,
+                description: p.description,
+                summary: p.summary,
+                clientName: p.client_name,
+                clientEmail: p.client_email,
+                stage: p.stage,
+                createdAt: p.created_at
+            }));
+
+            providerProjects = (rawProjects || []).map(p => ({
+                id: p.id,
+                title: p.title,
+                category: p.category,
+                budget: p.budget,
+                description: p.description,
+                summary: p.summary,
+                clientName: p.client_name,
+                stage: p.stage,
+                completionPercentage: p.completion_percentage || 0,
+                agreement: Array.isArray(p.agreements) ? p.agreements[0] : p.agreements,
+                milestones: p.milestones || []
+            }));
 
             updateMetrics();
             renderInvitations();
@@ -126,59 +176,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
         } catch (error) {
-            console.error('Failed to hydrate provider workspace:', error);
+            console.error('Failed to hydrate provider workspace from Supabase:', error);
             if (window.Toast) {
-                window.Toast.error('Could not sync with live database. Displaying local workspace.');
+                window.Toast.error('Could not load live projects from database.');
             }
             renderInvitations();
             renderFilteredProjects();
         }
-    }
-
-    async function fetchInvitationsSafe() {
-        let liveInvites = [];
-        try {
-            if (window.ProjectApi && typeof window.ProjectApi.getProviderInvitations === 'function') {
-                liveInvites = await window.ProjectApi.getProviderInvitations();
-            } else if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-                const res = await window.ApiClient.get('/projects/invitations/provider');
-                liveInvites = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
-            }
-        } catch (e) {
-            console.warn('Backend invitations query deferred:', e.message);
-        }
-
-        // Merge with local fallback invitations
-        const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
-        const myLocalInvites = localInvites.filter(inv => 
-            !inv.providerId || String(inv.providerId) === String(currentUser.id) || String(inv.providerEmail) === String(currentUser.email)
-        );
-
-        const combined = Array.isArray(liveInvites) ? [...liveInvites] : [];
-        myLocalInvites.forEach(localInv => {
-            if (!combined.some(c => String(c.id) === String(localInv.id))) {
-                combined.unshift(localInv);
-            }
-        });
-
-        return combined;
-    }
-
-    async function fetchProjectsSafe() {
-        try {
-            if (window.ProjectApi && typeof window.ProjectApi.getProviderProjects === 'function') {
-                return await window.ProjectApi.getProviderProjects('ALL');
-            }
-            if (window.ApiClient && typeof window.ApiClient.get === 'function') {
-                const res = await window.ApiClient.get('/projects/provider?status=ALL');
-                return (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
-            }
-        } catch (e) {
-            console.warn('Backend provider projects query deferred:', e.message);
-        }
-
-        const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
-        return localProjects.filter(p => String(p.assignedProviderId) === String(currentUser.id));
     }
 
     function showLoadingState() {
@@ -326,12 +330,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 : `<span class="badge badge-warning" style="font-size: 0.75rem;">📝 Scope Draft</span>`;
 
             const stageBadge = getStageBadge(project.stage);
-            const clientDisplay = project.clientName || project.client?.fullName || 'Client Partner';
+            const clientDisplay = project.clientName || 'Client Partner';
 
             card.innerHTML = `
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
-                        <span class="badge badge-subtle">PRJ-${String(project.id).padStart(3, '0')}</span>
+                        <span class="badge badge-subtle">PRJ-${String(project.id).slice(-4).toUpperCase()}</span>
                         <div style="display: flex; gap: 0.35rem; align-items: center;">
                             ${scopeBadge}
                             ${stageBadge}
@@ -375,54 +379,65 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Array.isArray(project.milestones) && project.milestones.length > 0) {
             const approvedWeight = project.milestones.reduce((acc, m) => {
                 if (m.status === 'APPROVED' || m.status === 'COMPLETED') {
-                    return acc + (Number(m.weightPercentage) || (100 / project.milestones.length));
+                    return acc + (Number(m.weight_percentage || m.weightPercentage) || (100 / project.milestones.length));
                 }
                 return acc;
             }, 0);
             return Math.min(100, Math.round(approvedWeight));
         }
 
-        if (typeof project.progressPercentage === 'number') {
-            return Math.min(100, Math.max(0, project.progressPercentage));
-        }
-
-        return 0;
+        return Number(project.completionPercentage) || 0;
     }
 
     // -------------------------------------------------------------------------
-    // 6. Invitation Processing Handlers (Accept / Decline)
+    // 6. Invitation Processing Handlers (Accept / Decline via Supabase)
     // -------------------------------------------------------------------------
     async function handleInvitationResponse(projectId, action) {
-        if (!projectId) return;
+        if (!projectId || !sb) return;
 
         try {
-            if (window.ProjectApi && typeof window.ProjectApi.respondToInvitation === 'function') {
-                await window.ProjectApi.respondToInvitation(projectId, action);
-            } else if (window.ApiClient && typeof window.ApiClient.post === 'function') {
-                await window.ApiClient.post(`/projects/${projectId}/invitations/respond`, { action });
-            }
-
-            // Sync with local fallback invitations
-            let localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
-            const acceptedInvite = localInvites.find(inv => String(inv.id) === String(projectId));
-            localInvites = localInvites.filter(inv => String(inv.id) !== String(projectId));
-            localStorage.setItem('wb_local_invitations', JSON.stringify(localInvites));
-
             if (action === 'ACCEPT') {
-                if (acceptedInvite) {
-                    let localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
-                    acceptedInvite.stage = PROJECT_STAGES.REQUIREMENT_DISCUSSION;
-                    acceptedInvite.assignedProviderId = currentUser.id;
-                    localProjects.unshift(acceptedInvite);
-                    localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
-                }
+                const { error } = await sb
+                    .from('projects')
+                    .update({
+                        stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION,
+                        assigned_provider_id: currentUser.id,
+                        assigned_provider_name: displayName
+                    })
+                    .eq('id', projectId);
+
+                if (error) throw error;
+
+                // Create initial agreement draft if none exists
+                await sb
+                    .from('agreements')
+                    .insert([{
+                        project_id: projectId,
+                        version: '1.0',
+                        status: 'DRAFT',
+                        terms_and_conditions: 'Standard WorkBridge milestone & scope baseline.'
+                    }])
+                    .select()
+                    .maybeSingle();
 
                 if (window.Toast) window.Toast.success('Invitation accepted! Launching workspace...');
                 closeInvitationModal();
                 setTimeout(() => {
                     window.location.href = `project-view.html?id=${projectId}`;
-                }, 600);
+                }, 500);
+
             } else {
+                // Decline invite
+                const { error } = await sb
+                    .from('projects')
+                    .update({
+                        stage: 'COMPLETED',
+                        summary: 'Invitation declined by provider.'
+                    })
+                    .eq('id', projectId);
+
+                if (error) throw error;
+
                 if (window.Toast) window.Toast.info('Invitation declined.');
                 closeInvitationModal();
                 pendingInvitations = pendingInvitations.filter(inv => String(inv.id) !== String(projectId));
@@ -432,7 +447,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error(`Error processing invitation (${action}):`, error);
             if (window.Toast) {
-                window.Toast.error(error.message || `Unable to ${action.toLowerCase()} invitation right now.`);
+                window.Toast.error(error.message || `Unable to ${action.toLowerCase()} invitation.`);
             }
         }
     }
@@ -509,7 +524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Event Listeners & Live Cloud Service Publishing
+    // 8. Event Listeners & Live Cloud Service Publishing to Supabase
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Stage Filter Pills
@@ -528,7 +543,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 refreshDashboardBtn.disabled = true;
                 refreshDashboardBtn.style.opacity = '0.6';
                 await loadProviderDashboard();
-                if (window.Toast) window.Toast.info('Dashboard synced.');
+                if (window.Toast) window.Toast.info('Dashboard synced with cloud.');
                 refreshDashboardBtn.disabled = false;
                 refreshDashboardBtn.style.opacity = '1';
             });
@@ -562,13 +577,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Post Service Form Submit -> Synced directly to Neon DB
+        // ---------------------------------------------------------------------
+        // Post Service Form Submit -> Directly Inserts into Supabase `services`
+        // ---------------------------------------------------------------------
         if (postServiceForm) {
             postServiceForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const title = (document.getElementById('serviceTitleInput')?.value || '').trim();
                 const category = document.getElementById('serviceCategorySelect')?.value || 'WEB_DEVELOPMENT';
+                const domainText = document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || 'Full-Stack Web Development';
                 const hourlyRate = parseFloat(document.getElementById('serviceRateInput')?.value) || 50.0;
                 const deliveryDays = parseInt(document.getElementById('serviceDeliveryDaysInput')?.value, 10) || 14;
                 const skillsText = (document.getElementById('serviceSkillsInput')?.value || '').trim();
@@ -579,55 +597,54 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
+                if (!sb) {
+                    if (window.Toast) window.Toast.error('Database connection not available.');
+                    return;
+                }
+
                 if (btnSubmitService) {
                     btnSubmitService.disabled = true;
                     btnSubmitService.textContent = 'Publishing to Cloud...';
                 }
 
-                // Strict Backend Contract: ProviderProfileDto.ServiceOfferRequest
-                const cloudPayload = {
+                const parsedSkills = skillsText 
+                    ? skillsText.split(',').map(s => s.trim()).filter(Boolean)
+                    : ['Java', 'Spring Boot', 'JavaScript'];
+
+                const newServiceRow = {
+                    provider_id: currentUser.id,
+                    provider_name: displayName,
                     title: title,
                     category: category,
-                    hourlyRate: hourlyRate,
-                    deliveryDays: deliveryDays,
-                    skills: skillsText, // comma-separated string parsed cleanly by ProfileService.java
-                    bio: description
+                    domain: domainText,
+                    hourly_rate: hourlyRate,
+                    delivery_days: deliveryDays,
+                    skills: parsedSkills,
+                    description: description,
+                    average_rating: 5.0
                 };
 
                 try {
-                    // Centralized ApiClient strips '/api' automatically if present
-                    if (!window.ApiClient || typeof window.ApiClient.post !== 'function') {
-                        throw new Error('ApiClient service unavailable.');
-                    }
+                    // Direct insertion into Supabase PostgreSQL
+                    const { data, error } = await sb
+                        .from('services')
+                        .insert([newServiceRow])
+                        .select()
+                        .single();
 
-                    // 1. Dispatch directly to Neon DB via Render Web Service
-                    await window.ApiClient.post('/profiles/services', cloudPayload);
-
-                    // 2. Also keep a local cache entry for immediate optimistic rendering
-                    const localCatalog = JSON.parse(localStorage.getItem('wb_posted_services') || '[]');
-                    localCatalog.unshift({
-                        id: Date.now(),
-                        userId: currentUser.id,
-                        userFullName: displayName,
-                        domain: document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || category,
-                        ...cloudPayload,
-                        skills: skillsText ? skillsText.split(',').map(s => s.trim()).filter(Boolean) : ['Java'],
-                        averageRating: 5.0,
-                        createdAt: new Date().toISOString()
-                    });
-                    localStorage.setItem('wb_posted_services', JSON.stringify(localCatalog));
+                    if (error) throw error;
 
                     if (window.Toast) {
-                        window.Toast.success('Service published! Clients across all devices can now find your service.');
+                        window.Toast.success('Service published to Cloud! Visible on all devices immediately.');
                     }
 
                     closePostServiceModal();
                     await loadProviderDashboard();
 
                 } catch (err) {
-                    console.error('Failed to publish service to backend:', err);
+                    console.error('Failed to publish service to Supabase:', err);
                     if (window.Toast) {
-                        window.Toast.error(err.message || 'Could not save service to cloud database. Please retry.');
+                        window.Toast.error(err.message || 'Could not publish service. Please try again.');
                     }
                 } finally {
                     if (btnSubmitService) {

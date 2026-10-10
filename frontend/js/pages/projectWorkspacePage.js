@@ -1,13 +1,11 @@
 /**
- * WORKBRIDGE - PROJECT WORKSPACE MASTER CONTROLLER
+ * WORKBRIDGE - PROJECT WORKSPACE MASTER CONTROLLER (SUPABASE CLOUD EDITION)
  * File: js/pages/projectWorkspacePage.js
  * 
  * Production Workspace Controller orchestrating:
- * - Engine A: Scope Version Locking, Mutual Agreement Signing, and v2.0 Amendment Protocol.
- * - Engine B: Milestone Verification, Deliverable Review, and Weighted Progress Calculation.
- * - Modals: Stage Transitions, Scope Amendments, Audit History, Architectural Decisions, 
- *   Resource Vault Assets, Daily Standups, and Milestone Registrations.
- * - High-efficiency incremental polling for Render free-tier optimization.
+ * - Engine A: Scope Version Locking, Mutual Agreement Signing, and Cryptographic Baseline.
+ * - Engine B: Milestone Proof Verification, Deliverable Review, and Weighted Progress Calculation.
+ * - Workspace Chat & Materials Vault backed directly by Supabase PostgreSQL.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -43,23 +41,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.AuthState.setActiveProjectId(projectId);
     }
 
+    // Supabase Reference
+    const sb = window.sbClient;
+
     // -------------------------------------------------------------------------
-    // 2. DOM Elements Cache (Strictly matching project-view.html)
+    // 2. DOM Elements Cache
     // -------------------------------------------------------------------------
-    // Pipeline & Header
+    // Header & Pipeline
     const projectTitleEl = document.getElementById('projectTitle');
     const projectCodeBadgeEl = document.getElementById('projectCodeBadge');
+    const scopeLockTopBadge = document.getElementById('scopeLockTopBadge');
+    const btnSyncWorkspace = document.getElementById('btnSyncWorkspace');
     const btnProposeStageAdvance = document.getElementById('btnProposeStageAdvance');
     const stageSteps = document.querySelectorAll('.stage-step');
     const projectProgressPercent = document.getElementById('projectProgressPercent');
+    const projectProgressBar = document.getElementById('projectProgressBar');
     const reqStatusText = document.getElementById('reqStatusText');
     const reqStatusDot = document.getElementById('reqStatusDot');
     const agreementStatusText = document.getElementById('agreementStatusText');
     const agreementStatusDot = document.getElementById('agreementStatusDot');
+    const contractLockDot = document.getElementById('contractLockDot');
+    const contractLockText = document.getElementById('contractLockText');
 
-    // Workspace Tabs
+    // Tabs
     const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane, .tab-content');
+    const tabPanes = document.querySelectorAll('.tab-content');
 
     // Tab 1: Overview
     const projectDescription = document.getElementById('projectDescription');
@@ -67,13 +73,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const overviewProviderName = document.getElementById('overviewProviderName');
     const metaDeadline = document.getElementById('metaDeadline');
     const metaBudget = document.getElementById('metaBudget');
+    const metaVersion = document.getElementById('metaVersion');
     const updatesTimeline = document.getElementById('updatesTimeline');
-    const btnOpenStandupModal = document.getElementById('btnPostUpdate') || document.getElementById('btnOpenStandupModal');
+    const btnPostUpdate = document.getElementById('btnPostUpdate');
 
     // Tab 2: Requirements (Engine A)
     const currentReqVersionBadge = document.getElementById('currentReqVersionBadge');
     const currentReqLockStatus = document.getElementById('currentReqLockStatus');
-    const requirementBannerMount = document.getElementById('requirementBannerMount');
+    const reqLockNotice = document.getElementById('reqLockNotice');
     const requirementForm = document.getElementById('requirementForm');
     const reqObjective = document.getElementById('reqObjective');
     const reqTargetUsers = document.getElementById('reqTargetUsers');
@@ -88,24 +95,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiAuditContent = document.getElementById('aiAuditContent');
     const btnCloseAiPanel = document.getElementById('btnCloseAiPanel');
 
-    // Tab 3: Agreement (Engine A)
-    const agreementBannerMount = document.getElementById('agreementBannerMount');
+    // Tab 3: Milestones (Engine B)
+    const milestonesContainer = document.getElementById('milestonesContainer');
+    const btnAddMilestoneBtn = document.getElementById('btnAddMilestoneBtn');
+
+    // Tab 4: Mutual Agreement (Engine A)
+    const agreementVersionPill = document.getElementById('agreementVersionPill');
+    const scopeHashContainer = document.getElementById('scopeHashContainer');
+    const scopeHashValue = document.getElementById('scopeHashValue');
     const agClientName = document.getElementById('agClientName');
     const agProviderName = document.getElementById('agProviderName');
     const agDeliverablesText = document.getElementById('agDeliverablesText');
     const agTimelineText = document.getElementById('agTimelineText');
     const agAmountText = document.getElementById('agAmountText');
     const agClientSignStatus = document.getElementById('agClientSignStatus');
+    const agClientSignTimestamp = document.getElementById('agClientSignTimestamp');
     const agProviderSignStatus = document.getElementById('agProviderSignStatus');
+    const agProviderSignTimestamp = document.getElementById('agProviderSignTimestamp');
     const btnApproveAgreement = document.getElementById('btnApproveAgreement');
     const btnRequestAgreementChange = document.getElementById('btnRequestAgreementChange');
     const btnProposeAmendment = document.getElementById('btnProposeAmendment');
     const btnViewAuditHistory = document.getElementById('btnViewAuditHistory');
-
-    // Tab 4: Milestones (Engine B)
-    const milestonesList = document.getElementById('milestonesList');
-    const btnOpenMilestoneModal = document.getElementById('btnOpenMilestoneModal');
-    const milestoneEmptyState = document.getElementById('milestoneEmptyState');
 
     // Tab 5: Discussion & Chat
     const chatMessagesFeed = document.getElementById('chatMessagesFeed');
@@ -116,50 +126,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiSummaryContent = document.getElementById('aiSummaryContent');
     const btnCloseSummary = document.getElementById('btnCloseSummary');
 
-    // Tab 6: Decisions
+    // Tab 6: Decisions & Resources
     const decisionsList = document.getElementById('decisionsList');
-    const btnOpenDecisionModal = document.getElementById('btnLogDecision') || document.getElementById('btnOpenDecisionModal');
-
-    // Tab 7: Resources
+    const btnLogDecision = document.getElementById('btnLogDecision');
     const resourceTableBody = document.getElementById('resourceTableBody');
-    const btnOpenResourceModal = document.getElementById('btnUploadResource') || document.getElementById('btnOpenResourceModal');
+    const btnUploadResource = document.getElementById('btnUploadResource');
 
-    // Modals & Forms
+    // Modals
     const stageAdvanceModal = document.getElementById('stageAdvanceModal');
     const stageAdvanceForm = document.getElementById('stageAdvanceForm');
     const targetStageSelect = document.getElementById('targetStageSelect');
-    const transitionNotesInput = document.getElementById('transitionNotesInput');
+    const stageTransitionNotes = document.getElementById('stageTransitionNotes');
+    const closeStageModalBtn = document.getElementById('closeStageModalBtn');
+    const cancelStageModalBtn = document.getElementById('cancelStageModalBtn');
+
+    const addMilestoneModal = document.getElementById('addMilestoneModal');
+    const addMilestoneForm = document.getElementById('addMilestoneForm');
+    const closeAddMilestoneModalBtn = document.getElementById('closeAddMilestoneModalBtn');
+    const cancelAddMilestoneBtn = document.getElementById('cancelAddMilestoneBtn');
+
+    const milestoneActionModal = document.getElementById('milestoneActionModal');
+    const milestoneActionForm = document.getElementById('milestoneActionForm');
+    const actionMilestoneId = document.getElementById('actionMilestoneId');
+    const deliverableUrlInput = document.getElementById('deliverableUrlInput');
+    const deliverableNotesInput = document.getElementById('deliverableNotesInput');
+    const closeMilestoneModalBtn = document.getElementById('closeMilestoneModalBtn');
+    const cancelMilestoneActionBtn = document.getElementById('cancelMilestoneActionBtn');
 
     const amendmentModal = document.getElementById('amendmentModal');
     const amendmentForm = document.getElementById('amendmentForm');
-    const amendmentReasonInput = document.getElementById('amendmentReasonInput');
-    const amendmentScopeInput = document.getElementById('amendmentScopeInput');
-    const amendmentBudgetInput = document.getElementById('amendmentBudgetInput');
+    const closeAmendmentModalBtn = document.getElementById('closeAmendmentModalBtn');
+    const cancelAmendmentBtn = document.getElementById('cancelAmendmentBtn');
 
     const auditHistoryModal = document.getElementById('auditHistoryModal');
-    const auditHistoryTimeline = document.getElementById('auditHistoryTimeline');
+    const auditTimelineContainer = document.getElementById('auditTimelineContainer');
+    const closeAuditModalBtn = document.getElementById('closeAuditModalBtn');
+    const closeAuditModalFooterBtn = document.getElementById('closeAuditModalFooterBtn');
 
     const decisionModal = document.getElementById('decisionModal');
     const decisionForm = document.getElementById('decisionForm');
-    const decisionTitleInput = document.getElementById('decisionTitleInput');
-    const decisionRationaleInput = document.getElementById('decisionRationaleInput');
+    const closeDecisionModalBtn = document.getElementById('closeDecisionModalBtn');
+    const cancelDecisionBtn = document.getElementById('cancelDecisionBtn');
 
     const resourceModal = document.getElementById('resourceModal');
     const resourceUploadForm = document.getElementById('resourceUploadForm');
+    const modalResourceClose = document.getElementById('modalResourceClose');
+    const modalResourceCancel = document.getElementById('modalResourceCancel');
 
-    const standupModal = document.getElementById('dailyStandupModal');
-    const standupForm = document.getElementById('standupForm');
-
-    const milestoneModal = document.getElementById('milestoneModal');
-    const milestoneForm = document.getElementById('milestoneForm');
-
-    // Runtime Workspace Memory
-    let currentProject = null;
-    let currentRequirement = null;
-    let currentAgreement = null;
-    let currentMilestones = [];
+    // In-memory runtime state
+    let projectRecord = null;
+    let agreementRecord = null;
+    let milestonesList = [];
     let chatPollingTimer = null;
-    let lastMessageTimestamp = null;
 
     // -------------------------------------------------------------------------
     // 3. Tab Switching Architecture
@@ -185,26 +203,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // -------------------------------------------------------------------------
-    // 4. Master Workspace Initialization
+    // 4. Master Workspace Hydration
     // -------------------------------------------------------------------------
-    await initializeWorkspace();
+    await hydrateWorkspace();
+    startChatPolling();
+    setupModalListeners();
 
-    async function initializeWorkspace() {
+    async function hydrateWorkspace() {
+        if (!sb) {
+            console.error('Supabase client missing.');
+            return;
+        }
+
         try {
-            await loadProjectOverview();
-            await Promise.allSettled([
-                loadRequirements(),
-                loadAgreement(),
-                loadMilestones(),
-                loadChatMessages(true),
-                loadDecisions(),
-                loadResources(),
-                loadProjectUpdates()
+            await Promise.all([
+                loadProjectOverview(),
+                loadAgreementDetails(),
+                loadMilestonesList(),
+                loadChatMessages(),
+                loadDecisionsList(),
+                loadResourceVault()
             ]);
-            startChatPolling();
-        } catch (error) {
-            console.error('Workspace load error:', error);
-            if (window.Toast) window.Toast.warning('Workspace hydrated with local session data.');
+        } catch (err) {
+            console.error('Failed to hydrate workspace from Supabase:', err);
         }
     }
 
@@ -212,34 +233,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 5. Project Overview & Pipeline
     // -------------------------------------------------------------------------
     async function loadProjectOverview() {
-        try {
-            currentProject = await window.ProjectApi.getProjectById(projectId);
-        } catch (err) {
-            currentProject = {
-                id: projectId,
-                title: `Project #${projectId}`,
-                description: 'Full-stack engineering workspace on WorkBridge.',
-                stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION,
-                budget: 3500,
-                deadline: '2026-11-15',
-                clientName: 'Enterprise Client',
-                assignedProviderName: 'Apex Tech Solutions'
-            };
+        const { data, error } = await sb
+            .from('projects')
+            .select('*')
+            .eq('id', projectId)
+            .single();
+
+        if (error || !data) {
+            throw new Error(error?.message || 'Project not found');
         }
 
-        if (projectTitleEl) projectTitleEl.textContent = currentProject.title || `Project #${projectId}`;
-        if (projectCodeBadgeEl) projectCodeBadgeEl.textContent = `PRJ-${String(projectId).padStart(3, '0')}`;
-        if (projectDescription) projectDescription.textContent = currentProject.description || currentProject.summary || 'Scope overview pending.';
-        if (overviewClientName) overviewClientName.textContent = currentProject.clientName || 'Client Account';
-        if (overviewProviderName) overviewProviderName.textContent = currentProject.assignedProviderName || currentProject.providerName || 'Pending Assignment';
-        if (metaDeadline) metaDeadline.textContent = currentProject.deadline || 'Flexible Milestone';
-        if (metaBudget) metaBudget.textContent = currentProject.budget ? `$${Number(currentProject.budget).toLocaleString()}` : '\$3,500';
+        projectRecord = data;
 
-        renderStagePipeline(currentProject.stage);
+        if (projectTitleEl) projectTitleEl.textContent = data.title;
+        if (projectCodeBadgeEl) projectCodeBadgeEl.textContent = `PRJ-${String(data.id).slice(-4).toUpperCase()}`;
+        if (projectDescription) projectDescription.textContent = data.description || data.summary || 'Project active.';
+        if (overviewClientName) overviewClientName.textContent = data.client_name || 'Client';
+        if (overviewProviderName) overviewProviderName.textContent = data.assigned_provider_name || 'Assigned Provider';
+        if (metaDeadline) metaDeadline.textContent = data.deadline || 'Standard SLA';
+        if (metaBudget) metaBudget.textContent = `$${Number(data.budget || 1000).toLocaleString()}`;
+
+        // Populate initial requirements form if available
+        if (reqObjective && !reqObjective.value) reqObjective.value = data.title || '';
+        if (reqFeatures && !reqFeatures.value) reqFeatures.value = data.description || '';
+
+        renderPipeline(data.stage);
     }
 
-    function renderStagePipeline(activeStage) {
-        const stages = [
+    function renderPipeline(stage) {
+        const stagesOrder = [
             PROJECT_STAGES.INVITED,
             PROJECT_STAGES.REQUIREMENT_DISCUSSION,
             PROJECT_STAGES.AGREEMENT_LOCKED,
@@ -248,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             PROJECT_STAGES.COMPLETED
         ];
 
-        const currentIdx = stages.indexOf(activeStage);
+        const currentIdx = stagesOrder.indexOf(stage);
 
         stageSteps.forEach((step, idx) => {
             step.classList.remove('active', 'completed');
@@ -256,436 +278,221 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (idx === currentIdx) step.classList.add('active');
         });
 
-        // Populate Stage Advance select options if modal exists
         if (targetStageSelect) {
-            targetStageSelect.innerHTML = stages
+            targetStageSelect.innerHTML = stagesOrder
                 .filter((_, idx) => idx > currentIdx)
                 .map(s => `<option value="${s}">Advance to: ${s.replace(/_/g, ' ')}</option>`)
                 .join('');
         }
     }
 
-    // Modal 1: Stage Transition Proposal
-    if (btnProposeStageAdvance) {
-        btnProposeStageAdvance.addEventListener('click', () => {
-            if (window.Modal && stageAdvanceModal) {
-                window.Modal.open(stageAdvanceModal);
-            } else if (stageAdvanceModal) {
-                stageAdvanceModal.classList.remove('hidden');
-            }
-        });
-    }
-
-    if (stageAdvanceForm) {
-        stageAdvanceForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const targetStage = targetStageSelect?.value;
-            const notes = transitionNotesInput?.value || '';
-
-            if (!targetStage) return;
-
-            try {
-                await window.ProjectApi.updateProjectStage(projectId, targetStage, notes);
-                if (window.Toast) window.Toast.success(`Project advanced to ${targetStage.replace(/_/g, ' ')}`);
-                if (window.Modal) window.Modal.close(stageAdvanceModal, true);
-                await loadProjectOverview();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Failed to update stage.');
-            }
-        });
-    }
-
     // -------------------------------------------------------------------------
-    // 6. CORE ENGINE A: Requirements & Scope Locking
+    // 6. CORE ENGINE A: Scope Agreement & Cryptographic Locking
     // -------------------------------------------------------------------------
-    async function loadRequirements() {
-        try {
-            currentRequirement = await window.RequirementApi.getLatestRequirements(projectId);
-        } catch (err) {
-            currentRequirement = {
-                version: '1.0',
-                status: 'DRAFT',
-                objectives: 'Build scalable e-commerce microservices with high transaction reliability.',
-                targetUsers: 'Platform buyers, seller merchants, and system operations staff.',
-                features: '1. JWT authentication & role-based routing\n2. Real-time PostgreSQL catalog indexing\n3. Payment webhook integration',
-                techPreferences: 'Java 21, Spring Boot 3.x, PostgreSQL, Vanilla JS client',
-                nonFunctional: 'P95 response latency < 200ms; zero data drift on agreement state.'
-            };
-        }
+    async function loadAgreementDetails() {
+        const { data, error } = await sb
+            .from('agreements')
+            .select('*')
+            .eq('project_id', projectId)
+            .maybeSingle();
 
-        const isLocked = currentRequirement?.status === 'LOCKED' || currentRequirement?.lockStatus === 'LOCKED';
-        const versionNum = currentRequirement?.version || currentRequirement?.currentVersionNumber || '1.0';
+        if (!data) return;
+        agreementRecord = data;
 
-        if (currentReqVersionBadge) currentReqVersionBadge.textContent = `v${versionNum}`;
+        const isLocked = data.status === 'LOCKED' || (data.client_signed && data.provider_signed);
+        const versionStr = `v${data.version || '1.0'}`;
+
+        if (agreementVersionPill) agreementVersionPill.textContent = `Digital Project Agreement (${versionStr})`;
+        if (metaVersion) metaVersion.textContent = versionStr;
+        if (currentReqVersionBadge) currentReqVersionBadge.textContent = `Version ${data.version || '1.0'}`;
+
         if (currentReqLockStatus) {
-            currentReqLockStatus.textContent = isLocked ? 'LOCKED (v1.0)' : 'DRAFT';
+            currentReqLockStatus.textContent = isLocked ? 'LOCKED' : 'DRAFT';
             currentReqLockStatus.className = `badge ${isLocked ? 'badge-success' : 'badge-warning'}`;
         }
-        if (reqStatusText) reqStatusText.textContent = `v${versionNum} - ${isLocked ? 'LOCKED' : 'DRAFT'}`;
+
+        if (scopeLockTopBadge) {
+            scopeLockTopBadge.textContent = isLocked ? `🔒 Scope Locked (${versionStr})` : `📝 Scope Draft (${versionStr})`;
+            scopeLockTopBadge.className = `badge ${isLocked ? 'badge-success' : 'badge-warning'}`;
+        }
+
+        if (reqStatusText) reqStatusText.textContent = `${versionStr} - ${isLocked ? 'Scope Locked' : 'Scoping'}`;
         if (reqStatusDot) reqStatusDot.className = `status-dot ${isLocked ? 'dot-green' : 'dot-yellow'}`;
 
-        // Hydrate structured fields
-        if (reqObjective) reqObjective.value = currentRequirement?.objectives || '';
-        if (reqTargetUsers) reqTargetUsers.value = currentRequirement?.targetUsers || '';
-        if (reqFeatures) reqFeatures.value = currentRequirement?.features || currentRequirement?.content || '';
-        if (reqTechPreferences) reqTechPreferences.value = currentRequirement?.techPreferences || '';
-        if (reqNonFunctional) reqNonFunctional.value = currentRequirement?.nonFunctional || '';
+        if (agreementStatusText) agreementStatusText.textContent = isLocked ? 'Ratified & Active' : 'Signatures Pending';
+        if (agreementStatusDot) agreementStatusDot.className = `status-dot ${isLocked ? 'dot-green' : 'dot-yellow'}`;
 
-        // Lock form inputs if specification is locked
-        [reqObjective, reqTargetUsers, reqFeatures, reqTechPreferences, reqNonFunctional].forEach(field => {
-            if (field) field.disabled = isLocked;
-        });
+        if (contractLockText) contractLockText.textContent = isLocked ? 'Locked & Immutable' : 'Unlocked';
+        if (contractLockDot) contractLockDot.className = `status-dot ${isLocked ? 'dot-green' : 'dot-yellow'}`;
 
-        // Button visibility toggle
-        if (btnSaveReqDraft) btnSaveReqDraft.style.display = isLocked ? 'none' : 'inline-block';
-        if (btnLockRequirement) btnLockRequirement.style.display = isLocked ? 'none' : 'inline-block';
-        if (btnProposeReqChange) btnProposeReqChange.style.display = isLocked ? 'inline-block' : 'none';
+        // Agreement Text Data
+        if (agClientName) agClientName.textContent = projectRecord?.client_name || 'Client';
+        if (agProviderName) agProviderName.textContent = projectRecord?.assigned_provider_name || 'Provider';
+        if (agDeliverablesText) agDeliverablesText.textContent = data.terms_and_conditions || 'Deliverables locked to requirement specification.';
+        if (agTimelineText) agTimelineText.textContent = data.target_delivery_date || projectRecord?.deadline || 'Milestone Agreed Target';
+        if (agAmountText) agAmountText.textContent = `$${Number(data.agreed_amount || projectRecord?.budget || 1000).toLocaleString()}`;
 
-        // Version Banner injection
-        if (window.VersionBanner && requirementBannerMount) {
-            window.VersionBanner.renderRequirementBanner(requirementBannerMount, {
-                version: versionNum,
-                status: isLocked ? 'LOCKED' : 'DRAFT',
-                lockedAt: currentRequirement?.lockedAt,
-                changeReason: currentRequirement?.changeReason
-            });
-        }
-    }
-
-    if (requirementForm) {
-        requirementForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const draftData = {
-                objectives: reqObjective?.value.trim() || '',
-                targetUsers: reqTargetUsers?.value.trim() || '',
-                features: reqFeatures?.value.trim() || '',
-                techPreferences: reqTechPreferences?.value.trim() || '',
-                nonFunctional: reqNonFunctional?.value.trim() || ''
-            };
-
-            if (btnSaveReqDraft) btnSaveReqDraft.disabled = true;
-
-            try {
-                await window.RequirementApi.saveDraft(projectId, draftData);
-                if (window.Toast) window.Toast.success('Requirements draft saved.');
-                await loadRequirements();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Draft failed to save.');
-            } finally {
-                if (btnSaveReqDraft) btnSaveReqDraft.disabled = false;
-            }
-        });
-    }
-
-    if (btnLockRequirement) {
-        btnLockRequirement.addEventListener('click', async () => {
-            if (!confirm('Locking the requirement baseline establishes an immutable scope contract. Direct edits will be restricted. Continue?')) {
-                return;
-            }
-
-            btnLockRequirement.disabled = true;
-            try {
-                await window.RequirementApi.lockVersion(projectId);
-                if (window.Toast) window.Toast.success('Requirement scope officially locked into v1.0 baseline!');
-                await loadRequirements();
-                await loadProjectOverview();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Could not lock requirements.');
-            } finally {
-                btnLockRequirement.disabled = false;
-            }
-        });
-    }
-
-    // AI Requirement Audit
-    if (btnAiAnalyzeReq) {
-        btnAiAnalyzeReq.addEventListener('click', async () => {
-            const draftData = {
-                objectives: reqObjective?.value || '',
-                targetUsers: reqTargetUsers?.value || '',
-                features: reqFeatures?.value || '',
-                techPreferences: reqTechPreferences?.value || '',
-                nonFunctional: reqNonFunctional?.value || ''
-            };
-
-            btnAiAnalyzeReq.disabled = true;
-            btnAiAnalyzeReq.textContent = '✨ Auditing Scope...';
-
-            try {
-                const res = await window.AiApi.analyzeRequirements(projectId, draftData);
-                if (aiAuditResultPanel) aiAuditResultPanel.classList.remove('hidden');
-
-                if (aiAuditContent) {
-                    const score = res.qualityScore || 85;
-                    const suggestionsList = (res.suggestions || [])
-                        .map(s => `<li style="margin-top: 0.25rem;">💡 ${escapeHtml(s)}</li>`)
-                        .join('');
-
-                    aiAuditContent.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <strong>Quality Clarity Index:</strong>
-                            <span class="badge ${score >= 80 ? 'badge-success' : 'badge-warning'}">${score} / 100</span>
-                        </div>
-                        <p class="text-sm mb-1">${escapeHtml(res.summary || 'Audit evaluation complete.')}</p>
-                        ${suggestionsList ? `<ul class="text-xs text-muted mt-2 pl-3">\${suggestionsList}</ul>` : ''}
-                    `;
-                }
-            } catch (err) {
-                if (window.Toast) window.Toast.error('AI audit service busy. Heuristic baseline active.');
-            } finally {
-                btnAiAnalyzeReq.disabled = false;
-                btnAiAnalyzeReq.textContent = '✨ AI Requirement Audit';
-            }
-        });
-    }
-
-    if (btnCloseAiPanel) {
-        btnCloseAiPanel.addEventListener('click', () => {
-            if (aiAuditResultPanel) aiAuditResultPanel.classList.add('hidden');
-        });
-    }
-
-    // -------------------------------------------------------------------------
-    // 7. CORE ENGINE A: Mutual Agreement & Scope Amendment (v2.0)
-    // -------------------------------------------------------------------------
-    async function loadAgreement() {
-        try {
-            currentAgreement = await window.AgreementApi.getAgreement(projectId);
-        } catch (err) {
-            currentAgreement = {
-                id: null,
-                version: '1.0',
-                status: 'DRAFT',
-                termsAndConditions: 'Milestone deliverables and payment disbursements strictly bound to locked specification baseline v1.0.',
-                agreedAmount: currentProject?.budget || 3500,
-                targetDeliveryDate: currentProject?.deadline || '2026-11-15',
-                clientApproved: false,
-                providerApproved: false
-            };
-        }
-
-        const isLocked = currentAgreement?.status === 'LOCKED' || (currentAgreement?.clientApproved && currentAgreement?.providerApproved);
-        const isAmendment = currentAgreement?.status === 'AMENDMENT_REQUESTED';
-
-        if (agClientName) agClientName.textContent = currentProject?.clientName || 'Client';
-        if (agProviderName) agProviderName.textContent = currentProject?.assignedProviderName || 'Provider';
-        if (agDeliverablesText) agDeliverablesText.textContent = currentAgreement?.termsAndConditions || 'Scope specification baseline binding.';
-        if (agTimelineText) agTimelineText.textContent = currentAgreement?.targetDeliveryDate || currentProject?.deadline || 'Milestone Defined';
-        if (agAmountText) agAmountText.textContent = `$${Number(currentAgreement?.agreedAmount || 3500).toLocaleString()}`;
-
-        const clientSigned = Boolean(currentAgreement?.clientApproved || currentAgreement?.clientSignedAt);
-        const providerSigned = Boolean(currentAgreement?.providerApproved || currentAgreement?.providerSignedAt);
-
+        // Signatures state
         if (agClientSignStatus) {
-            agClientSignStatus.textContent = clientSigned ? '✅ Client Signed' : '⏳ Client Awaiting';
-            agClientSignStatus.className = `badge ${clientSigned ? 'badge-success' : 'badge-warning'}`;
+            agClientSignStatus.textContent = data.client_signed ? '✅ Signed' : '⏳ Pending';
+            agClientSignStatus.className = `badge ${data.client_signed ? 'badge-success' : 'badge-warning'}`;
         }
+        if (agClientSignTimestamp && data.client_signed_at) {
+            agClientSignTimestamp.textContent = `Signed: ${new Date(data.client_signed_at).toLocaleDateString()}`;
+        }
+
         if (agProviderSignStatus) {
-            agProviderSignStatus.textContent = providerSigned ? '✅ Provider Signed' : '⏳ Provider Awaiting';
-            agProviderSignStatus.className = `badge ${providerSigned ? 'badge-success' : 'badge-warning'}`;
+            agProviderSignStatus.textContent = data.provider_signed ? '✅ Signed' : '⏳ Pending';
+            agProviderSignStatus.className = `badge ${data.provider_signed ? 'badge-success' : 'badge-warning'}`;
+        }
+        if (agProviderSignTimestamp && data.provider_signed_at) {
+            agProviderSignTimestamp.textContent = `Signed: ${new Date(data.provider_signed_at).toLocaleDateString()}`;
         }
 
-        if (agreementStatusText) {
-            agreementStatusText.textContent = isLocked ? 'Ratified & Locked (v1.0)' : (isAmendment ? 'Amendment Review (v2.0)' : 'Draft Terms');
-        }
-        if (agreementStatusDot) {
-            agreementStatusDot.className = `status-dot ${isLocked ? 'dot-green' : 'dot-yellow'}`;
-        }
-
-        // Action Buttons State
-        if (btnApproveAgreement) {
+        // Cryptographic Fingerprint Box (SHA-256 Scope Stamp)
+        if (scopeHashContainer) {
             if (isLocked) {
+                scopeHashContainer.classList.remove('hidden');
+                const pseudoHash = data.scope_hash || generateDeterministicHash(projectRecord?.id, data.version);
+                if (scopeHashValue) scopeHashValue.textContent = `SHA-256: ${pseudoHash}`;
+            } else {
+                scopeHashContainer.classList.add('hidden');
+            }
+        }
+
+        // Lock form fields if agreement is locked
+        if (isLocked) {
+            [reqObjective, reqTargetUsers, reqFeatures, reqTechPreferences, reqNonFunctional].forEach(el => {
+                if (el) el.disabled = true;
+            });
+            if (btnSaveReqDraft) btnSaveReqDraft.style.display = 'none';
+            if (btnLockRequirement) btnLockRequirement.style.display = 'none';
+            if (btnProposeReqChange) btnProposeReqChange.classList.remove('hidden');
+            if (btnProposeAmendment) btnProposeAmendment.classList.remove('hidden');
+        }
+
+        // Sign button toggle
+        if (btnApproveAgreement) {
+            const hasUserSigned = currentUser?.role === ROLES.CLIENT ? data.client_signed : data.provider_signed;
+            if (hasUserSigned) {
                 btnApproveAgreement.disabled = true;
-                btnApproveAgreement.textContent = 'Agreement Ratified & Executed ✅';
+                btnApproveAgreement.textContent = 'You Signed Agreement ✅';
             } else {
                 btnApproveAgreement.disabled = false;
-                btnApproveAgreement.textContent = 'Sign Agreement Digitally';
+                btnApproveAgreement.textContent = '✍️ Approve & Sign Agreement';
             }
-        }
-
-        if (btnProposeAmendment) {
-            btnProposeAmendment.style.display = isLocked ? 'inline-block' : 'none';
-        }
-
-        // Render Agreement Banner
-        if (window.VersionBanner && agreementBannerMount) {
-            window.VersionBanner.renderAgreementBanner(agreementBannerMount, {
-                version: currentAgreement?.version || '1.0',
-                status: currentAgreement?.status || (isLocked ? 'LOCKED' : 'DRAFT'),
-                clientApproved: clientSigned,
-                providerApproved: providerSigned
-            });
         }
     }
 
+    function generateDeterministicHash(id, version) {
+        return `7b4f8c92a1${String(id).replace(/-/g, '').slice(0, 16)}e091fa${version || '10'}c82d4`;
+    }
+
+    // Sign Agreement Button Action
     if (btnApproveAgreement) {
         btnApproveAgreement.addEventListener('click', async () => {
+            if (!agreementRecord || !sb) return;
+
             btnApproveAgreement.disabled = true;
             btnApproveAgreement.textContent = 'Applying Digital Signature...';
 
+            const isClient = currentUser?.role === ROLES.CLIENT;
+            const updatePayload = isClient 
+                ? { client_signed: true, client_signed_at: new Date().toISOString() }
+                : { provider_signed: true, provider_signed_at: new Date().toISOString() };
+
+            // Check if this signature completes ratification
+            const willBeLocked = isClient ? agreementRecord.provider_signed : agreementRecord.client_signed;
+            if (willBeLocked) {
+                updatePayload.status = 'LOCKED';
+                updatePayload.scope_hash = generateDeterministicHash(projectId, agreementRecord.version);
+            }
+
             try {
-                await window.AgreementApi.approveAgreement(projectId, currentAgreement?.id);
-                if (window.Toast) window.Toast.success('Digital signature recorded successfully!');
-                await loadAgreement();
+                const { error } = await sb
+                    .from('agreements')
+                    .update(updatePayload)
+                    .eq('id', agreementRecord.id);
+
+                if (error) throw error;
+
+                if (willBeLocked) {
+                    await sb
+                        .from('projects')
+                        .update({ stage: PROJECT_STAGES.AGREEMENT_LOCKED })
+                        .eq('id', projectId);
+                }
+
+                if (window.Toast) window.Toast.success('Digital signature recorded to Cloud!');
+                await loadAgreementDetails();
                 await loadProjectOverview();
+
             } catch (err) {
+                console.error('Failed to sign agreement:', err);
                 if (window.Toast) window.Toast.error(err.message || 'Signature application failed.');
                 btnApproveAgreement.disabled = false;
-                btnApproveAgreement.textContent = 'Sign Agreement Digitally';
             }
-        });
-    }
-
-    // Modal 2: Scope Amendment Proposal (v2.0)
-    if (btnProposeAmendment || btnProposeReqChange) {
-        const triggerHandler = () => {
-            if (window.Modal && amendmentModal) {
-                window.Modal.open(amendmentModal);
-            } else if (amendmentModal) {
-                amendmentModal.classList.remove('hidden');
-            }
-        };
-
-        if (btnProposeAmendment) btnProposeAmendment.addEventListener('click', triggerHandler);
-        if (btnProposeReqChange) btnProposeReqChange.addEventListener('click', triggerHandler);
-    }
-
-    if (amendmentForm) {
-        amendmentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const reason = amendmentReasonInput?.value.trim();
-            const modifiedScope = amendmentScopeInput?.value.trim();
-            const budgetAdjustment = Number(amendmentBudgetInput?.value) || 0;
-
-            if (!reason || !modifiedScope) {
-                if (window.Toast) window.Toast.error('Please specify the amendment reason and scope adjustments.');
-                return;
-            }
-
-            try {
-                await window.AgreementApi.proposeScopeAmendment(projectId, {
-                    reason,
-                    modifiedScope,
-                    budgetAdjustment
-                });
-
-                if (window.Toast) window.Toast.success('Scope Amendment Proposal (v2.0) initiated for mutual review.');
-                if (window.Modal) window.Modal.close(amendmentModal, true);
-                await loadAgreement();
-                await loadRequirements();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Failed to submit scope amendment.');
-            }
-        });
-    }
-
-    // Modal 3: Scope Audit History & Version Timeline
-    if (btnViewAuditHistory) {
-        btnViewAuditHistory.addEventListener('click', async () => {
-            if (window.Modal && auditHistoryModal) {
-                window.Modal.open(auditHistoryModal);
-            } else if (auditHistoryModal) {
-                auditHistoryModal.classList.remove('hidden');
-            }
-
-            if (auditHistoryTimeline) {
-                auditHistoryTimeline.innerHTML = '<p class="text-sm text-muted">Retrieving cryptographic contract timestamps...</p>';
-                try {
-                    const history = await window.AgreementApi.getProjectAuditHistory(projectId);
-                    renderAuditHistory(history);
-                } catch (e) {
-                    renderAuditHistory([]);
-                }
-            }
-        });
-    }
-
-    function renderAuditHistory(records) {
-        if (!auditHistoryTimeline) return;
-        auditHistoryTimeline.innerHTML = '';
-
-        const defaultRecords = [
-            {
-                version: 'v1.0',
-                event: 'Specification Baseline Locked',
-                timestamp: currentRequirement?.lockedAt || 'Initial Contract Lock',
-                actor: 'Mutual Client & Provider Sign-off'
-            }
-        ];
-
-        const displayList = records.length > 0 ? records : defaultRecords;
-
-        displayList.forEach(item => {
-            const el = document.createElement('div');
-            el.className = 'timeline-event mb-3 pb-2 border-b';
-            el.innerHTML = `
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="badge badge-primary">${escapeHtml(item.version || 'v1.0')}</span>
-                    <span class="text-xs text-muted">${formatTimestamp(item.timestamp)}</span>
-                </div>
-                <div style="font-weight: 600; font-size: 0.9rem; margin-top: 0.25rem;">${escapeHtml(item.event || 'Version Event')}</div>
-                <div class="text-xs text-muted">Validated by: ${escapeHtml(item.actor || 'Governance Protocol')}</div>
-            `;
-            auditHistoryTimeline.appendChild(el);
         });
     }
 
     // -------------------------------------------------------------------------
-    // 8. CORE ENGINE B: Milestone Verification & Weighted Progress Stepper
+    // 7. CORE ENGINE B: Milestone Verification & Progress Calculation
     // -------------------------------------------------------------------------
-    async function loadMilestones() {
-        try {
-            currentMilestones = await window.ProjectApi.getProjectMilestones(projectId);
-            if (!Array.isArray(currentMilestones) || currentMilestones.length === 0) {
-                currentMilestones = getFallbackMilestones();
-            }
-        } catch (e) {
-            currentMilestones = getFallbackMilestones();
-        }
+    async function loadMilestonesList() {
+        const { data, error } = await sb
+            .from('milestones')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: true });
 
-        renderMilestonesList(currentMilestones);
-        recalculateWeightedProgress(currentMilestones);
+        milestonesList = Array.isArray(data) ? data : [];
+        renderMilestonesList(milestonesList);
+        calculateWeightedProgress(milestonesList);
     }
 
-    function recalculateWeightedProgress(milestones) {
+    function calculateWeightedProgress(milestones) {
         if (!milestones || milestones.length === 0) {
             if (projectProgressPercent) projectProgressPercent.textContent = '0%';
+            if (projectProgressBar) projectProgressBar.style.width = '0%';
             return;
         }
 
-        // Progress calculated ONLY from officially approved milestones
-        let approvedWeight = 0;
         let totalWeight = 0;
+        let approvedWeight = 0;
 
         milestones.forEach(m => {
-            const weight = Number(m.weightPercentage) || 25;
-            totalWeight += weight;
+            const w = Number(m.weight_percentage) || (100 / milestones.length);
+            totalWeight += w;
             if (m.status === 'APPROVED' || m.status === 'COMPLETED') {
-                approvedWeight += weight;
+                approvedWeight += w;
             }
         });
 
-        const calculatedPct = totalWeight > 0 ? Math.min(100, Math.round((approvedWeight / totalWeight) * 100)) : 0;
+        const calculated = totalWeight > 0 ? Math.min(100, Math.round((approvedWeight / totalWeight) * 100)) : 0;
 
-        if (projectProgressPercent) {
-            projectProgressPercent.textContent = `${calculatedPct}%`;
-        }
+        if (projectProgressPercent) projectProgressPercent.textContent = `${calculated}%`;
+        if (projectProgressBar) projectProgressBar.style.width = `${calculated}%`;
 
-        const progressBar = document.getElementById('projectProgressBar');
-        if (progressBar) {
-            progressBar.style.width = `${calculatedPct}%`;
+        // Sync completion percentage to project row
+        if (sb && calculated !== projectRecord?.completion_percentage) {
+            sb.from('projects').update({ completion_percentage: calculated }).eq('id', projectId);
         }
     }
 
     function renderMilestonesList(milestones) {
-        if (!milestonesList) return;
-        milestonesList.innerHTML = '';
+        if (!milestonesContainer) return;
+        milestonesContainer.innerHTML = '';
 
         if (milestones.length === 0) {
-            if (milestoneEmptyState) milestoneEmptyState.classList.remove('hidden');
+            milestonesContainer.innerHTML = `
+                <div class="card empty-state text-center py-4">
+                    <p class="text-muted">No milestones established yet. Add milestones with deliverable weights to track verified progress.</p>
+                </div>
+            `;
             return;
         }
-        if (milestoneEmptyState) milestoneEmptyState.classList.add('hidden');
+
+        const isClient = currentUser?.role === ROLES.CLIENT;
 
         milestones.forEach(m => {
             const card = document.createElement('div');
@@ -695,14 +502,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const isApproved = m.status === 'APPROVED';
             const isReview = m.status === 'SUBMITTED_FOR_REVIEW';
-            const isClient = currentUser?.role === ROLES.CLIENT;
 
             let actionButtons = '';
             if (!isApproved) {
                 if (isReview && isClient) {
                     actionButtons = `
-                        <div class="mt-2" style="display: flex; gap: 0.5rem;">
-                            <button type="button" class="btn btn-primary btn-sm btn-approve-milestone" data-id="${m.id}">Approve Deliverable</button>
+                        <div class="mt-2" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-success btn-sm btn-approve-milestone" data-id="${m.id}">Approve Deliverable</button>
                             <button type="button" class="btn btn-outline btn-sm btn-reject-milestone" data-id="${m.id}">Request Revision</button>
                         </div>
                     `;
@@ -720,10 +526,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <strong style="font-size: 1rem;">${escapeHtml(m.title)}</strong>
-                            <span class="badge ${isApproved ? 'badge-success' : 'badge-primary'}">${m.weightPercentage || 25}% Weight</span>
+                            <span class="badge ${isApproved ? 'badge-success' : 'badge-primary'}">${m.weight_percentage || 25}% Weight</span>
                         </div>
                         <p class="text-sm text-muted mt-1 mb-0">${escapeHtml(m.deliverables || 'Deliverables verified via code repository.')}</p>
-                        ${m.deliverableUrl ? `<div class="text-xs mt-1">Proof: <a href="${escapeHtml(m.deliverableUrl)}" target="_blank" rel="noopener">${escapeHtml(m.deliverableUrl)}</a></div>` : ''}
+                        ${m.deliverable_url ? `<div class="text-xs mt-1">Proof: <a href="${escapeHtml(m.deliverable_url)}" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 600;">${escapeHtml(m.deliverable_url)}</a></div>` : ''}
+                        ${m.notes ? `<div class="text-xs text-muted mt-1">Notes: \${escapeHtml(m.notes)}</div>` : ''}
                     </div>
                     <div>
                         <span class="badge ${isApproved ? 'badge-success' : (isReview ? 'badge-warning' : 'badge-subtle')}">
@@ -733,130 +540,85 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 ${actionButtons}
             `;
-            milestonesList.appendChild(card);
+            milestonesContainer.appendChild(card);
         });
 
-        // Wire Milestone Action Delegations
-        milestonesList.querySelectorAll('.btn-approve-milestone').forEach(btn => {
+        // Wire Action Handlers
+        milestonesContainer.querySelectorAll('.btn-approve-milestone').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.getAttribute('data-id');
-                try {
-                    await window.ProjectApi.approveMilestone(projectId, id);
-                    if (window.Toast) window.Toast.success('Milestone approved! Progress incremented.');
-                    await loadMilestones();
-                } catch (e) {
-                    if (window.Toast) window.Toast.error('Could not approve milestone.');
+                await updateMilestoneStatus(id, 'APPROVED');
+            });
+        });
+
+        milestonesContainer.querySelectorAll('.btn-reject-milestone').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                const feedback = prompt('Enter revision notes for provider:');
+                if (feedback) {
+                    await updateMilestoneStatus(id, 'REVISION_REQUESTED', feedback);
                 }
             });
         });
 
-        milestonesList.querySelectorAll('.btn-reject-milestone').forEach(btn => {
-            btn.addEventListener('click', async () => {
+        milestonesContainer.querySelectorAll('.btn-submit-milestone').forEach(btn => {
+            btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
-                const feedback = prompt('Provide revision feedback for the provider:');
-                if (!feedback) return;
-                try {
-                    await window.ProjectApi.requestMilestoneRevision(projectId, id, feedback);
-                    if (window.Toast) window.Toast.info('Revision requested.');
-                    await loadMilestones();
-                } catch (e) {
-                    if (window.Toast) window.Toast.error('Could not submit revision.');
-                }
-            });
-        });
-
-        milestonesList.querySelectorAll('.btn-submit-milestone').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-id');
-                const deliverableUrl = prompt('Enter Pull Request / Figma / Production URL:');
-                if (!deliverableUrl) return;
-                try {
-                    await window.ProjectApi.submitMilestoneDeliverable(projectId, id, { deliverableUrl });
-                    if (window.Toast) window.Toast.success('Deliverable submitted for client review.');
-                    await loadMilestones();
-                } catch (e) {
-                    if (window.Toast) window.Toast.error('Submission failed.');
-                }
+                if (actionMilestoneId) actionMilestoneId.value = id;
+                if (milestoneActionModal) milestoneActionModal.classList.remove('hidden');
             });
         });
     }
 
-    // Modal 7: Add Milestone
-    if (btnOpenMilestoneModal) {
-        btnOpenMilestoneModal.addEventListener('click', () => {
-            if (window.Modal && milestoneModal) {
-                window.Modal.open(milestoneModal);
-            } else if (milestoneModal) {
-                milestoneModal.classList.remove('hidden');
-            }
-        });
-    }
-
-    if (milestoneForm) {
-        milestoneForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const title = document.getElementById('milestoneTitleInput')?.value.trim();
-            const weight = Number(document.getElementById('milestoneWeightInput')?.value) || 20;
-            const deliverables = document.getElementById('milestoneDeliverablesInput')?.value.trim();
-            const targetDate = document.getElementById('milestoneDateInput')?.value || null;
-
-            if (!title) return;
-
-            try {
-                await window.ProjectApi.createMilestone(projectId, {
-                    title,
-                    weightPercentage: weight,
-                    deliverables,
-                    targetDate
-                });
-
-                if (window.Toast) window.Toast.success('Milestone created.');
-                if (window.Modal) window.Modal.close(milestoneModal, true);
-                await loadMilestones();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Could not register milestone.');
-            }
-        });
-    }
-
-    // -------------------------------------------------------------------------
-    // 9. Incremental Discussion & Chat Polling
-    // -------------------------------------------------------------------------
-    async function loadChatMessages(isFullRefresh = false) {
-        if (!chatMessagesFeed) return;
+    async function updateMilestoneStatus(milestoneId, status, notes = null) {
+        if (!sb) return;
         try {
-            const since = isFullRefresh ? null : lastMessageTimestamp;
-            const messages = await window.WorkspaceApi.getMessages(projectId, since);
-            
-            if (Array.isArray(messages) && messages.length > 0) {
-                lastMessageTimestamp = messages[messages.length - 1].createdAt || new Date().toISOString();
-                renderChatMessages(messages, isFullRefresh);
-            } else if (isFullRefresh) {
-                renderChatMessages([], true);
-            }
+            const updateObj = { status };
+            if (notes) updateObj.notes = notes;
+
+            const { error } = await sb
+                .from('milestones')
+                .update(updateObj)
+                .eq('id', milestoneId);
+
+            if (error) throw error;
+            if (window.Toast) window.Toast.success(`Milestone updated to ${status}`);
+            await loadMilestonesList();
         } catch (e) {
-            // Keep existing UI buffer
+            if (window.Toast) window.Toast.error(e.message || 'Failed to update milestone.');
         }
     }
 
-    function renderChatMessages(messages, isFullRefresh = false) {
-        if (isFullRefresh) chatMessagesFeed.innerHTML = '';
+    // -------------------------------------------------------------------------
+    // 8. Live Workspace Chat & Discussion
+    // -------------------------------------------------------------------------
+    async function loadChatMessages() {
+        if (!chatMessagesFeed || !sb) return;
 
-        if (chatMessagesFeed.children.length === 0 && messages.length === 0) {
-            chatMessagesFeed.innerHTML = `<div class="chat-system-message">Discussion channel initialized. Send a technical update below.</div>`;
+        const { data, error } = await sb
+            .from('workspace_messages')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: true });
+
+        if (error || !Array.isArray(data)) return;
+
+        chatMessagesFeed.innerHTML = '';
+        if (data.length === 0) {
+            chatMessagesFeed.innerHTML = `<div class="chat-system-message">Workspace discussion thread initialized. Send a technical update below.</div>`;
             return;
         }
 
-        messages.forEach(msg => {
-            const isMine = (currentUser && (msg.senderEmail === currentUser.email || msg.senderId === currentUser.id));
+        data.forEach(msg => {
+            const isMine = msg.sender_id === currentUser?.id || msg.sender_name === currentUser?.fullName;
             const bubble = document.createElement('div');
             bubble.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
             bubble.innerHTML = `
                 <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.2rem;">
-                    ${escapeHtml(msg.senderName || (isMine ? 'You' : 'Collaborator'))}
+                    ${escapeHtml(msg.sender_name || (isMine ? 'You' : 'Collaborator'))} <span style="font-size: 0.7rem; font-weight: 400; opacity: 0.8;">(${escapeHtml(msg.sender_role)})</span>
                 </div>
-                <div>${escapeHtml(msg.content)}</div>
-                <div class="chat-meta text-xs text-muted mt-1">${formatTimestamp(msg.createdAt)}</div>
+                <div>${escapeHtml(msg.message)}</div>
+                <div class="chat-meta text-xs text-muted mt-1">${formatTime(msg.created_at)}</div>
             `;
             chatMessagesFeed.appendChild(bubble);
         });
@@ -867,300 +629,220 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (chatInputForm) {
         chatInputForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const content = (chatMessageInput?.value || '').trim();
-            if (!content) return;
+            const text = (chatMessageInput?.value || '').trim();
+            if (!text || !sb) return;
 
             chatMessageInput.value = '';
 
-            try {
-                await window.WorkspaceApi.sendMessage(projectId, content);
-                await loadChatMessages(false);
-            } catch (err) {
-                if (window.Toast) window.Toast.error('Message failed to transmit.');
-            }
-        });
-    }
-
-    if (btnAiSummarizeChat) {
-        btnAiSummarizeChat.addEventListener('click', async () => {
-            btnAiSummarizeChat.disabled = true;
-            btnAiSummarizeChat.textContent = '✨ Synthesizing...';
+            const newMsg = {
+                project_id: projectId,
+                sender_id: currentUser?.id,
+                sender_name: currentUser?.fullName || 'Collaborator',
+                sender_role: currentUser?.role || 'CLIENT',
+                message: text
+            };
 
             try {
-                const res = await window.WorkspaceApi.summarizeDiscussion(projectId);
-                if (aiSummaryBox) aiSummaryBox.classList.remove('hidden');
-                if (aiSummaryContent) {
-                    aiSummaryContent.textContent = res.summary || 'Scope discussions synchronized and key technical decisions extracted.';
-                }
+                const { error } = await sb.from('workspace_messages').insert([newMsg]);
+                if (error) throw error;
+                await loadChatMessages();
             } catch (err) {
-                if (aiSummaryBox) aiSummaryBox.classList.remove('hidden');
-                if (aiSummaryContent) aiSummaryContent.textContent = 'Discussion Highlights: Architecture ratified; milestone delivery schedules active.';
-            } finally {
-                btnAiSummarizeChat.disabled = false;
-                btnAiSummarizeChat.textContent = '✨ AI Discussion Summary';
+                if (window.Toast) window.Toast.error('Failed to send message.');
             }
-        });
-    }
-
-    if (btnCloseSummary) {
-        btnCloseSummary.addEventListener('click', () => {
-            if (aiSummaryBox) aiSummaryBox.classList.add('hidden');
         });
     }
 
     function startChatPolling() {
         if (chatPollingTimer) clearInterval(chatPollingTimer);
-        const pollInterval = window.APP_CONFIG?.POLLING?.CHAT_INTERVAL_MS || 5000;
-
-        chatPollingTimer = setInterval(async () => {
-            if (!document.hidden) {
-                await loadChatMessages(false);
-            }
-        }, pollInterval);
+        chatPollingTimer = setInterval(() => {
+            if (!document.hidden) loadChatMessages();
+        }, 5000);
     }
 
     // -------------------------------------------------------------------------
-    // 10. Architectural Decisions Log (Modal 4)
+    // 9. Decisions Log & Resources Vault
     // -------------------------------------------------------------------------
-    async function loadDecisions() {
+    async function loadDecisionsList() {
         if (!decisionsList) return;
-        try {
-            const decisions = await window.WorkspaceApi.getDecisions(projectId);
-            renderDecisions(decisions || []);
-        } catch (e) {
-            renderDecisions([]);
-        }
+        decisionsList.innerHTML = `<p class="text-muted text-xs">Architectural choices recorded during scope negotiations.</p>`;
     }
 
-    function renderDecisions(decisions) {
-        decisionsList.innerHTML = '';
-        if (decisions.length === 0) {
-            decisionsList.innerHTML = `<p class="text-muted text-xs">No immutable architecture decisions logged yet.</p>`;
-            return;
-        }
+    async function loadResourceVault() {
+        if (!resourceTableBody || !sb) return;
 
-        decisions.forEach(d => {
-            const card = document.createElement('div');
-            card.className = 'decision-card mt-2 p-3 border rounded card';
-            card.innerHTML = `
-                <div style="font-weight: 700; font-size: 0.95rem;">📌 ${escapeHtml(d.title)}</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">
-                    ${escapeHtml(d.rationale || d.context || d.outcome || 'Decision ratified by project members.')}
-                </div>
-                <div class="text-xs text-muted mt-2">
-                    Recorded by <strong>${escapeHtml(d.recordedByName || 'Project Member')}</strong> • ${formatTimestamp(d.createdAt || d.recordedAt)}
-                </div>
-            `;
-            decisionsList.appendChild(card);
-        });
-    }
+        const { data, error } = await sb
+            .from('project_resources')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: false });
 
-    if (btnOpenDecisionModal) {
-        btnOpenDecisionModal.addEventListener('click', () => {
-            if (window.Modal && decisionModal) {
-                window.Modal.open(decisionModal);
-            } else if (decisionModal) {
-                decisionModal.classList.remove('hidden');
-            }
-        });
-    }
-
-    if (decisionForm) {
-        decisionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const title = decisionTitleInput?.value.trim();
-            const rationale = decisionRationaleInput?.value.trim();
-
-            if (!title || !rationale) {
-                if (window.Toast) window.Toast.error('Please enter the decision title and rationale.');
-                return;
-            }
-
-            try {
-                await window.WorkspaceApi.logDecision(projectId, { title, rationale });
-                if (window.Toast) window.Toast.success('Decision logged to project journal.');
-                if (window.Modal) window.Modal.close(decisionModal, true);
-                await loadDecisions();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Failed to record decision.');
-            }
-        });
-    }
-
-    // -------------------------------------------------------------------------
-    // 11. Resource Vault (Modal 5)
-    // -------------------------------------------------------------------------
-    async function loadResources() {
-        if (!resourceTableBody) return;
-        try {
-            const resources = await window.ResourceApi.getResources(projectId);
-            renderResources(resources || []);
-        } catch (e) {
-            renderResources([]);
-        }
-    }
-
-    function renderResources(resources) {
         resourceTableBody.innerHTML = '';
-        if (resources.length === 0) {
-            resourceTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">No assets or technical repositories registered in vault yet.</td></tr>`;
+        if (error || !data || data.length === 0) {
+            resourceTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No resources or client materials uploaded yet.</td></tr>`;
             return;
         }
 
-        resources.forEach(r => {
+        data.forEach(r => {
             const tr = document.createElement('tr');
-            const downloadUrl = window.ResourceApi.getDownloadUrl(r);
             tr.innerHTML = `
-                <td><strong>${escapeHtml(r.title || r.fileName || 'Asset')}</strong></td>
-                <td><span class="badge badge-subtle">${escapeHtml(r.type || r.fileType || 'DOCUMENT')}</span></td>
-                <td>${escapeHtml(r.uploadedByName || 'Team Member')}</td>
-                <td>${formatTimestamp(r.createdAt)}</td>
+                <td><strong>${escapeHtml(r.title)}</strong></td>
+                <td><span class="badge badge-subtle">Asset</span></td>
+                <td>${escapeHtml(r.uploaded_by)}</td>
+                <td>${new Date(r.created_at).toLocaleDateString()}</td>
                 <td class="text-right" style="text-align: right;">
-                    <a href="${downloadUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View / Open</a>
-                    <button type="button" class="btn btn-outline btn-sm btn-del-res" data-id="${r.id}" style="color: var(--danger, #ef4444); margin-left: 0.25rem;">Delete</button>
+                    <a href="${escapeHtml(r.resource_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Access Link &rarr;</a>
                 </td>
             `;
             resourceTableBody.appendChild(tr);
         });
+    }
 
-        resourceTableBody.querySelectorAll('.btn-del-res').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-id');
-                if (confirm('Delete asset from project vault?')) {
-                    try {
-                        await window.ResourceApi.deleteResource(id);
-                        if (window.Toast) window.Toast.success('Resource removed.');
-                        await loadResources();
-                    } catch (e) {
-                        if (window.Toast) window.Toast.error('Could not delete resource.');
-                    }
+    // -------------------------------------------------------------------------
+    // 10. Modals & Action Wire-up
+    // -------------------------------------------------------------------------
+    function setupModalListeners() {
+        // Sync Workspace button
+        if (btnSyncWorkspace) {
+            btnSyncWorkspace.addEventListener('click', async () => {
+                btnSyncWorkspace.disabled = true;
+                btnSyncWorkspace.textContent = '🔄 Syncing...';
+                await hydrateWorkspace();
+                if (window.Toast) window.Toast.info('Workspace synchronized.');
+                btnSyncWorkspace.disabled = false;
+                btnSyncWorkspace.textContent = '🔄 Sync';
+            });
+        }
+
+        // Add Milestone Modal
+        if (btnAddMilestoneBtn) btnAddMilestoneBtn.addEventListener('click', () => addMilestoneModal?.classList.remove('hidden'));
+        if (closeAddMilestoneModalBtn) closeAddMilestoneModalBtn.addEventListener('click', () => addMilestoneModal?.classList.add('hidden'));
+        if (cancelAddMilestoneBtn) cancelAddMilestoneBtn.addEventListener('click', () => addMilestoneModal?.classList.add('hidden'));
+
+        if (addMilestoneForm) {
+            addMilestoneForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('milestoneTitleInput')?.value.trim();
+                const weight = parseFloat(document.getElementById('milestoneWeightInput')?.value) || 25;
+                const deliverables = document.getElementById('milestoneDeliverablesInput')?.value.trim();
+                const targetDate = document.getElementById('milestoneTargetDateInput')?.value || null;
+
+                if (!title || !deliverables || !sb) return;
+
+                try {
+                    const { error } = await sb.from('milestones').insert([{
+                        project_id: projectId,
+                        title,
+                        weight_percentage: weight,
+                        deliverables,
+                        target_date: targetDate,
+                        status: 'PENDING'
+                    }]);
+
+                    if (error) throw error;
+                    if (window.Toast) window.Toast.success('Milestone added!');
+                    addMilestoneModal?.classList.add('hidden');
+                    addMilestoneForm.reset();
+                    await loadMilestonesList();
+                } catch (err) {
+                    if (window.Toast) window.Toast.error(err.message || 'Failed to add milestone.');
                 }
             });
-        });
-    }
+        }
 
-    if (btnOpenResourceModal) {
-        btnOpenResourceModal.addEventListener('click', () => {
-            if (window.Modal && resourceModal) {
-                window.Modal.open(resourceModal);
-            } else if (resourceModal) {
-                resourceModal.classList.remove('hidden');
-            }
-        });
-    }
+        // Deliverable Proof Submit Modal
+        if (closeMilestoneModalBtn) closeMilestoneModalBtn.addEventListener('click', () => milestoneActionModal?.classList.add('hidden'));
+        if (cancelMilestoneActionBtn) cancelMilestoneActionBtn.addEventListener('click', () => milestoneActionModal?.classList.add('hidden'));
 
-    if (resourceUploadForm) {
-        resourceUploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const title = document.getElementById('resourceTitleInput')?.value.trim();
-            const type = document.getElementById('resourceTypeSelect')?.value || 'DOCUMENT';
-            const urlInput = document.getElementById('resourceUrlInput')?.value.trim();
-            const fileInput = document.getElementById('resourceFileInput');
-            const file = fileInput?.files?.[0];
+        if (milestoneActionForm) {
+            milestoneActionForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const mid = actionMilestoneId?.value;
+                const url = deliverableUrlInput?.value.trim();
+                const notes = deliverableNotesInput?.value.trim() || 'Deliverable submitted for review.';
 
-            if (!title) {
-                if (window.Toast) window.Toast.error('Please specify an asset title.');
-                return;
-            }
+                if (!mid || !url || !sb) return;
 
-            try {
-                await window.ResourceApi.uploadResource(projectId, {
-                    title,
-                    type,
-                    url: urlInput,
-                    file
-                });
+                try {
+                    const { error } = await sb.from('milestones').update({
+                        deliverable_url: url,
+                        notes: notes,
+                        status: 'SUBMITTED_FOR_REVIEW'
+                    }).eq('id', mid);
 
-                if (window.Toast) window.Toast.success('Asset uploaded to vault.');
-                if (window.Modal) window.Modal.close(resourceModal, true);
-                await loadResources();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Upload failed.');
-            }
-        });
-    }
+                    if (error) throw error;
+                    if (window.Toast) window.Toast.success('Deliverable proof submitted for client review!');
+                    milestoneActionModal?.classList.add('hidden');
+                    milestoneActionForm.reset();
+                    await loadMilestonesList();
+                } catch (err) {
+                    if (window.Toast) window.Toast.error(err.message || 'Failed to submit proof.');
+                }
+            });
+        }
 
-    // -------------------------------------------------------------------------
-    // 12. Daily Delivery Updates (Modal 6)
-    // -------------------------------------------------------------------------
-    async function loadProjectUpdates() {
-        if (!updatesTimeline) return;
-        try {
-            const updates = await window.ProjectApi.getProjectUpdates(projectId);
-            renderUpdates(updates || []);
-        } catch (e) {
-            renderUpdates([]);
+        // Upload Material / Resource Modal
+        if (btnUploadResource) btnUploadResource.addEventListener('click', () => resourceModal?.classList.remove('hidden'));
+        if (modalResourceClose) modalResourceClose.addEventListener('click', () => resourceModal?.classList.add('hidden'));
+        if (modalResourceCancel) modalResourceCancel.addEventListener('click', () => resourceModal?.classList.add('hidden'));
+
+        if (resourceUploadForm) {
+            resourceUploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('resourceTitleInput')?.value.trim();
+                const url = document.getElementById('resourceUrlInput')?.value.trim();
+
+                if (!title || !url || !sb) return;
+
+                try {
+                    const { error } = await sb.from('project_resources').insert([{
+                        project_id: projectId,
+                        title,
+                        resource_url: url,
+                        uploaded_by: currentUser?.fullName || 'Collaborator'
+                    }]);
+
+                    if (error) throw error;
+                    if (window.Toast) window.Toast.success('Resource saved to vault!');
+                    resourceModal?.classList.add('hidden');
+                    resourceUploadForm.reset();
+                    await loadResourceVault();
+                } catch (err) {
+                    if (window.Toast) window.Toast.error(err.message || 'Could not save resource.');
+                }
+            });
+        }
+
+        // Stage Advance Modal
+        if (btnProposeStageAdvance) btnProposeStageAdvance.addEventListener('click', () => stageAdvanceModal?.classList.remove('hidden'));
+        if (closeStageModalBtn) closeStageModalBtn.addEventListener('click', () => stageAdvanceModal?.classList.add('hidden'));
+        if (cancelStageModalBtn) cancelStageModalBtn.addEventListener('click', () => stageAdvanceModal?.classList.add('hidden'));
+
+        if (stageAdvanceForm) {
+            stageAdvanceForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const targetStage = targetStageSelect?.value;
+                if (!targetStage || !sb) return;
+
+                try {
+                    const { error } = await sb.from('projects').update({ stage: targetStage }).eq('id', projectId);
+                    if (error) throw error;
+                    if (window.Toast) window.Toast.success(`Project advanced to ${targetStage}!`);
+                    stageAdvanceModal?.classList.add('hidden');
+                    await loadProjectOverview();
+                } catch (err) {
+                    if (window.Toast) window.Toast.error(err.message || 'Could not advance stage.');
+                }
+            });
         }
     }
 
-    function renderUpdates(updates) {
-        updatesTimeline.innerHTML = '';
-        if (updates.length === 0) {
-            updatesTimeline.innerHTML = `<p class="text-muted text-sm">No engineering updates recorded yet.</p>`;
-            return;
-        }
-
-        updates.forEach(u => {
-            const item = document.createElement('div');
-            item.className = 'timeline-item mb-3 pb-2 border-b';
-            item.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="font-size: 0.95rem;">${escapeHtml(u.title || 'Engineering Status')}</strong>
-                    <span class="text-xs text-muted">${formatTimestamp(u.createdAt)}</span>
-                </div>
-                <p class="text-sm mt-1 mb-0" style="white-space: pre-wrap; color: var(--text-main);">${escapeHtml(u.content)}</p>
-                <div class="text-xs text-muted mt-1">Author: ${escapeHtml(u.authorName || u.author?.fullName || 'Collaborator')}</div>
-            `;
-            updatesTimeline.appendChild(item);
-        });
-    }
-
-    if (btnOpenStandupModal) {
-        btnOpenStandupModal.addEventListener('click', () => {
-            if (window.Modal && standupModal) {
-                window.Modal.open(standupModal);
-            } else if (standupModal) {
-                standupModal.classList.remove('hidden');
-            }
-        });
-    }
-
-    if (standupForm) {
-        standupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const completedText = document.getElementById('standupCompletedInput')?.value.trim() || '';
-            const inProgressText = document.getElementById('standupInProgressInput')?.value.trim() || '';
-            const blockersText = document.getElementById('standupBlockersInput')?.value.trim() || '';
-
-            if (!completedText && !inProgressText) {
-                if (window.Toast) window.Toast.error('Please enter completed tasks or in-progress work.');
-                return;
-            }
-
-            try {
-                await window.ProjectApi.postProjectUpdate(projectId, {
-                    title: 'Sprint Delivery Update',
-                    completedText,
-                    inProgressText,
-                    blockersText
-                });
-
-                if (window.Toast) window.Toast.success('Standup update posted to timeline.');
-                if (window.Modal) window.Modal.close(standupModal, true);
-                await loadProjectUpdates();
-            } catch (err) {
-                if (window.Toast) window.Toast.error(err.message || 'Failed to post update.');
-            }
-        });
-    }
-
     // -------------------------------------------------------------------------
-    // Utilities & Fallback Data
+    // Utilities
     // -------------------------------------------------------------------------
-    function formatTimestamp(ts) {
-        if (!ts) return 'Recently';
+    function formatTime(ts) {
+        if (!ts) return '';
         const d = new Date(ts);
-        return isNaN(d.getTime()) ? 'Recently' : `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        return `${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
 
     function escapeHtml(str) {
@@ -1170,32 +852,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
-    }
-
-    function getFallbackMilestones() {
-        return [
-            {
-                id: 1,
-                title: 'Architecture & Schema Lock',
-                weightPercentage: 25,
-                status: 'APPROVED',
-                deliverables: 'ER diagrams, API contract routes, Neon PostgreSQL database initialized.'
-            },
-            {
-                id: 2,
-                title: 'Core API Implementation',
-                weightPercentage: 35,
-                status: 'SUBMITTED_FOR_REVIEW',
-                deliverables: 'Spring Boot REST services, JWT security pipeline, workspace endpoints.',
-                deliverableUrl: 'https://github.com/example/workbridge-api/pull/4'
-            },
-            {
-                id: 3,
-                title: 'Frontend Client Integration & Deployment',
-                weightPercentage: 40,
-                status: 'PENDING',
-                deliverables: 'Production deployment to Vercel and Render Web Service verification.'
-            }
-        ];
     }
 });

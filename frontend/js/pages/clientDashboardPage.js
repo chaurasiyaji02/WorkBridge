@@ -1,10 +1,9 @@
 /**
- * WORKBRIDGE - CLIENT DASHBOARD PAGE CONTROLLER
+ * WORKBRIDGE - CLIENT DASHBOARD PAGE CONTROLLER (SUPABASE EDITION)
  * File: js/pages/clientDashboardPage.js
  * 
- * Synchronized with client-dashboard.html DOM elements.
- * Handles client authentication guards, metric aggregates, project listing,
- * stage pill filtering, action item alerts, and the Create Project modal workflow.
+ * Powered by direct Supabase PostgreSQL queries (`projects` & `agreements` tables).
+ * Supports real-time project creation, stage lifecycle filtering, and pending sign-off alerts.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,6 +28,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const currentUser = window.AuthState ? window.AuthState.getUser() : null;
     if (!currentUser) return;
 
+    // Supabase Reference
+    const sb = window.sbClient;
+
     // DOM Elements - Profile & Sidebar
     const clientNameEl = document.getElementById('clientName');
     const clientEmailEl = document.getElementById('clientEmail');
@@ -52,8 +54,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterPills = document.querySelectorAll('.filter-pill');
     const refreshClientDashboardBtn = document.getElementById('refreshClientDashboardBtn');
 
-    // DOM Elements - Modal & Buttons (Strictly matching client-dashboard.html)
+    // DOM Elements - Modal & Buttons
     const openCreateProjectModalBtn = document.getElementById('openCreateProjectModalBtn');
+    const sidebarCreateProjectBtn = document.getElementById('sidebarCreateProjectBtn');
     const quickCreateProjectBtn = document.getElementById('quickCreateProjectBtn');
     const emptyStateCreateBtn = document.getElementById('emptyStateCreateBtn');
     const createProjectModal = document.getElementById('createProjectModal');
@@ -63,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitCreateProjectBtn = document.getElementById('submitCreateProjectBtn');
 
     // Populate Sidebar Profile Information
-    const displayName = currentUser.fullName || currentUser.username || currentUser.email || 'Client Workspace';
+    const displayName = currentUser.fullName || currentUser.username || currentUser.email || 'Client Partner';
     if (clientNameEl) clientNameEl.textContent = displayName;
     if (clientEmailEl) clientEmailEl.textContent = currentUser.email || '';
     if (clientAvatarEl) clientAvatarEl.textContent = displayName.charAt(0).toUpperCase();
@@ -78,58 +81,96 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // -------------------------------------------------------------------------
-    // 2. Fetch Dashboard Data & Projects (Safe Hybrid Sync)
+    // 2. Fetch Projects directly from Supabase
     // -------------------------------------------------------------------------
     async function loadClientDashboard() {
-        let remoteProjects = [];
+        showLoadingSkeleton();
+
         try {
-            if (window.ProjectApi && typeof window.ProjectApi.getClientProjects === 'function') {
-                const data = await window.ProjectApi.getClientProjects('ALL');
-                remoteProjects = Array.isArray(data) ? data : [];
+            if (!sb) {
+                throw new Error('Supabase client connection missing.');
             }
-        } catch (error) {
-            console.warn('Backend client projects query deferred, loading local pipeline:', error.message);
+
+            // Query projects where current user is the client
+            const { data, error } = await sb
+                .from('projects')
+                .select(`
+                    *,
+                    agreements ( version, status, client_signed, provider_signed ),
+                    milestones ( id, status, weight_percentage )
+                `)
+                .or(`client_id.eq.${currentUser.id},client_email.eq.${currentUser.email}`)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.warn('Supabase client projects query error:', error.message);
+            }
+
+            const rawProjects = Array.isArray(data) ? data : [];
+
+            clientProjects = rawProjects.map(p => {
+                const agreement = Array.isArray(p.agreements) ? p.agreements[0] : p.agreements;
+                const milestones = Array.isArray(p.milestones) ? p.milestones : [];
+
+                // Calculate progress from approved milestone weights if available
+                let progress = Number(p.completion_percentage) || 0;
+                if (milestones.length > 0) {
+                    const approvedWeight = milestones.reduce((sum, m) => {
+                        return (m.status === 'APPROVED' || m.status === 'COMPLETED')
+                            ? sum + (Number(m.weight_percentage) || (100 / milestones.length))
+                            : sum;
+                    }, 0);
+                    progress = Math.min(100, Math.round(approvedWeight));
+                }
+
+                // Identify if an action requires client intervention
+                const hasPendingApproval = 
+                    p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION ||
+                    (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED && (!agreement || !agreement.client_signed)) ||
+                    milestones.some(m => m.status === 'SUBMITTED_FOR_REVIEW');
+
+                return {
+                    id: p.id,
+                    title: p.title,
+                    category: p.category,
+                    budget: p.budget,
+                    description: p.description,
+                    summary: p.summary,
+                    stage: p.stage,
+                    assignedProviderId: p.assigned_provider_id,
+                    assignedProviderName: p.assigned_provider_name || 'Pending Assignment',
+                    completionPercentage: progress,
+                    agreement: agreement,
+                    hasPendingApproval: hasPendingApproval,
+                    createdAt: p.created_at
+                };
+            });
+
+            // Update UI
+            updateMetrics(clientProjects);
+            renderPendingAlerts(clientProjects);
+            renderProjectsList(clientProjects);
+
+        } catch (err) {
+            console.error('Failed to load client projects from Supabase:', err);
+            if (window.Toast) {
+                window.Toast.error('Could not sync projects with database.');
+            }
+            renderProjectsList([]);
         }
+    }
 
-        // Merge with local projects created by this client (or from explore page invitations)
-        const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
-        const localInvites = JSON.parse(localStorage.getItem('wb_local_invitations') || '[]');
-
-        const combinedMap = new Map();
-
-        // 1. Add remote projects
-        remoteProjects.forEach(p => combinedMap.set(String(p.id), p));
-
-        // 2. Add local created projects
-        localProjects.forEach(p => {
-            if (!combinedMap.has(String(p.id))) {
-                combinedMap.set(String(p.id), p);
-            }
-        });
-
-        // 3. Add explore invitations initiated by this client
-        localInvites.forEach(inv => {
-            if (!combinedMap.has(String(inv.id))) {
-                combinedMap.set(String(inv.id), {
-                    id: inv.id,
-                    title: inv.title,
-                    description: inv.description || inv.summary,
-                    summary: inv.summary,
-                    stage: inv.stage || PROJECT_STAGES.INVITED,
-                    assignedProviderName: inv.providerName || 'Invited Provider',
-                    budget: inv.budget,
-                    completionPercentage: 10,
-                    hasPendingApproval: false
-                });
-            }
-        });
-
-        clientProjects = Array.from(combinedMap.values());
-
-        // Update UI
-        updateMetrics(clientProjects);
-        renderPendingAlerts(clientProjects);
-        renderProjectsList(clientProjects);
+    function showLoadingSkeleton() {
+        if (!projectsList) return;
+        projectsList.innerHTML = `
+            <div class="card card-skeleton">
+                <div class="skeleton-line w-50"></div>
+                <div class="skeleton-line w-25 mt-2"></div>
+                <div class="skeleton-box mt-3"></div>
+            </div>
+        `;
+        projectsList.classList.remove('hidden');
+        if (noProjectsState) noProjectsState.classList.add('hidden');
     }
 
     // -------------------------------------------------------------------------
@@ -147,11 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             p.stage === PROJECT_STAGES.IN_PROGRESS
         ).length;
 
-        const pendingCount = projects.filter(p => 
-            p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION || 
-            p.stage === PROJECT_STAGES.AGREEMENT_LOCKED ||
-            p.hasPendingApproval
-        ).length;
+        const pendingCount = projects.filter(p => p.hasPendingApproval).length;
 
         if (statActiveProjectsEl) statActiveProjectsEl.textContent = activeCount;
         if (metricActiveCount) metricActiveCount.textContent = activeCount;
@@ -162,16 +199,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 4. Render Pending Action Alerts (Sign-offs / Approvals)
+    // 4. Render Pending Action Alerts
     // -------------------------------------------------------------------------
     function renderPendingAlerts(projects) {
         if (!pendingApprovalsSection || !pendingActionsList) return;
 
-        const actionableProjects = projects.filter(p => 
-            p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION || 
-            p.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
-            p.hasPendingApproval
-        );
+        const actionableProjects = projects.filter(p => p.hasPendingApproval);
 
         if (actionableProjects.length === 0) {
             pendingApprovalsSection.classList.add('hidden');
@@ -192,9 +225,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             alertCard.style.flexWrap = 'wrap';
             alertCard.style.gap = '0.75rem';
 
-            let actionText = 'Action pending: Review & lock requirement specifications with provider.';
-            if (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED) {
-                actionText = 'Action pending: Digital Agreement drafted. Review terms and apply signature.';
+            let actionText = 'Action pending: Review scope & specifications in collaborative workspace.';
+            if (p.stage === PROJECT_STAGES.AGREEMENT_LOCKED && (!p.agreement || !p.agreement.client_signed)) {
+                actionText = 'Action pending: Digital Agreement draft awaiting your client signature.';
             }
 
             alertCard.innerHTML = `
@@ -234,13 +267,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.style.justifyContent = 'space-between';
 
             const stageBadge = getStageBadge(project.stage);
-            const rawProgress = project.completionPercentage ?? project.progressPercentage ?? project.progress ?? 0;
-            const progress = Math.min(100, Math.max(0, Number(rawProgress) || 0));
+            const progress = project.completionPercentage || 0;
 
             card.innerHTML = `
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                        <span class="badge badge-subtle">PRJ-${String(project.id).padStart(3, '0')}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.35rem;">
+                        <span class="badge badge-subtle">PRJ-${String(project.id).slice(-4).toUpperCase()}</span>
                         ${stageBadge}
                     </div>
                     <h3 class="card-title" style="font-size: 1.15rem; margin-top: 0.25rem;">
@@ -248,22 +280,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                             ${escapeHtml(project.title)}
                         </a>
                     </h3>
-                    <p class="card-text text-sm" style="min-height: 40px; margin-top: 0.5rem; color: var(--text-muted);">
-                        ${escapeHtml(project.description || project.summary || 'Collaborative engineering engagement on WorkBridge.')}
+                    <p class="card-text text-sm" style="min-height: 40px; margin-top: 0.5rem; color: var(--text-muted, #64748b);">
+                        ${escapeHtml(project.summary || project.description || 'Collaborative engineering engagement on WorkBridge.')}
                     </p>
                 </div>
 
-                <div class="project-card-footer mt-3" style="border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+                <div class="project-card-footer mt-3" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted, #64748b); margin-bottom: 0.35rem;">
                         <span>Milestone Completion</span>
                         <strong>${progress}%</strong>
                     </div>
-                    <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #e2e8f0); border-radius: 9999px; overflow: hidden;">
-                        <div style="width: ${progress}%; height: 100%; background-color: var(--primary, #3b82f6); transition: width 0.4s ease;"></div>
+                    <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #f1f5f9); border-radius: 9999px; overflow: hidden;">
+                        <div style="width: ${progress}%; height: 100%; background-color: ${progress === 100 ? 'var(--success, #10b981)' : 'var(--primary, #3b82f6)'}; transition: width 0.4s ease;"></div>
                     </div>
                     
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem;">
-                        <span class="text-xs text-muted">Provider: <strong>${escapeHtml(project.assignedProviderName || project.providerName || 'Pending Assignment')}</strong></span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="text-xs text-muted">Provider: <strong>${escapeHtml(project.assignedProviderName)}</strong></span>
                         <a href="project-view.html?id=${project.id}" class="btn btn-outline btn-sm">Enter Workspace &rarr;</a>
                     </div>
                 </div>
@@ -313,14 +345,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 refreshClientDashboardBtn.disabled = true;
                 refreshClientDashboardBtn.style.opacity = '0.6';
                 await loadClientDashboard();
-                if (window.Toast) window.Toast.info('Dashboard synced.');
+                if (window.Toast) window.Toast.info('Dashboard synced with cloud.');
                 refreshClientDashboardBtn.disabled = false;
                 refreshClientDashboardBtn.style.opacity = '1';
             });
         }
 
-        // Connect ALL 3 buttons to open Create Project Modal
+        // Connect All Buttons to Open Create Project Modal
         if (openCreateProjectModalBtn) openCreateProjectModalBtn.addEventListener('click', openCreateModal);
+        if (sidebarCreateProjectBtn) sidebarCreateProjectBtn.addEventListener('click', openCreateModal);
         if (quickCreateProjectBtn) quickCreateProjectBtn.addEventListener('click', openCreateModal);
         if (emptyStateCreateBtn) emptyStateCreateBtn.addEventListener('click', openCreateModal);
 
@@ -334,14 +367,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Project Creation Form Submit Handler
+        // ---------------------------------------------------------------------
+        // Project Creation Form Submit -> Direct Supabase PostgreSQL Insert
+        // ---------------------------------------------------------------------
         if (createProjectForm) {
             createProjectForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const title = (document.getElementById('projectTitleInput')?.value || '').trim();
                 const category = document.getElementById('projectCategoryInput')?.value || 'WEB_DEVELOPMENT';
-                const budget = document.getElementById('projectBudgetInput')?.value || 1000;
+                const budget = parseFloat(document.getElementById('projectBudgetInput')?.value) || 1000;
                 const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
 
                 if (!title || !summary) {
@@ -349,60 +384,74 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
+                if (!sb) {
+                    if (window.Toast) window.Toast.error('Database connection not available.');
+                    return;
+                }
+
                 if (submitCreateProjectBtn) {
                     submitCreateProjectBtn.disabled = true;
-                    submitCreateProjectBtn.textContent = 'Creating Project...';
+                    submitCreateProjectBtn.textContent = 'Creating Project in Cloud...';
                 }
 
-                const newProjectPayload = {
-                    id: Date.now(),
-                    title,
-                    category,
-                    budget: Number(budget),
+                const newProjectRow = {
+                    client_id: currentUser.id,
+                    client_name: displayName,
+                    client_email: currentUser.email || 'client@workbridge.io',
+                    assigned_provider_name: 'Pending Assignment',
+                    title: title,
+                    category: category,
+                    budget: budget,
                     description: summary,
                     summary: summary,
-                    stage: PROJECT_STAGES.INVITED,
-                    assignedProviderName: 'Pending Assignment',
-                    completionPercentage: 0,
-                    hasPendingApproval: false,
-                    createdAt: new Date().toISOString()
+                    stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION,
+                    completion_percentage: 0
                 };
 
-                // 1. Immediately store into local pipeline so client dashboard updates without delay
-                const localProjects = JSON.parse(localStorage.getItem('wb_local_projects') || '[]');
-                localProjects.unshift(newProjectPayload);
-                localStorage.setItem('wb_local_projects', JSON.stringify(localProjects));
-
-                // 2. Attempt remote save if API is reachable
                 try {
-                    if (window.ProjectApi && typeof window.ProjectApi.createProject === 'function') {
-                        await window.ProjectApi.createProject({
-                            title,
-                            category,
-                            budget: Number(budget),
-                            description: summary
-                        });
-                    }
+                    // Direct insertion into Supabase `projects` table
+                    const { data: createdProject, error: prjErr } = await sb
+                        .from('projects')
+                        .insert([newProjectRow])
+                        .select()
+                        .single();
+
+                    if (prjErr) throw prjErr;
+
+                    // Initialize Agreement baseline v1.0
+                    await sb
+                        .from('agreements')
+                        .insert([{
+                            project_id: createdProject.id,
+                            version: '1.0',
+                            status: 'DRAFT',
+                            agreed_amount: budget,
+                            terms_and_conditions: 'Standard WorkBridge milestone & scope baseline agreement.'
+                        }])
+                        .select()
+                        .maybeSingle();
+
+                    if (window.Toast) window.Toast.success('Project created! Initialized in Scope Discussion.');
+                    closeCreateModal();
+                    await loadClientDashboard();
+
                 } catch (err) {
-                    console.warn('Backend sync deferred, project registered in local dashboard:', err.message);
+                    console.error('Failed to create project in Supabase:', err);
+                    if (window.Toast) {
+                        window.Toast.error(err.message || 'Could not save project. Please try again.');
+                    }
+                } finally {
+                    if (submitCreateProjectBtn) {
+                        submitCreateProjectBtn.disabled = false;
+                        submitCreateProjectBtn.textContent = 'Create & Open Scope';
+                    }
                 }
-
-                if (window.Toast) window.Toast.success('Project created successfully!');
-                closeCreateModal();
-
-                if (submitCreateProjectBtn) {
-                    submitCreateProjectBtn.disabled = false;
-                    submitCreateProjectBtn.textContent = 'Create & Open Scope';
-                }
-
-                // Immediately re-load to display new project card
-                await loadClientDashboard();
             });
         }
     }
 
     // -------------------------------------------------------------------------
-    // 8. Helpers & Fallbacks
+    // 8. Helpers
     // -------------------------------------------------------------------------
     function getStageBadge(stage) {
         switch (stage) {

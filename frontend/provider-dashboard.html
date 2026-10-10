@@ -53,7 +53,7 @@
                 <div class="provider-meta-info">
                     <div class="meta-item">
                         <span class="meta-label">Primary Domain:</span>
-                        <strong id="providerCategory" class="meta-value">Engineering & Build</strong>
+                        <strong id="providerCategory" class="meta-value">Engineering &amp; Build</strong>
                     </div>
                     <div class="meta-item mt-1">
                         <span class="meta-label">Reputation:</span>
@@ -65,17 +65,23 @@
                     </div>
                 </div>
 
-                <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-3" style="text-align: center; text-decoration: none; display: block;">⚙️ Edit Profile &amp; Domain</a>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-primary btn-block" id="sidebarPostServiceBtn">
+                        ➕ Post New Service
+                    </button>
+                </div>
+
+                <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-2" style="text-align: center; text-decoration: none; display: block;">⚙️ Edit Profile &amp; Domain</a>
             </div>
 
             <!-- Provider Team & Delivery Capacity -->
             <div class="card mt-3">
                 <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center;">
                     <h4 class="menu-heading" style="margin: 0;">Delivery Capacity</h4>
-                    <span class="badge badge-subtle" id="activeCapacityBadge">Available</span>
+                    <span class="badge badge-success" id="activeCapacityBadge">Available</span>
                 </div>
                 <div id="teamMembersSummary" class="team-summary-list mt-2">
-                    <p class="text-muted text-sm" id="capacitySubtext">Connected to live Neon DB pipeline.</p>
+                    <p class="text-muted text-sm" id="capacitySubtext">PostgreSQL Cloud Persistence Active.</p>
                 </div>
             </div>
 
@@ -180,6 +186,7 @@
                         <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Under Scoping</button>
                         <button type="button" class="filter-pill" data-filter="AGREEMENT_LOCKED">Scope Locked</button>
                         <button type="button" class="filter-pill" data-filter="IN_PROGRESS">Building</button>
+                        <button type="button" class="filter-pill" data-filter="COMPLETED">Completed</button>
                     </div>
                 </div>
 
@@ -217,7 +224,7 @@
             </div>
             <div class="modal-footer" id="invitationModalActions">
                 <button type="button" class="btn btn-secondary" id="declineInviteBtn">Decline</button>
-                <button type="button" class="btn btn-success" id="acceptInviteBtn">Accept & Open Workspace</button>
+                <button type="button" class="btn btn-success" id="acceptInviteBtn">Accept &amp; Open Workspace</button>
             </div>
         </div>
     </div>
@@ -235,26 +242,26 @@
             <form id="postServiceForm">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="serviceTitleInput" class="form-label">Service Title</label>
-                        <input type="text" id="serviceTitleInput" class="form-control" placeholder="e.g. Full-Stack Spring Boot & React Development" required>
+                        <label for="serviceTitleInput" class="form-label">Service Title *</label>
+                        <input type="text" id="serviceTitleInput" class="form-control" placeholder="e.g. Full-Stack Spring Boot &amp; React Development" required>
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="serviceCategorySelect" class="form-label">Category / Specialization</label>
+                        <label for="serviceCategorySelect" class="form-label">Category / Specialization *</label>
                         <select id="serviceCategorySelect" class="form-control">
                             <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
-                            <option value="BACKEND">Backend & Cloud Microservices</option>
-                            <option value="FRONTEND">Frontend & UI/UX Systems</option>
+                            <option value="BACKEND">Backend &amp; Cloud Microservices</option>
+                            <option value="FRONTEND">Frontend &amp; UI/UX Systems</option>
                             <option value="MOBILE">Mobile App Development</option>
-                            <option value="DEVOPS">Cloud Architecture & DevOps</option>
-                            <option value="AI">AI & Machine Learning</option>
+                            <option value="DEVOPS">Cloud Architecture &amp; DevOps</option>
+                            <option value="AI">AI &amp; Machine Learning</option>
                         </select>
                     </div>
 
                     <div class="form-group mt-2">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                             <div>
-                                <label for="serviceRateInput" class="form-label">Hourly Rate ($/hr)</label>
+                                <label for="serviceRateInput" class="form-label">Hourly Rate ($/hr) *</label>
                                 <input type="number" id="serviceRateInput" class="form-control" placeholder="50" min="10" value="50" required>
                             </div>
                             <div>
@@ -265,12 +272,12 @@
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="serviceSkillsInput" class="form-label">Skills & Tech Stack (comma-separated)</label>
+                        <label for="serviceSkillsInput" class="form-label">Skills &amp; Tech Stack (comma-separated) *</label>
                         <input type="text" id="serviceSkillsInput" class="form-control" placeholder="Spring Boot, Java 21, PostgreSQL, React, JWT" required>
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="serviceDescriptionInput" class="form-label">Service Scope & Deliverable Overview</label>
+                        <label for="serviceDescriptionInput" class="form-label">Service Scope &amp; Deliverable Overview *</label>
                         <textarea id="serviceDescriptionInput" class="form-control" rows="3" placeholder="Describe the capabilities, milestone guarantees, and architectural standards you provide..." required></textarea>
                     </div>
                 </div>
@@ -285,7 +292,9 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Script Loading Pipeline -->
+    <!-- Script Loading Pipeline (Supabase First) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state/authState.js"></script>
     <script src="js/api/apiClient.js"></script>
