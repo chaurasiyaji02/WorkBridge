@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sign In or Register for WorkBridge - Intelligent Milestone &amp; Scope Collaboration Platform">
-    <title>Authentication | WorkBridge</title>
+    <meta name="description" content="Sign In or Register for WorkBridge - Enterprise Scope Governance and Milestone Verification Platform">
+    <title>Authentication &amp; Access | WorkBridge</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -16,10 +16,10 @@
     <!-- Minimal Header -->
     <header class="auth-header">
         <div class="container auth-nav-container">
-            <a href="index.html" class="brand-logo">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
                 <span class="logo-accent">Work</span>Bridge
             </a>
-            <a href="index.html" class="text-link">&larr; Back to Home</a>
+            <a href="index.html" class="text-link">&larr; Back to Platform Home</a>
         </div>
     </header>
 
@@ -43,13 +43,13 @@
             <!-- ===================== LOGIN FORM ===================== -->
             <form id="loginForm" class="auth-form mt-3" novalidate>
                 <div class="form-group">
-                    <label for="loginEmail" class="form-label">Email Address</label>
+                    <label for="loginEmail" class="form-label">Corporate / Personal Email *</label>
                     <input 
                         type="email" 
                         id="loginEmail" 
                         name="email" 
                         class="form-control" 
-                        placeholder="name@company.com" 
+                        placeholder="engineer@company.com" 
                         autocomplete="username"
                         required
                     >
@@ -58,14 +58,14 @@
 
                 <div class="form-group mt-2">
                     <div class="form-label-row">
-                        <label for="loginPassword" class="form-label">Password</label>
+                        <label for="loginPassword" class="form-label">Account Password *</label>
                     </div>
                     <input 
                         type="password" 
                         id="loginPassword" 
                         name="password" 
                         class="form-control" 
-                        placeholder="••••••••" 
+                        placeholder="••••••••••••" 
                         autocomplete="current-password"
                         required
                     >
@@ -73,8 +73,12 @@
                 </div>
 
                 <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block mt-3">
-                    <span class="btn-text">Sign In to Workspace</span>
+                    <span class="btn-text">Authenticate &amp; Enter Workspace</span>
                 </button>
+
+                <div class="p-2 border rounded mt-3 text-center" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.4;">
+                    🔒 Authenticated sessions are secured with Row Level Security (RLS) on PostgreSQL.
+                </div>
             </form>
 
             <!-- ===================== REGISTER FORM ===================== -->
@@ -82,20 +86,20 @@
                 
                 <!-- Role Selection -->
                 <div class="form-group">
-                    <label class="form-label">Account Type *</label>
+                    <label class="form-label">Account Identity Role *</label>
                     <div class="role-selector-grid">
                         <label class="role-option">
                             <input type="radio" name="role" value="CLIENT" id="roleClientRadio" checked>
                             <div class="role-box">
-                                <span class="role-title">Client</span>
-                                <span class="role-desc">Commission work &amp; lock project scopes</span>
+                                <span class="role-title">Client Principal</span>
+                                <span class="role-desc">Commission engineering projects &amp; lock baseline scopes</span>
                             </div>
                         </label>
                         <label class="role-option">
                             <input type="radio" name="role" value="SERVICE_PROVIDER" id="roleProviderRadio">
                             <div class="role-box">
-                                <span class="role-title">Service Provider</span>
-                                <span class="role-desc">Deliver technical solutions &amp; milestones</span>
+                                <span class="role-title">Technical Lead</span>
+                                <span class="role-desc">Deliver technical architectures &amp; verify milestone PRs</span>
                             </div>
                         </label>
                     </div>
@@ -108,7 +112,7 @@
                         id="regFullName" 
                         name="fullName" 
                         class="form-control" 
-                        placeholder="e.g. Alex Johnson or Apex Solutions" 
+                        placeholder="e.g. Alex Johnson or Apex Engineering Labs" 
                         autocomplete="name"
                         required
                     >
@@ -129,16 +133,16 @@
                     <span class="form-error" id="regEmailError"></span>
                 </div>
 
-                <!-- Provider Domain Specialization (Auto toggled when Provider role is checked) -->
+                <!-- Provider Domain Specialization (Toggled when Provider role is checked) -->
                 <div class="form-group mt-2 hidden" id="providerDomainGroup">
-                    <label for="regDomain" class="form-label">Primary Technical Specialization *</label>
+                    <label for="regDomain" class="form-label">Primary Technical Domain *</label>
                     <select id="regDomain" name="domain" class="form-control">
-                        <option value="Full-Stack Web Development">Full-Stack Web Development</option>
-                        <option value="Backend Engineering &amp; Cloud">Backend Engineering &amp; Cloud</option>
-                        <option value="Frontend &amp; UI/UX Design">Frontend &amp; UI/UX Design</option>
-                        <option value="Mobile App Development">Mobile App Development</option>
-                        <option value="DevOps &amp; Infrastructure">DevOps &amp; Infrastructure</option>
-                        <option value="AI &amp; Data Engineering">AI &amp; Data Engineering</option>
+                        <option value="Full-Stack Web Development">Full-Stack Web Engineering</option>
+                        <option value="Backend Engineering & Cloud">Backend Architecture &amp; Cloud Microservices</option>
+                        <option value="Frontend & UI/UX Design">Frontend &amp; UI Systems</option>
+                        <option value="Mobile App Development">Mobile Systems (iOS &amp; Android)</option>
+                        <option value="DevOps & Infrastructure">DevOps &amp; Infrastructure as Code</option>
+                        <option value="AI & Data Engineering">AI Pipelines &amp; Data Engineering</option>
                     </select>
                 </div>
 
@@ -170,8 +174,12 @@
                     <span class="form-error" id="regConfirmPasswordError"></span>
                 </div>
 
+                <div class="p-2 border rounded mt-3" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.4;">
+                    🛡️ <strong>Registration Safeguard:</strong> Account registration establishes verified identity credentials only. Technical service packages are never auto-published to Explore without explicit provider authoring.
+                </div>
+
                 <button type="submit" id="registerSubmitBtn" class="btn btn-primary btn-block mt-3">
-                    <span class="btn-text">Create Account</span>
+                    <span class="btn-text">Register Verified Account</span>
                 </button>
             </form>
 
@@ -181,7 +189,7 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts Pipeline (Supabase Loaded FIRST before Application Controllers) -->
+    <!-- Scripts Pipeline (Supabase First) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/api/supabaseClient.js"></script>
     <script src="js/config.js"></script>

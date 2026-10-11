@@ -267,6 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const budgetDisplay = invite.budget ? `$${Number(invite.budget).toLocaleString()}` : 'Negotiable';
             const clientNameDisplay = invite.clientName || invite.clientEmail || 'Client';
+            const dateStr = invite.createdAt ? ` &bull; <span>${new Date(invite.createdAt).toLocaleDateString()}</span>` : '';
 
             inviteCard.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
@@ -279,7 +280,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <p class="card-text text-sm mt-1">${escapeHtml(invite.summary || invite.description || 'Client has requested your technical collaboration.')}</p>
                         <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted, #64748b);">
                             <span>Requested by: <strong>${escapeHtml(clientNameDisplay)}</strong></span>
-                            ${invite.createdAt ? ` &bull; <span>\${new Date(invite.createdAt).toLocaleDateString()}</span>` : ''}
+                            ${dateStr}
                         </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; align-self: center; flex-wrap: wrap;">
@@ -474,8 +475,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     // 7. Invitation Processing Handlers (Accept / Decline via Supabase)
     // -------------------------------------------------------------------------
-    async function handleInvitationResponse(projectId, action) {
-        if (!projectId || !sb) return;
+    async function handleInvitationResponse(invProjectId, action) {
+        if (!invProjectId || !sb) return;
 
         try {
             if (action === 'ACCEPT') {
@@ -486,7 +487,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         assigned_provider_id: currentUser.id,
                         assigned_provider_name: displayName
                     })
-                    .eq('id', projectId);
+                    .eq('id', invProjectId);
 
                 if (error) throw error;
 
@@ -494,7 +495,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await sb
                     .from('agreements')
                     .insert([{
-                        project_id: projectId,
+                        project_id: invProjectId,
                         version: '1.0',
                         status: 'DRAFT',
                         terms_and_conditions: 'Standard WorkBridge milestone & scope baseline.'
@@ -505,7 +506,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (window.Toast) window.Toast.success('Invitation accepted! Launching workspace...');
                 closeInvitationModal();
                 setTimeout(() => {
-                    window.location.href = `project-view.html?id=${projectId}`;
+                    window.location.href = `project-view.html?id=${invProjectId}`;
                 }, 500);
 
             } else {
@@ -516,13 +517,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         stage: 'COMPLETED',
                         summary: 'Invitation declined by provider.'
                     })
-                    .eq('id', projectId);
+                    .eq('id', invProjectId);
 
                 if (error) throw error;
 
                 if (window.Toast) window.Toast.info('Invitation declined.');
                 closeInvitationModal();
-                pendingInvitations = pendingInvitations.filter(inv => String(inv.id) !== String(projectId));
+                pendingInvitations = pendingInvitations.filter(inv => String(inv.id) !== String(invProjectId));
                 updateMetrics();
                 renderInvitations();
             }
@@ -649,7 +650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Post Service Modal Triggers (Wiring all buttons)
+        // Post Service Modal Triggers
         if (btnOpenPostServiceModal) btnOpenPostServiceModal.addEventListener('click', openPostServiceModal);
         if (sidebarPostServiceBtn) sidebarPostServiceBtn.addEventListener('click', openPostServiceModal);
         if (btnQuickPostService) btnQuickPostService.addEventListener('click', openPostServiceModal);
@@ -663,9 +664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // ---------------------------------------------------------------------
-        // Post Service Form Submit -> Directly Inserts into Supabase `services`
-        // ---------------------------------------------------------------------
+        // Post Service Form Submit
         if (postServiceForm) {
             postServiceForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -757,16 +756,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             case PROJECT_STAGES.COMPLETED:
                 return `<span class="badge badge-success">Completed</span>`;
             default:
-                return `<span class="badge badge-subtle">${stage || 'Active'}</span>`;
+                return `<span class="badge badge-subtle">${escapeHtml(stage || 'Active')}</span>`;
         }
     }
 
     function escapeHtml(str) {
-        if (!str) return '';
+        if (str === null || str === undefined) return '';
         return String(str)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 });

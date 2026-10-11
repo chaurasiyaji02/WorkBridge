@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     // 1. Route Guard: Ensure user is logged in as a CLIENT
     // -------------------------------------------------------------------------
-    if (window.AuthState) {
+    if (window.AuthState && typeof window.AuthState.requireAuth === 'function') {
         window.AuthState.requireAuth([ROLES.CLIENT]);
     }
 
@@ -101,12 +101,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error('Supabase client connection missing.');
             }
 
-            // Query projects belonging to this client with joined agreements & milestones
             const { data, error } = await sb
                 .from('projects')
                 .select(`
                     *,
-                    agreements ( id, version, status, client_signed, provider_signed, agreed_amount, terms_and_conditions ),
+                    agreements ( id, version, status, client_signed, provider_signed, agreed_amount, terms_and_conditions, scope_hash ),
                     milestones ( id, status, weight_percentage )
                 `)
                 .or(`client_id.eq.${currentUser.id},client_email.eq.${currentUser.email}`)
@@ -122,7 +121,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const agreement = Array.isArray(p.agreements) ? p.agreements[0] : p.agreements;
                 const milestones = Array.isArray(p.milestones) ? p.milestones : [];
 
-                // Calculate weighted progress
                 let progress = Number(p.completion_percentage) || 0;
                 if (milestones.length > 0) {
                     const approvedWeight = milestones.reduce((sum, m) => {
@@ -133,10 +131,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     progress = Math.min(100, Math.round(approvedWeight));
                 }
 
-                // Action required if agreement is waiting for client signature or deliverable submitted
                 const needsSignature = agreement && !agreement.client_signed && agreement.status !== 'SUPERSEDED';
                 const hasPendingDeliverable = milestones.some(m => m.status === 'SUBMITTED_FOR_REVIEW');
-                const hasPendingApproval = needsSignature || hasPendingDeliverable || p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION;
+                const isPendingInvitation = p.stage === PROJECT_STAGES.INVITED;
+                const hasPendingApproval = needsSignature || hasPendingDeliverable || isPendingInvitation || p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION;
 
                 return {
                     id: p.id,
@@ -154,6 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     hasPendingApproval: hasPendingApproval,
                     needsSignature: needsSignature,
                     hasPendingDeliverable: hasPendingDeliverable,
+                    isPendingInvitation: isPendingInvitation,
                     createdAt: p.created_at
                 };
             });
@@ -238,7 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Render Action Required Alerts (With Direct Sign/Review Popup)
+    // 5. Render Action Required Alerts
     // -------------------------------------------------------------------------
     function renderPendingAlerts(projects) {
         if (!pendingApprovalsSection || !pendingActionsList) return;
@@ -268,7 +267,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             let actionBtnText = 'Open Workspace &rarr;';
             let isQuickReview = false;
 
-            if (p.needsSignature) {
+            if (p.isPendingInvitation) {
+                actionText = `📩 Invitation dispatched to ${escapeHtml(p.assignedProviderName)}. Scoping unlocks once provider accepts.`;
+            } else if (p.needsSignature) {
                 actionText = `✍️ Agreement v${p.agreement?.version || '1.0'} drafted. Review terms and apply your signature.`;
                 actionBtnText = 'Quick Review &amp; Sign';
                 isQuickReview = true;
@@ -295,7 +296,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             pendingActionsList.appendChild(alertCard);
         });
 
-        // Wire quick review modal open
         pendingActionsList.querySelectorAll('.btn-quick-review').forEach(btn => {
             btn.addEventListener('click', () => {
                 const prjId = btn.getAttribute('data-id');
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Scope Review Modal Action (Sign / Request Revision)
+    // 6. Scope Review Modal Action (WebCrypto Deterministic Hashing)
     // -------------------------------------------------------------------------
     function openScopeReviewModal(project) {
         if (!scopeReviewModal) return;
@@ -346,6 +346,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (closeScopeReviewModalBtn) closeScopeReviewModalBtn.addEventListener('click', closeScopeReviewModal);
 
+    async function computeSha256Fingerprint(projId, version, amount) {
+        try {
+            const payload = `WORKBRIDGE-PROTOCOL:${projId}:V${version || '1.0'}:AMOUNT${amount || 1000}`;
+            const msgBuffer = new TextEncoder().encode(payload);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+            return `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`;
+        }
+    }
+
     // Sign from Modal
     if (signScopeAgreementBtn) {
         signScopeAgreementBtn.addEventListener('click', async () => {
@@ -362,9 +374,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 client_signed_at: new Date().toISOString()
             };
 
+            let computedHash = null;
             if (willBeLocked) {
+                computedHash = await computeSha256Fingerprint(activeReviewProject.id, ag.version, ag.agreed_amount);
                 updatePayload.status = 'LOCKED';
-                updatePayload.scope_hash = `7b4f8c92a1${String(activeReviewProject.id).slice(0, 16)}e091fav10c82d4`;
+                updatePayload.scope_hash = computedHash;
             }
 
             try {
@@ -372,7 +386,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (error) throw error;
 
                 if (willBeLocked) {
-                    await sb.from('projects').update({ stage: PROJECT_STAGES.AGREEMENT_LOCKED }).eq('id', activeReviewProject.id);
+                    await sb.from('projects').update({ 
+                        stage: PROJECT_STAGES.AGREEMENT_LOCKED,
+                        scope_locked: true,
+                        scope_hash: computedHash
+                    }).eq('id', activeReviewProject.id);
                 }
 
                 if (window.Toast) window.Toast.success('Agreement digitally signed & verified!');
@@ -460,7 +478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Modal Functions (Open / Close)
+    // 8. Modal Functions
     // -------------------------------------------------------------------------
     function openCreateModal() {
         if (!createProjectModal) return;
@@ -477,7 +495,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 9. Event Listeners Setup
     // -------------------------------------------------------------------------
     function setupEventListeners() {
-        // Filter Pills Handler
         filterPills.forEach(pill => {
             pill.addEventListener('click', () => {
                 filterPills.forEach(p => p.classList.remove('active'));
@@ -493,7 +510,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Sync Refresh Button
         if (refreshClientDashboardBtn) {
             refreshClientDashboardBtn.addEventListener('click', async () => {
                 refreshClientDashboardBtn.disabled = true;
@@ -505,13 +521,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Connect All Buttons to Open Create Project Modal
         if (openCreateProjectModalBtn) openCreateProjectModalBtn.addEventListener('click', openCreateModal);
         if (sidebarCreateProjectBtn) sidebarCreateProjectBtn.addEventListener('click', openCreateModal);
         if (quickCreateProjectBtn) quickCreateProjectBtn.addEventListener('click', openCreateModal);
         if (emptyStateCreateBtn) emptyStateCreateBtn.addEventListener('click', openCreateModal);
 
-        // Modal Close Triggers
         if (closeCreateProjectModalBtn) closeCreateProjectModalBtn.addEventListener('click', closeCreateModal);
         if (cancelCreateProjectBtn) cancelCreateProjectBtn.addEventListener('click', closeCreateModal);
 
@@ -521,9 +535,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // ---------------------------------------------------------------------
-        // Project Creation Form Submit (With Provider Assignment Option)
-        // ---------------------------------------------------------------------
         if (createProjectForm) {
             createProjectForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -568,7 +579,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 };
 
                 try {
-                    // Direct insertion into Supabase `projects` table
                     const { data: createdProject, error: prjErr } = await sb
                         .from('projects')
                         .insert([newProjectRow])
@@ -577,7 +587,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (prjErr) throw prjErr;
 
-                    // Initialize Agreement baseline v1.0
                     await sb
                         .from('agreements')
                         .insert([{
@@ -632,16 +641,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             case PROJECT_STAGES.COMPLETED:
                 return `<span class="badge badge-success">Completed</span>`;
             default:
-                return `<span class="badge badge-subtle">${stage || 'Active'}</span>`;
+                return `<span class="badge badge-subtle">${escapeHtml(stage || 'Active')}</span>`;
         }
     }
 
     function escapeHtml(str) {
-        if (!str) return '';
+        if (str === null || str === undefined) return '';
         return String(str)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 });

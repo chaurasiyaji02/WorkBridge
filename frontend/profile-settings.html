@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Manage your WorkBridge account profile details and specialized capabilities.">
-    <title>Profile Settings | WorkBridge</title>
+    <meta name="description" content="Manage your WorkBridge account profile identity, domain specializations, and deliverable credentials.">
+    <title>Profile &amp; Capability Settings | WorkBridge</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -13,10 +13,10 @@
 </head>
 <body class="dashboard-body">
 
-    <!-- Global Top Navigation -->
+    <!-- Global Top Navigation Header -->
     <header class="site-header">
         <div class="container nav-container">
-            <a href="index.html" class="brand-logo">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
                 <span class="logo-accent">Work</span>Bridge
             </a>
 
@@ -48,7 +48,7 @@
             <div class="dashboard-header-row mb-3">
                 <div>
                     <h1 class="page-title">Profile &amp; Capability Settings</h1>
-                    <p class="text-muted">Customize your public identity, domain specializations, and verification credentials.</p>
+                    <p class="text-muted">Manage your verified public identity, engineering specializations, and deliverable credentials.</p>
                 </div>
             </div>
 
@@ -56,26 +56,26 @@
             <div class="card mt-3">
                 <form id="profileSettingsForm">
 
-                    <!-- Avatar & Identity Row -->
+                    <!-- Avatar & Identity Summary Row -->
                     <div class="profile-header-summary mb-3" style="display: flex; align-items: center; gap: 1.25rem;">
                         <div class="profile-avatar avatar-provider" id="settingsAvatarPreview" style="width: 64px; height: 64px; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">
                             U
                         </div>
                         <div>
                             <h3 style="margin: 0;" id="settingsHeaderName">Account Name</h3>
-                            <span class="text-xs text-muted" id="settingsRoleSubtext">WorkBridge Verified Member</span>
+                            <span class="text-xs text-muted" id="settingsRoleSubtext">WorkBridge Verified Identity</span>
                         </div>
                     </div>
                     
                     <!-- Basic Identity Section -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
                         <div class="form-group">
-                            <label for="profileFullName" class="form-label">Full Name / Display Name *</label>
-                            <input type="text" id="profileFullName" class="form-control" placeholder="e.g. Alex Johnson or Apex Systems" required>
+                            <label for="profileFullName" class="form-label">Full Name / Organization Display *</label>
+                            <input type="text" id="profileFullName" class="form-control" placeholder="e.g. Alex Johnson or Apex Engineering Labs" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="profileEmail" class="form-label">Account Email (Immutable)</label>
+                            <label for="profileEmail" class="form-label">Account Email Address (Immutable)</label>
                             <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.7; cursor: not-allowed;">
                         </div>
                     </div>
@@ -85,29 +85,29 @@
                     <!-- ========================================== -->
                     <div id="clientSpecializedFields" class="hidden mt-3">
                         <div class="profile-divider my-3"></div>
-                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🏢 Client Organization &amp; Project Preferences</h4>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🏢 Client Enterprise Profile &amp; Preferences</h4>
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
                             <div class="form-group">
-                                <label for="clientCompanyNameInput" class="form-label">Company / Brand Name</label>
-                                <input type="text" id="clientCompanyNameInput" class="form-control" placeholder="e.g. Acme Health Technologies">
+                                <label for="clientCompanyNameInput" class="form-label">Enterprise / Company Name</label>
+                                <input type="text" id="clientCompanyNameInput" class="form-control" placeholder="e.g. Acme Health Technologies Inc.">
                             </div>
 
                             <div class="form-group">
-                                <label for="clientIndustrySelect" class="form-label">Primary Industry</label>
+                                <label for="clientIndustrySelect" class="form-label">Primary Industry Vertical</label>
                                 <select id="clientIndustrySelect" class="form-control">
-                                    <option value="Software & IT">Software &amp; IT</option>
-                                    <option value="Fintech & Banking">Fintech &amp; Banking</option>
-                                    <option value="Healthcare & Bio">Healthcare &amp; Bio</option>
-                                    <option value="E-Commerce & Retail">E-Commerce &amp; Retail</option>
-                                    <option value="EdTech & Education">EdTech &amp; Education</option>
-                                    <option value="Other">Other</option>
+                                    <option value="Software & IT">Software &amp; Cloud Infrastructure</option>
+                                    <option value="Fintech & Banking">Fintech &amp; Digital Banking</option>
+                                    <option value="Healthcare & Bio">Healthcare &amp; Life Sciences</option>
+                                    <option value="E-Commerce & Retail">E-Commerce &amp; Consumer Logistics</option>
+                                    <option value="EdTech & Education">EdTech &amp; Learning Platforms</option>
+                                    <option value="Other">Other Specialized Domain</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-group mt-2">
-                            <label for="clientWebsiteInput" class="form-label">Company Website / Project Link</label>
+                            <label for="clientWebsiteInput" class="form-label">Corporate Website / Repository Link</label>
                             <input type="url" id="clientWebsiteInput" class="form-control" placeholder="https://example.com">
                         </div>
                     </div>
@@ -117,49 +117,53 @@
                     <!-- ========================================== -->
                     <div id="providerSpecializedFields" class="hidden mt-3">
                         <div class="profile-divider my-3"></div>
-                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🛠️ Provider Technical Domain &amp; Offerings</h4>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🛠️ Technical Lead Specialization &amp; Architecture Credentials</h4>
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
                             <div class="form-group">
-                                <label for="providerDomainSelect" class="form-label">Primary Specialization Domain *</label>
+                                <label for="providerDomainSelect" class="form-label">Primary Technical Domain *</label>
                                 <select id="providerDomainSelect" class="form-control">
-                                    <option value="Full-Stack Web Development">Full-Stack Web Development</option>
-                                    <option value="Backend Engineering & Cloud">Backend Engineering &amp; Cloud</option>
-                                    <option value="Frontend & UI/UX Design">Frontend &amp; UI/UX Design</option>
-                                    <option value="Mobile App Development">Mobile App Development</option>
-                                    <option value="AI & Data Engineering">AI &amp; Data Engineering</option>
-                                    <option value="DevOps & Infrastructure">DevOps &amp; Infrastructure</option>
+                                    <option value="Full-Stack Web Development">Full-Stack Web Engineering</option>
+                                    <option value="Backend Engineering & Cloud">Backend Architecture &amp; Cloud Microservices</option>
+                                    <option value="Frontend & UI/UX Design">Frontend &amp; UI Design Systems</option>
+                                    <option value="Mobile App Development">Mobile Systems (iOS &amp; Android)</option>
+                                    <option value="AI & Data Engineering">AI Pipelines &amp; Data Engineering</option>
+                                    <option value="DevOps & Infrastructure">DevOps &amp; Infrastructure as Code</option>
                                     <option value="Security Architecture & Audit">Security Architecture &amp; Audit</option>
                                 </select>
                             </div>
 
                             <div class="form-group">
-                                <label for="providerHourlyRateInput" class="form-label">Base Hourly Rate ($ USD / hr)</label>
+                                <label for="providerHourlyRateInput" class="form-label">Baseline Consideration Rate ($ USD / hr)</label>
                                 <input type="number" id="providerHourlyRateInput" class="form-control" placeholder="50" min="10" value="50">
                             </div>
                         </div>
 
                         <div class="form-group mt-2">
-                            <label for="providerSkillsInput" class="form-label">Key Skills &amp; Tech Stack (Comma-separated) *</label>
-                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="Spring Boot, Java 21, PostgreSQL, React, Docker, JWT">
+                            <label for="providerSkillsInput" class="form-label">Verified Tech Stack &amp; Frameworks (Comma-separated) *</label>
+                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="Java 21, Spring Boot 3, Supabase PostgreSQL, Vanilla JS, Docker, Kubernetes">
                         </div>
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
                             <div class="form-group">
-                                <label for="providerGithubInput" class="form-label">GitHub / Repository Profile</label>
+                                <label for="providerGithubInput" class="form-label">GitHub / Public Codebase Profile</label>
                                 <input type="url" id="providerGithubInput" class="form-control" placeholder="https://github.com/username">
                             </div>
                             <div class="form-group">
-                                <label for="providerPortfolioInput" class="form-label">Portfolio / Live Deployment Link</label>
+                                <label for="providerPortfolioInput" class="form-label">Live Deployment / Staging Portfolio Link</label>
                                 <input type="url" id="providerPortfolioInput" class="form-control" placeholder="https://myportfolio.dev">
                             </div>
+                        </div>
+
+                        <div class="p-2 border rounded mt-3" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.5;">
+                            🛡️ <strong>Catalog Safeguard:</strong> Updating capability settings will update your profile card in talent searches. It will <em>not</em> automatically post or publish unconfigured service packages to the Explore directory.
                         </div>
                     </div>
 
                     <!-- Common Professional Bio -->
                     <div class="form-group mt-3">
                         <label for="profileBioInput" class="form-label" id="bioLabel">About / Professional Overview *</label>
-                        <textarea id="profileBioInput" class="form-control" rows="4" placeholder="Describe your experience, technical guarantees, and collaboration standards..." required></textarea>
+                        <textarea id="profileBioInput" class="form-control" rows="4" placeholder="Detail your engineering background, testing rigor, deliverable guarantees, and collaboration standards..." required></textarea>
                     </div>
 
                     <!-- Action Buttons -->

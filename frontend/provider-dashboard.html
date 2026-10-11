@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Service Provider Dashboard - WorkBridge Milestone &amp; Scope Governance Platform">
-    <title>Provider Workspace | WorkBridge</title>
+    <meta name="description" content="Technical Lead Operations Hub - WorkBridge Scope Governance &amp; Milestone Verification Platform">
+    <title>Provider Operations Hub | WorkBridge</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -13,10 +13,10 @@
 </head>
 <body class="dashboard-body">
 
-    <!-- Global Top Navigation -->
+    <!-- Global Top Navigation Header -->
     <header class="site-header">
         <div class="container nav-container">
-            <a href="index.html" class="brand-logo">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
                 <span class="logo-accent">Work</span>Bridge
             </a>
 
@@ -43,7 +43,7 @@
                     <div class="profile-avatar avatar-provider" id="providerAvatar">P</div>
                     <div class="profile-title-group">
                         <h3 class="profile-name" id="providerName">Provider Profile</h3>
-                        <span class="badge badge-primary" id="providerRoleBadge">Service Provider</span>
+                        <span class="badge badge-primary" id="providerRoleBadge">Technical Lead</span>
                     </div>
                 </div>
                 <p class="profile-email text-muted" id="providerEmail">provider@workbridge.io</p>
@@ -56,28 +56,28 @@
                         <strong id="providerCategory" class="meta-value">Engineering &amp; Build</strong>
                     </div>
                     <div class="meta-item mt-1">
-                        <span class="meta-label">Reputation:</span>
+                        <span class="meta-label">Delivery Reputation:</span>
                         <strong id="providerRating" class="text-highlight">★ 5.0</strong>
                     </div>
                     <div class="meta-item mt-1">
-                        <span class="meta-label">Governance Status:</span>
-                        <span class="badge badge-success" id="providerVerificationBadge">Verified Account</span>
+                        <span class="meta-label">Governance Standing:</span>
+                        <span class="badge badge-success" id="providerVerificationBadge">Verified Lead</span>
                     </div>
                 </div>
 
                 <div class="mt-3">
                     <button type="button" class="btn btn-primary btn-block" id="sidebarPostServiceBtn">
-                        ➕ Post New Service Offering
+                        ➕ Publish Specialized Service
                     </button>
                 </div>
 
-                <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-2" style="text-align: center; text-decoration: none; display: block;">⚙️ Edit Capabilities &amp; Domain</a>
+                <a href="profile-settings.html" class="btn btn-outline btn-sm btn-block mt-2" style="text-align: center; text-decoration: none; display: block;">⚙️ Capabilities &amp; Stack</a>
             </div>
 
             <!-- Provider Delivery Capacity -->
             <div class="card mt-3">
                 <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h4 class="menu-heading" style="margin: 0;">Delivery Capacity</h4>
+                    <h4 class="menu-heading" style="margin: 0;">Sprint Capacity</h4>
                     <span class="badge badge-success" id="activeCapacityBadge">Available</span>
                 </div>
                 <div id="teamMembersSummary" class="team-summary-list mt-2">
@@ -87,11 +87,11 @@
 
             <!-- Quick Action Links -->
             <div class="sidebar-menu-card card mt-3">
-                <h4 class="menu-heading">Quick Actions</h4>
+                <h4 class="menu-heading">Operational Queues</h4>
                 <ul class="sidebar-menu">
                     <li><a href="#invitationsSection" class="sidebar-link active">📩 Pending Invitations</a></li>
                     <li><a href="#providerProjectsSection" class="sidebar-link">📁 Active Engagements</a></li>
-                    <li><a href="#myServicesSection" class="sidebar-link">⚡ My Published Gigs</a></li>
+                    <li><a href="#myServicesSection" class="sidebar-link">⚡ Published Service Gigs</a></li>
                     <li><a href="provider-explore.html" class="sidebar-link">🌐 Explore Talent Market</a></li>
                 </ul>
             </div>
@@ -104,11 +104,11 @@
             <div class="dashboard-header-row">
                 <div>
                     <h1 class="page-title">Provider Operations Hub</h1>
-                    <p class="text-muted">Manage incoming invitations, publish your specialized services, and deliver milestone baselines.</p>
+                    <p class="text-muted">Review incoming scoping invitations, deliver technical milestone baselines, and manage published capabilities.</p>
                 </div>
                 <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-outline" id="refreshDashboardBtn" title="Sync live records">
-                        <span class="btn-icon">🔄</span> Sync
+                        <span class="btn-icon">🔄</span> Sync Live
                     </button>
                     <button type="button" class="btn btn-primary" id="btnOpenPostServiceModal">
                         <span>➕</span> Post New Service
@@ -121,7 +121,7 @@
                 <div class="card metric-card">
                     <div class="metric-icon">📩</div>
                     <div class="metric-details">
-                        <span class="metric-label">New Invitations</span>
+                        <span class="metric-label">Incoming Invitations</span>
                         <h2 class="metric-value text-info" id="metricInvitesCount">0</h2>
                     </div>
                 </div>
@@ -137,7 +137,7 @@
                 <div class="card metric-card">
                     <div class="metric-icon">🔒</div>
                     <div class="metric-details">
-                        <span class="metric-label">Scope Locked (v1+)</span>
+                        <span class="metric-label">Scope Locked (v1.0+)</span>
                         <h2 class="metric-value text-warning" id="metricDraftAgreements">0</h2>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
                 </div>
             </section>
 
-            <!-- Incoming Invitations Section -->
+            <!-- Incoming Invitations Section (Pillar 1 Gate) -->
             <section id="invitationsSection" class="mt-4">
                 <div class="section-title-row">
                     <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -159,6 +159,7 @@
                         <span class="badge badge-info" id="invitesBadge">0 Pending</span>
                     </div>
                 </div>
+                <p class="text-xs text-muted mt-1">Review inbound scope proposals. Accepting initiates mutual requirements drafting in the workspace.</p>
 
                 <div id="invitationsList" class="invitations-container mt-2">
                     <!-- Loading Skeleton Placeholder -->
@@ -172,7 +173,7 @@
                 <div id="noInvitesState" class="card empty-state text-center hidden">
                     <div class="empty-icon">📭</div>
                     <h4>No Pending Invitations</h4>
-                    <p class="text-muted">You're fully caught up. When clients invite you to scope their projects, they will appear here.</p>
+                    <p class="text-muted">You are up to date. Direct project requests dispatched by clients will appear in this review queue.</p>
                 </div>
             </section>
 
@@ -202,7 +203,7 @@
                 <div id="noProviderProjectsState" class="card empty-state text-center hidden">
                     <div class="empty-icon">📂</div>
                     <h3>No Active Engagements</h3>
-                    <p class="text-muted">You do not have any active project contracts currently running.</p>
+                    <p class="text-muted">You do not have any active project contracts currently in progress.</p>
                     <div class="empty-actions mt-3">
                         <button type="button" class="btn btn-primary" id="emptyStatePostServiceBtn">➕ Post a Specialized Service</button>
                         <a href="provider-explore.html" class="btn btn-outline" style="margin-left: 0.5rem;">Browse Talent Market</a>
@@ -214,11 +215,12 @@
             <section id="myServicesSection" class="mt-4">
                 <div class="section-title-row">
                     <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <h3 class="section-heading" style="margin: 0;">My Published Service Offerings</h3>
+                        <h3 class="section-heading" style="margin: 0;">Published Service Offerings</h3>
                         <span class="badge badge-success" id="myServicesCountBadge">0 Active Gigs</span>
                     </div>
                     <button type="button" class="btn btn-outline btn-sm" id="btnQuickPostService">+ New Offering</button>
                 </div>
+                <p class="text-xs text-muted mt-1">Services displayed in the public Explore directory. Explicit creation prevents auto-publishing glitches.</p>
 
                 <div id="myServicesGrid" class="projects-list-grid mt-3">
                     <!-- Populated dynamically via providerDashboardPage.js -->
@@ -227,20 +229,20 @@
                 <div id="noServicesState" class="card empty-state text-center hidden">
                     <div class="empty-icon">⚡</div>
                     <h4>No Services Published Yet</h4>
-                    <p class="text-muted">Publish your technical packages so clients browsing the Explore market can discover and invite you.</p>
+                    <p class="text-muted">Publish your technical packages so clients browsing the marketplace can discover your architectural capabilities.</p>
                 </div>
             </section>
 
         </main>
     </div>
 
-    <!-- Review Invitation & Scope Modal -->
+    <!-- Review Invitation & Scope Modal (Pillar 1 Lifecycle) -->
     <div class="modal-backdrop hidden" id="invitationModal" role="dialog" aria-modal="true" aria-labelledby="invitationModalTitle">
         <div class="modal-card">
             <div class="modal-header">
                 <div class="modal-heading-group">
-                    <span class="badge badge-primary" id="modalProjectCategory">Software Development</span>
-                    <h3 class="modal-title mt-1" id="invitationModalTitle">Project Invitation Details</h3>
+                    <span class="badge badge-primary" id="modalProjectCategory">Software Architecture</span>
+                    <h3 class="modal-title mt-1" id="invitationModalTitle">Inbound Project Invitation</h3>
                 </div>
                 <button type="button" class="modal-close-btn" id="closeInvitationModalBtn" aria-label="Close modal">&times;</button>
             </div>
@@ -254,61 +256,65 @@
         </div>
     </div>
 
-    <!-- Post New Service / Gig Modal -->
+    <!-- Post New Service / Gig Modal (Strict Validation) -->
     <div class="modal-backdrop hidden" id="postServiceModal" role="dialog" aria-modal="true" aria-labelledby="postServiceModalTitle">
         <div class="modal-card">
             <div class="modal-header">
                 <div class="modal-heading-group">
                     <span class="badge badge-primary">Marketplace Service Offering</span>
-                    <h3 class="modal-title mt-1" id="postServiceModalTitle">Publish Technical Service Package</h3>
+                    <h3 class="modal-title mt-1" id="postServiceModalTitle">Publish Specialized Service Package</h3>
                 </div>
                 <button type="button" class="modal-close-btn" id="closePostServiceModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <form id="postServiceForm">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="serviceTitleInput" class="form-label">Service Title *</label>
-                        <input type="text" id="serviceTitleInput" class="form-control" placeholder="e.g. Enterprise Spring Boot 3 &amp; PostgreSQL Microservices" required>
+                        <label for="serviceTitleInput" class="form-label">Service Offering Title *</label>
+                        <input type="text" id="serviceTitleInput" class="form-control" placeholder="e.g. Production Spring Boot 3 &amp; PostgreSQL Microservices Architecture" required>
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="serviceCategorySelect" class="form-label">Category / Specialization *</label>
-                        <select id="serviceCategorySelect" class="form-control">
-                            <option value="WEB_DEVELOPMENT">Full-Stack Web Development</option>
-                            <option value="BACKEND">Backend &amp; Cloud Microservices</option>
+                        <label for="serviceCategorySelect" class="form-label">Technical Specialization *</label>
+                        <select id="serviceCategorySelect" class="form-control" required>
+                            <option value="WEB_DEVELOPMENT">Full-Stack Web Engineering</option>
+                            <option value="BACKEND">Backend &amp; Microservices Architecture</option>
                             <option value="FRONTEND">Frontend &amp; UI/UX Systems</option>
-                            <option value="MOBILE">Mobile App Development</option>
-                            <option value="DEVOPS">Cloud Architecture &amp; DevOps</option>
-                            <option value="AI">AI &amp; Machine Learning</option>
+                            <option value="MOBILE">Mobile Systems (iOS &amp; Android)</option>
+                            <option value="DEVOPS">DevOps &amp; Cloud Infrastructure</option>
+                            <option value="AI">AI &amp; Machine Learning Solutions</option>
                         </select>
                     </div>
 
                     <div class="form-group mt-2">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                             <div>
-                                <label for="serviceRateInput" class="form-label">Hourly Rate ($/hr) *</label>
+                                <label for="serviceRateInput" class="form-label">Standard Hourly Consideration ($/hr) *</label>
                                 <input type="number" id="serviceRateInput" class="form-control" placeholder="50" min="10" value="50" required>
                             </div>
                             <div>
-                                <label for="serviceDeliveryDaysInput" class="form-label">Standard Turnaround (Days)</label>
+                                <label for="serviceDeliveryDaysInput" class="form-label">Estimated Delivery Turnaround (Days)</label>
                                 <input type="number" id="serviceDeliveryDaysInput" class="form-control" placeholder="14" min="1" value="14">
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="serviceSkillsInput" class="form-label">Skills &amp; Tech Stack (comma-separated) *</label>
-                        <input type="text" id="serviceSkillsInput" class="form-control" placeholder="Spring Boot, Java 21, Supabase, PostgreSQL, JWT, Docker" required>
+                        <label for="serviceSkillsInput" class="form-label">Technical Stack &amp; Frameworks (comma-separated) *</label>
+                        <input type="text" id="serviceSkillsInput" class="form-control" placeholder="Java 21, Spring Boot, Supabase PostgreSQL, Vanilla JS, Docker" required>
                     </div>
 
                     <div class="form-group mt-2">
-                        <label for="serviceDescriptionInput" class="form-label">Deliverable Scope &amp; Engineering Guarantees *</label>
-                        <textarea id="serviceDescriptionInput" class="form-control" rows="3" placeholder="Describe the architectural standards, code quality checks, and milestone commitments you provide..." required></textarea>
+                        <label for="serviceDescriptionInput" class="form-label">Scope Deliverables &amp; Code Quality Guarantees *</label>
+                        <textarea id="serviceDescriptionInput" class="form-control" rows="3" placeholder="Document the architectural standards, test coverage, and deliverable review commitments provided under this package..." required></textarea>
+                    </div>
+
+                    <div class="p-2 border rounded mt-3" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.5;">
+                        ⚡ <strong>Public Visibility Note:</strong> This offering is published immediately to the Explore directory. You retain complete authority to accept or decline inbound project invitations.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="cancelPostServiceBtn">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="btnSubmitService">Publish to Explore Market</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitService">Publish Offering</button>
                 </div>
             </form>
         </div>

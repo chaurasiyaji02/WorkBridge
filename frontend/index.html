@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="WorkBridge - Intelligent Collaboration and Scope Governance Platform. Transform scattered client discussions into structured, locked, and verifiable project execution.">
-    <title>WorkBridge | Milestone &amp; Scope Governance Platform</title>
+    <meta name="description" content="WorkBridge - Enterprise Scope Governance and Technical Deliverable Verification Platform. Eliminate scope creep and delivery disputes with cryptographic baselines and verified milestone proofs.">
+    <title>WorkBridge | Enterprise Scope Governance & Deliverable Verification</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -16,7 +16,7 @@
     <!-- Main Navigation Header -->
     <header class="site-header">
         <div class="container nav-container">
-            <a href="index.html" class="brand-logo">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
                 <span class="logo-accent">Work</span>Bridge
             </a>
             
@@ -41,125 +41,253 @@
             <div class="container hero-container">
                 <div class="hero-content">
                     <div class="hero-badge-group mb-2">
-                        <span class="badge badge-primary">Final-Year Engineering Project</span>
+                        <span class="badge badge-primary">WorkBridge Engine v2.0</span>
                         <span class="badge badge-success ml-1" id="cloudEngineBadge">PostgreSQL Cloud Live</span>
+                        <span class="badge badge-subtle ml-1">SHA-256 Scope Attestation</span>
                     </div>
                     <h1 class="hero-title">
-                        Turn scattered project discussions into <span class="text-highlight">structured, locked reality.</span>
+                        Replace ambiguous discussions with <span class="text-highlight">immutable, verified project delivery.</span>
                     </h1>
                     <p class="hero-description">
-                        WorkBridge eliminates scope creep, lost credentials, and ambiguous commitments. A specialized engineering workspace connecting technical clients and verified service providers with immutable scope contracts and milestone proof verification.
+                        WorkBridge protects engineering teams and clients from scope creep, undocumented requests, and milestone disputes. Define structured specifications, lock terms with deterministic cryptographic baselines, and release progress only on verified technical proofs.
                     </p>
                     <div class="hero-actions" id="heroActionContainer">
-                        <a href="auth.html?mode=register" class="btn btn-primary btn-lg" id="heroPrimaryCta">Start a Project</a>
-                        <a href="provider-explore.html" class="btn btn-outline btn-lg" id="heroSecondaryCta">Explore Providers</a>
+                        <a href="auth.html?mode=register" class="btn btn-primary btn-lg" id="heroPrimaryCta">Initialize Workspace</a>
+                        <a href="provider-explore.html" class="btn btn-outline btn-lg" id="heroSecondaryCta">Explore Technical Leads</a>
+                    </div>
+                    <div class="hero-trust-indicators mt-3">
+                        <span class="trust-item">✓ Zero Silent Scope Changes</span>
+                        <span class="trust-item">✓ Git Deliverable PR Sign-offs</span>
+                        <span class="trust-item">✓ Bi-Party Cryptographic Ratification</span>
                     </div>
                 </div>
 
-                <!-- Interactive State Machine Preview Visual -->
-                <div class="hero-preview-card">
+                <!-- Interactive State Machine Governance Console Preview -->
+                <div class="hero-preview-card" aria-label="WorkBridge Protocol Simulation Preview">
                     <div class="preview-header">
                         <div class="preview-traffic-dots">
                             <span class="preview-dot dot-red"></span>
                             <span class="preview-dot dot-yellow"></span>
                             <span class="preview-dot dot-green"></span>
                         </div>
-                        <span class="preview-title">Governance Engine v1.0</span>
+                        <span class="preview-title">Governance Protocol Engine • Runtime Monitor</span>
+                        <span class="preview-status-indicator">ONLINE</span>
                     </div>
                     <div class="preview-body">
+                        <!-- Protocol Step Indicator -->
+                        <div class="preview-pipeline-stages">
+                            <div class="pipeline-pill completed">01 INVITED</div>
+                            <div class="pipeline-divider">→</div>
+                            <div class="pipeline-pill completed">02 SCOPING</div>
+                            <div class="pipeline-divider">→</div>
+                            <div class="pipeline-pill active">03 RATIFIED (LOCKED)</div>
+                            <div class="pipeline-divider">→</div>
+                            <div class="pipeline-pill pending">04 VERIFIED BUILD</div>
+                        </div>
+
                         <!-- Scope Lock Indicator (Core Feature A) -->
                         <div class="preview-item">
-                            <span class="preview-label">Scope State</span>
-                            <span class="badge badge-success">🔒 Scope Locked (v1.0 Baseline)</span>
+                            <div>
+                                <span class="preview-label">Scope Integrity State</span>
+                                <div class="text-xs text-muted">Baseline fingerprint computed via SHA-256</div>
+                            </div>
+                            <span class="badge badge-success">🔒 Locked (v1.0 Immutable)</span>
                         </div>
 
                         <!-- Mutual Sign-off Status -->
                         <div class="preview-item">
-                            <span class="preview-label">Digital Sign-off</span>
-                            <span class="badge badge-primary">Mutually Ratified &amp; Signed</span>
+                            <div>
+                                <span class="preview-label">Dual Digital Signatures</span>
+                                <div class="text-xs text-muted">Client & Provider mutual ratification</div>
+                            </div>
+                            <span class="badge badge-primary">Mutually Ratified & Recorded</span>
                         </div>
 
                         <!-- Visual Milestone Progress (Core Feature B) -->
                         <div class="preview-item flex-column-item">
-                            <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 0.25rem;">
-                                <span class="preview-label">Milestone Progress (Weighted)</span>
-                                <strong class="text-highlight font-medium">75% Verified</strong>
+                            <div class="preview-meta-row">
+                                <span class="preview-label">Verified Deliverable Weight</span>
+                                <strong class="text-highlight font-medium">70% Milestone Complete</strong>
                             </div>
-                            <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #f1f5f9); border-radius: 9999px; overflow: hidden;">
-                                <div style="width: 75%; height: 100%; background-color: var(--primary, #3b82f6);"></div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: 70%;"></div>
+                            </div>
+                            <div class="preview-subtext-row">
+                                <span class="text-mono text-xs">Commit: #8f32ac9</span>
+                                <span class="text-mono text-xs">Branch: release/v1.0</span>
+                                <span class="badge badge-success badge-xs">PR Verified</span>
                             </div>
                         </div>
 
                         <!-- AI Ambiguity Analyzer -->
                         <div class="preview-item">
-                            <span class="preview-label">AI Ambiguity Audit</span>
-                            <span class="badge badge-subtle">Zero Scope Contradictions</span>
+                            <div>
+                                <span class="preview-label">AI Ambiguity & Contradiction Audit</span>
+                                <div class="text-xs text-muted">Automated requirements conflict check</div>
+                            </div>
+                            <span class="badge badge-subtle">0 Discrepancies Detected</span>
                         </div>
 
-                        <div class="preview-item">
-                            <span class="preview-label">Dispute Prevention</span>
-                            <span class="text-success font-medium">100% Cryptographically Traceable</span>
+                        <!-- Dispute Prevention Audit -->
+                        <div class="preview-item preview-footer-item">
+                            <span class="preview-label">Dispute Risk Score</span>
+                            <span class="text-success font-medium">0.0% Risk (Tamper-Resistant)</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Problem Statement Section -->
+        <!-- Operational Governance Breakdown Section -->
         <section class="section section-alt">
             <div class="container">
                 <div class="section-header text-center">
-                    <h2 class="section-title">The Problem With Modern Tech Projects</h2>
-                    <p class="section-subtitle">Why traditional chat apps, ad-hoc spreadsheets, and generic task boards fail technology collaborations.</p>
+                    <h2 class="section-title">The Cost of Unstructured Technology Engagements</h2>
+                    <p class="section-subtitle">Why traditional chat channels, arbitrary spreadsheets, and task checklists lead to failed delivery and commercial disputes.</p>
                 </div>
                 <div class="grid grid-3">
                     <div class="card problem-card">
                         <div class="card-icon">⚠️</div>
-                        <h3 class="card-title">Scope Creep &amp; Silent Edits</h3>
-                        <p class="card-text">Requirements change constantly inside informal message logs without version history or dual sign-off, creating severe conflict at delivery time.</p>
+                        <h3 class="card-title">Scope Creep & Silent Edits</h3>
+                        <p class="card-text">Functional expectations evolve inside unstructured messaging threads without version tracking or bilateral sign-offs, creating unresolvable conflict during final delivery.</p>
                     </div>
                     <div class="card problem-card">
                         <div class="card-icon">🗂️</div>
-                        <h3 class="card-title">Scattered Resources</h3>
-                        <p class="card-text">Crucial UI Figma files, architecture schemas, API credentials, and server keys get buried deep in unstructured multi-day conversations.</p>
+                        <h3 class="card-title">Lost Architectural Context</h3>
+                        <p class="card-text">Design specifications, Figma prototypes, API credentials, and staging URLs are scattered across disconnected channels, eliminating accountability and audit readiness.</p>
                     </div>
                     <div class="card problem-card">
                         <div class="card-icon">📑</div>
-                        <h3 class="card-title">Ambiguous Agreements</h3>
-                        <p class="card-text">Milestones, delivery dates, and acceptance criteria are rarely bound to an immutable digital agreement before technical building commences.</p>
+                        <h3 class="card-title">Ambiguous Acceptance Terms</h3>
+                        <p class="card-text">Milestone milestones, release dates, and acceptance criteria lack contractual binding, leaving technical leads vulnerable to payment delays and clients exposed to poor delivery.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Core Solution Pillars -->
+        <!-- Core Solution Pillars (10x Detailed Architecture) -->
         <section id="features" class="section">
             <div class="container">
                 <div class="section-header text-center">
-                    <h2 class="section-title">The WorkBridge Framework</h2>
-                    <p class="section-subtitle">A structured, role-based workflow engineered for clarity, version integrity, and dispute prevention.</p>
+                    <h2 class="section-title">The WorkBridge Engine Architecture</h2>
+                    <p class="section-subtitle">A deterministic governance lifecycle designed to align incentives and guarantee verified deliverable execution.</p>
                 </div>
+                
                 <div class="grid grid-2">
+                    <!-- Pillar 1 -->
                     <div class="card feature-card">
-                        <div class="feature-badge">Pillar 1</div>
-                        <h3 class="card-title">Smart Requirement Versioning (Engine A)</h3>
-                        <p class="card-text">Specifications are structured documents with automated version tracking (v1.0, v2.0). Once ratified, neither party can execute silent modifications without a formal Scope Amendment.</p>
+                        <div class="feature-badge">Engine A • Pillar 1</div>
+                        <h3 class="card-title">Deterministic Scope Baselines & SHA-256 Locking</h3>
+                        <p class="card-text">Functional specifications are managed through a structured versioning protocol. Once both parties ratify the scope document, the platform freezes inputs, writes an immutable SHA-256 cryptographic fingerprint, and restricts revisions to formal bilateral Scope Amendments (v2.0).</p>
+                        <ul class="feature-checklist">
+                            <li>Semantic requirement versioning (v1.0 baseline locking)</li>
+                            <li>Immutable audit logs for all scope modifications</li>
+                            <li>Formal amendment workflows with budget and timeline delta tracking</li>
+                        </ul>
                     </div>
+
+                    <!-- Pillar 2 -->
                     <div class="card feature-card">
-                        <div class="feature-badge">Pillar 2</div>
-                        <h3 class="card-title">Digital Project Agreements &amp; SHA-256 Locking</h3>
-                        <p class="card-text">A transparent mutual project agreement defining deliverables, weighted milestones, and consideration. Both client and provider review and lock terms before active building starts.</p>
+                        <div class="feature-badge">Protocol • Pillar 2</div>
+                        <h3 class="card-title">Bilateral Agreement Governance & Audit Export</h3>
+                        <p class="card-text">WorkBridge turns ambiguous proposals into actionable digital contracts. Structured terms—including delivery objectives, budget schedules, revision caps, and delivery SLA dates—require independent signatures before the workspace unlocks active development.</p>
+                        <ul class="feature-checklist">
+                            <li>Dual-step digital signing with auditable timestamps</li>
+                            <li>Instant printable audit trail and export-ready contract view</li>
+                            <li>Rigid invitation guards preventing premature workspace activity</li>
+                        </ul>
                     </div>
+
+                    <!-- Pillar 3 -->
                     <div class="card feature-card">
-                        <div class="feature-badge">Pillar 3</div>
-                        <h3 class="card-title">Weighted Milestones &amp; Proof Verification (Engine B)</h3>
-                        <p class="card-text">Milestones hold explicit completion weights. Providers submit verified repository PRs or Figma links, and project progress advances only when the client signs off.</p>
+                        <div class="feature-badge">Engine B • Pillar 3</div>
+                        <h3 class="card-title">Weighted Deliverables & Simulated Git Verification</h3>
+                        <p class="card-text">Project progression is tied strictly to verified technical deliverables rather than arbitrary completion percentages. Technical leads submit proof metadata—including Git repository links, Pull Request URLs, Commit hashes, and preview staging links.</p>
+                        <ul class="feature-checklist">
+                            <li>Weighted milestone completion tied to approved deliverables</li>
+                            <li>Client-facing verification console with direct PR and staging preview links</li>
+                            <li>Bilateral review controls: "Approve & Release Progress" or "Mandate Revision"</li>
+                        </ul>
                     </div>
+
+                    <!-- Pillar 4 -->
                     <div class="card feature-card">
-                        <div class="feature-badge">Pillar 4</div>
-                        <h3 class="card-title">Centralized Vault &amp; Architectural Journal</h3>
-                        <p class="card-text">A dedicated permanent resource vault for design wireframes and specifications, combined with an immutable decision journal recorded directly alongside discussion threads.</p>
+                        <div class="feature-badge">Workspace Vault • Pillar 4</div>
+                        <h3 class="card-title">Architectural Decision Vault & Resource Management</h3>
+                        <p class="card-text">Centralize all project knowledge within a secure, categorized asset repository. Technical choices made during standup discussions are permanently cataloged in the Architectural Decision Log to eliminate retroactive scope disputes.</p>
+                        <ul class="feature-checklist">
+                            <li>Structured asset vault for wireframes, API docs, and credential access</li>
+                            <li>Permanent architectural decision capture linked to discussions</li>
+                            <li>Role-verified standup threads with Client and Lead authentication badges</li>
+                        </ul>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparative Platform Matrix -->
+        <section class="section section-alt">
+            <div class="container">
+                <div class="section-header text-center">
+                    <h2 class="section-title">Engineered for Technical Precision</h2>
+                    <p class="section-subtitle">How WorkBridge compares with traditional project management and freelance marketplaces.</p>
+                </div>
+
+                <div class="comparison-table-wrapper">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Capability</th>
+                                <th>Ad-Hoc Chat & Task Boards</th>
+                                <th>Generic Freelance Platforms</th>
+                                <th class="highlight-column">WorkBridge Engine v2.0</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Scope Governance</strong></td>
+                                <td>None (Untracked edits in chat)</td>
+                                <td>Static proposal text</td>
+                                <td class="highlight-column"><strong>Cryptographic SHA-256 baseline lock</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Deliverable Proof</strong></td>
+                                <td>Subjective manual claims</td>
+                                <td>Arbitrary file attachments</td>
+                                <td class="highlight-column"><strong>Verified Git PR, commit & demo reviews</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Progress Calculation</strong></td>
+                                <td>Unweighted checklist items</td>
+                                <td>Hourly or manual inputs</td>
+                                <td class="highlight-column"><strong>Weighted mathematical progression</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Change Protocol</strong></td>
+                                <td>Informal text agreements</td>
+                                <td>Disputed milestones</td>
+                                <td class="highlight-column"><strong>Formal bilateral Scope Amendments (v2.0)</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Decision Auditing</strong></td>
+                                <td>Buried in chat history</td>
+                                <td>Not available</td>
+                                <td class="highlight-column"><strong>Permanent Architectural Decision Log</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Banner -->
+        <section class="section cta-section">
+            <div class="container text-center">
+                <h2 class="cta-title">Execute Your Next Technical Engagement with Certainty</h2>
+                <p class="cta-subtitle">Set up verified requirements, protect your engineering scope, and eliminate milestone disputes from day one.</p>
+                <div class="cta-buttons">
+                    <a href="auth.html?mode=register" class="btn btn-primary btn-lg">Deploy a Project Workspace</a>
+                    <a href="provider-explore.html" class="btn btn-outline btn-lg ml-2">Browse Technical Services</a>
                 </div>
             </div>
         </section>
@@ -169,11 +297,12 @@
     <footer class="site-footer">
         <div class="container footer-container">
             <div class="footer-brand">
-                <span class="logo-accent">Work</span>Bridge
-                <p class="footer-tagline">Intelligent Collaboration and Scope Governance Platform</p>
+                <span class="brand-logo"><span class="logo-accent">Work</span>Bridge</span>
+                <p class="footer-tagline">Intelligent Project Collaboration and Scope Governance Platform</p>
             </div>
             <div class="footer-meta">
-                <p>&copy; 2026 WorkBridge. Final Year Computer Science Project.</p>
+                <p>&copy; 2026 WorkBridge Systems. All rights reserved.</p>
+                <p class="text-xs text-muted">Deterministic Scope Governance • Cryptographic Baseline Verification</p>
             </div>
         </div>
     </footer>
@@ -186,10 +315,12 @@
     <script src="js/api/apiClient.js"></script>
     <script src="js/components/navbar.js"></script>
     <script>
-        // Hero Dynamic CTA adaptation based on standardized AuthState
+        // Dynamic Contextual CTA adaptation based on authenticated session
         document.addEventListener('DOMContentLoaded', () => {
             const auth = window.AuthState;
-            const isLoggedIn = auth && typeof auth.isLoggedIn === 'function' ? auth.isLoggedIn() : (auth && typeof auth.isAuthenticated === 'function' && auth.isAuthenticated());
+            const isLoggedIn = auth && typeof auth.isLoggedIn === 'function' 
+                ? auth.isLoggedIn() 
+                : (auth && typeof auth.isAuthenticated === 'function' && auth.isAuthenticated());
 
             if (isLoggedIn) {
                 const user = auth.getUser();

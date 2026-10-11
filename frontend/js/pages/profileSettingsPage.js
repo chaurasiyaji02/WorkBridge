@@ -6,6 +6,7 @@
  * - Direct real-time fetch and single-query update to Supabase `profiles` table.
  * - Dynamic field handling for Client (Company, Industry, Website) and Provider (Domain, Skills, Rate, Portfolio, GitHub).
  * - Instant AuthState session refresh to ensure all dashboards reflect updates without re-login.
+ * - Catalog safeguard: Profile updates never auto-publish or mutate unconfigured marketplace gigs.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -67,23 +68,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (roleIndicatorBadge) {
-        roleIndicatorBadge.textContent = isProvider ? 'Service Provider' : (isClient ? 'Client Account' : 'Administrator');
+        roleIndicatorBadge.textContent = isProvider ? 'Technical Lead' : (isClient ? 'Client Principal' : 'Administrator');
         roleIndicatorBadge.className = isProvider ? 'badge badge-primary' : 'badge badge-success';
     }
 
     if (settingsRoleSubtext) {
-        settingsRoleSubtext.textContent = isProvider ? 'Verified Technical Provider' : 'Project Commissioning Client';
+        settingsRoleSubtext.textContent = isProvider ? 'Verified Technical Provider' : 'Enterprise Client Principal';
     }
 
     // Role-Based Section Toggles
     if (isProvider) {
         if (providerSpecializedFields) providerSpecializedFields.classList.remove('hidden');
         if (clientSpecializedFields) clientSpecializedFields.classList.add('hidden');
-        if (bioLabel) bioLabel.textContent = 'Service Scope & Engineering Bio *';
+        if (bioLabel) bioLabel.textContent = 'Engineering Background & Delivery Guarantees *';
     } else {
         if (clientSpecializedFields) clientSpecializedFields.classList.remove('hidden');
         if (providerSpecializedFields) providerSpecializedFields.classList.add('hidden');
-        if (bioLabel) bioLabel.textContent = 'Company / Client Overview *';
+        if (bioLabel) bioLabel.textContent = 'Company / Project Overview *';
     }
 
     // Populate Initial Data from Session
@@ -96,27 +97,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!sb) return;
 
         try {
-            const { data, error } = await sb
-                .from('profiles')
-                .select('*')
-                .eq('id', currentUser.id)
-                .maybeSingle();
+            let userProfile = null;
 
-            if (error || !data) {
-                // If not matched by id, fallback query by email
+            if (currentUser.id) {
+                const { data, error } = await sb
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .maybeSingle();
+
+                if (!error && data) userProfile = data;
+            }
+
+            if (!userProfile && currentUser.email) {
                 const { data: dataByEmail } = await sb
                     .from('profiles')
                     .select('*')
                     .eq('email', currentUser.email)
                     .maybeSingle();
                 
-                if (dataByEmail) populateFormFromData(dataByEmail);
-                return;
+                if (dataByEmail) userProfile = dataByEmail;
             }
 
-            populateFormFromData(data);
+            if (userProfile) {
+                populateFormFromData(userProfile);
+            }
         } catch (err) {
-            console.warn('Could not fetch cloud profile, using session defaults:', err);
+            console.warn('Could not fetch cloud profile, retaining session defaults:', err);
         }
     }
 
@@ -184,10 +191,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnSaveProfile.textContent = 'Saving Changes...';
             }
 
-            // Construct unified payload
+            // Construct unified payload for profiles table
             const updatePayload = {
                 full_name: fullNameVal,
-                bio: bioVal
+                bio: bioVal,
+                updated_at: new Date().toISOString()
             };
 
             if (isProvider) {
@@ -211,29 +219,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 if (!sb) throw new Error('Database client connection missing.');
 
-                // 1. Direct Supabase Update to `profiles` table
-                const { error: dbError } = await sb
-                    .from('profiles')
-                    .update(updatePayload)
-                    .or(`id.eq.${currentUser.id},email.eq.${currentUser.email}`);
-
-                if (dbError) throw dbError;
-
-                // 2. Also update associated `services` records if provider changes domain or rate
-                if (isProvider) {
-                    await sb
-                        .from('services')
-                        .update({
-                            provider_name: fullNameVal,
-                            domain: updatePayload.domain,
-                            hourly_rate: updatePayload.hourly_rate,
-                            skills: updatePayload.skills
-                        })
-                        .eq('provider_id', currentUser.id)
-                        .catch(() => null);
+                // Direct Supabase Update to `profiles` table
+                let updateQuery = sb.from('profiles').update(updatePayload);
+                if (currentUser.id) {
+                    updateQuery = updateQuery.eq('id', currentUser.id);
+                } else {
+                    updateQuery = updateQuery.eq('email', currentUser.email);
                 }
 
-                // 3. Immediately sync user session object in AuthState / LocalStorage
+                const { error: dbError } = await updateQuery;
+                if (dbError) throw dbError;
+
+                // Immediately sync user session object in AuthState / LocalStorage
                 const updatedSessionUser = {
                     ...currentUser,
                     fullName: fullNameVal,
@@ -246,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 if (window.Toast) {
-                    window.Toast.success('Profile and capabilities updated in Cloud!');
+                    window.Toast.success('Profile and capabilities updated in Cloud database!');
                 }
 
                 setTimeout(() => {

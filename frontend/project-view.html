@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Unified Governance Workspace - WorkBridge Milestone &amp; Scope Platform">
-    <title>Project Workspace | WorkBridge</title>
+    <meta name="description" content="Unified Governance Workspace - WorkBridge Milestone &amp; Scope Platform. Cryptographic baselines, immutable mutual agreements, and verified Git deliverables.">
+    <title>Project Governance Workspace | WorkBridge</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -14,10 +14,10 @@
 </head>
 <body class="workspace-body">
 
-    <!-- Global Top Navigation -->
+    <!-- Global Top Navigation Header -->
     <header class="site-header">
         <div class="container nav-container">
-            <a href="index.html" class="brand-logo">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
                 <span class="logo-accent">Work</span>Bridge
             </a>
 
@@ -36,6 +36,28 @@
 
     <!-- Workspace Main Container -->
     <main class="workspace-container container">
+
+        <!-- ============================================================= -->
+        <!-- PILLAR 1 GUARD: INVITATION PENDING RESTRICTION BANNER         -->
+        <!-- ============================================================= -->
+        <section id="invitationGuardBanner" class="card guard-banner-card hidden" style="border-left: 4px solid #f59e0b; background: #fffbeb; margin-bottom: 1rem; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+                    <span style="font-size: 1.5rem;">🔒</span>
+                    <div>
+                        <div style="font-weight: 700; color: #92400e; font-size: 0.95rem;">Pending Service Provider Acceptance</div>
+                        <p id="invitationGuardMessage" style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #b45309;">
+                            This workspace is in a protected read-only state. Scoping tools, mutual terms, and milestone workflows will unlock immediately once the technical provider accepts the engagement.
+                        </p>
+                    </div>
+                </div>
+                <!-- Action Controls for Provider Persona -->
+                <div id="invitationProviderActions" class="hidden" style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="button" id="btnDeclineInvitation" class="btn btn-outline btn-sm" style="color: #b91c1c; border-color: #fca5a5;">Decline Project</button>
+                    <button type="button" id="btnAcceptInvitation" class="btn btn-success btn-sm">Accept Project &amp; Unlock Workspace</button>
+                </div>
+            </div>
+        </section>
 
         <!-- Sticky Project Header & State Summary -->
         <section class="card project-header-card">
@@ -64,6 +86,19 @@
                 </div>
             </div>
 
+            <!-- Telemetry Ribbon: Real-time Governance Overview -->
+            <div class="telemetry-ribbon mt-2 p-2 border rounded" style="background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.8rem;">
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <div><span class="text-muted">Target SLA:</span> <strong id="ribbonSlaDate">Pending Agreement</strong></div>
+                    <div><span class="text-muted">Total Budget:</span> <strong id="ribbonTotalBudget" class="text-success">$0.00</strong></div>
+                    <div><span class="text-muted">Escrow Released:</span> <strong id="ribbonEscrowReleased">$0.00 (0%)</strong></div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span class="text-muted">Fingerprint:</span>
+                    <code id="ribbonFingerprint" style="font-size: 0.75rem; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">UNRATIFIED</code>
+                </div>
+            </div>
+
             <!-- Dynamic Project Completion Engine (Weighted Milestones) -->
             <div class="workspace-progress-engine mt-3">
                 <div class="progress-engine-meta" style="display: flex; justify-content: space-between; align-items: center;">
@@ -78,10 +113,10 @@
                 </div>
             </div>
 
-            <!-- Project Stage & Progress Pipeline -->
+            <!-- Project Stage & Progress Pipeline Stepper -->
             <div class="stage-pipeline-scroll-wrapper mt-3">
                 <div class="stage-pipeline-container">
-                    <div class="stage-step" data-stage="INVITED" title="Step 1: Invitation pending provider response">
+                    <div class="stage-step" data-stage="INVITED" title="Step 1: Invitation dispatched. Awaiting provider response.">
                         <div class="step-circle">1</div>
                         <span class="step-label">Invited</span>
                     </div>
@@ -113,7 +148,7 @@
                 </div>
             </div>
 
-            <!-- State Machine Indicators -->
+            <!-- State Machine Live Indicators -->
             <div class="project-status-bar mt-3">
                 <div class="status-indicator" title="Current status of technical specifications">
                     <span class="status-dot dot-gray" id="reqStatusDot"></span>
@@ -130,7 +165,7 @@
             </div>
         </section>
 
-        <!-- Workspace Tabs Navigation -->
+        <!-- Workspace Navigation Tabs -->
         <nav class="workspace-tabs mt-3" role="tablist">
             <button type="button" class="tab-btn active" data-tab="tabOverview" role="tab">📊 Overview &amp; Updates</button>
             <button type="button" class="tab-btn" data-tab="tabRequirements" role="tab">📑 Requirements &amp; AI</button>
@@ -153,11 +188,21 @@
                             <span class="badge badge-subtle" id="overviewDomainBadge">Engineering Project</span>
                         </div>
                         <p class="card-text text-muted mt-2" id="projectDescription">Loading project overview...</p>
+
+                        <!-- Tech Stack & Architecture Baseline Chips -->
+                        <div class="mt-3 pt-3 border-top">
+                            <span class="text-xs text-muted font-bold" style="display: block; letter-spacing: 0.5px;">ESTABLISHED ARCHITECTURAL CONSTRAINTS</span>
+                            <div id="overviewStackBadges" class="mt-1" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <span class="badge badge-subtle">Vanilla JS Controller Layer</span>
+                                <span class="badge badge-subtle">Supabase PostgreSQL Live</span>
+                                <span class="badge badge-subtle">Deterministic SHA-256</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Progress & Delivery Updates Feed -->
                     <div class="card mt-3">
-                        <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                             <div>
                                 <h3 class="card-title" style="margin: 0;">Engineering Status &amp; Updates</h3>
                                 <p class="text-muted text-xs mt-1 mb-0">Asynchronous standup feed posted by client or provider.</p>
@@ -172,7 +217,7 @@
                     </div>
                 </div>
 
-                <!-- Collaborator & Contract Meta Column -->
+                <!-- Collaborator & Contract Metadata Column -->
                 <div class="grid-col-span-1">
                     <div class="card">
                         <h3 class="card-title">Project Stakeholders</h3>
@@ -200,6 +245,7 @@
                             <div class="kv-item"><span class="text-muted">Target SLA Delivery:</span> <strong id="metaDeadline">--</strong></div>
                             <div class="kv-item mt-1"><span class="text-muted">Agreed Budget:</span> <strong id="metaBudget" class="text-success font-medium">--</strong></div>
                             <div class="kv-item mt-1"><span class="text-muted">Baseline Version:</span> <strong id="metaVersion">v1.0</strong></div>
+                            <div class="kv-item mt-1"><span class="text-muted">Dispute Risk Score:</span> <strong class="text-success font-medium" id="metaRiskScore">0% Low Risk</strong></div>
                         </div>
                     </div>
                 </div>
@@ -242,27 +288,34 @@
                 <form id="requirementForm">
                     <div class="form-group">
                         <label for="reqObjective" class="form-label">Project Objectives &amp; Core Goal *</label>
-                        <textarea id="reqObjective" class="form-control" rows="3" placeholder="What problem does this platform solve?" required></textarea>
+                        <textarea id="reqObjective" class="form-control" rows="3" placeholder="What core business problem does this project solve?" required></textarea>
                     </div>
 
                     <div class="form-group mt-2">
                         <label for="reqTargetUsers" class="form-label">Target Audience / End Users</label>
-                        <textarea id="reqTargetUsers" class="form-control" rows="2" placeholder="Who will use this platform? (Admins, clients, consumers...)"></textarea>
+                        <textarea id="reqTargetUsers" class="form-control" rows="2" placeholder="Who will interact with this system? (e.g. Administrators, Clients, DevOps leads...)"></textarea>
                     </div>
 
                     <div class="form-group mt-2">
                         <label for="reqFeatures" class="form-label">Itemized Functional Scope &amp; Deliverables *</label>
-                        <textarea id="reqFeatures" class="form-control" rows="6" placeholder="List the specific technical features and modules required..." required></textarea>
+                        <textarea id="reqFeatures" class="form-control" rows="6" placeholder="List itemized features and modules (e.g. Auth flow, Supabase real-time sync, Webhook handlers...)" required></textarea>
                     </div>
 
-                    <div class="form-group mt-2">
-                        <label for="reqTechPreferences" class="form-label">Tech Stack &amp; Architectural Constraints</label>
-                        <input type="text" id="reqTechPreferences" class="form-control" placeholder="e.g. Java 21, Spring Boot, Supabase PostgreSQL, Vanilla JS">
+                    <div class="grid grid-2 mt-2" style="gap: 1rem;">
+                        <div class="form-group">
+                            <label for="reqTechPreferences" class="form-label">Tech Stack &amp; Constraints</label>
+                            <input type="text" id="reqTechPreferences" class="form-control" placeholder="e.g. Java 21, Spring Boot Façade, Supabase PostgreSQL, Vanilla JS">
+                        </div>
+                        <div class="form-group">
+                            <label for="reqNonFunctional" class="form-label">Non-Functional &amp; Quality Metrics</label>
+                            <input type="text" id="reqNonFunctional" class="form-control" placeholder="e.g. API latency < 200ms, 99.9% uptime, responsive CSS">
+                        </div>
                     </div>
 
+                    <!-- Scope Creep Guard: Explicit Out-of-Scope Items -->
                     <div class="form-group mt-2">
-                        <label for="reqNonFunctional" class="form-label">Non-Functional &amp; Quality Metrics</label>
-                        <textarea id="reqNonFunctional" class="form-control" rows="2" placeholder="Latency thresholds, security standards, mobile responsiveness..."></textarea>
+                        <label for="reqOutOfScope" class="form-label" style="color: #b91c1c;">Explicit Out-of-Scope Exclusions (Scope Creep Guard)</label>
+                        <textarea id="reqOutOfScope" class="form-control" rows="2" placeholder="What items are strictly NOT included in this engagement? (Prevents undocumented work disputes)"></textarea>
                     </div>
 
                     <div class="mt-3" id="reqFormActions" style="display: flex; gap: 0.5rem; align-items: center;">
@@ -280,8 +333,8 @@
             <div class="card">
                 <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
-                        <h3 class="card-title" style="margin: 0;">Milestone Roadmap &amp; Proof Verification</h3>
-                        <p class="text-muted text-sm mt-1 mb-0">Milestones hold weight percentages. Provider submits deliverable links; Client verifies proof to advance progress.</p>
+                        <h3 class="card-title" style="margin: 0;">Deliverable Roadmap &amp; Technical Milestone Verification</h3>
+                        <p class="text-muted text-sm mt-1 mb-0">Milestones hold weight percentages. Provider submits verified repository links; Client verifies proof to advance progress.</p>
                     </div>
                     <button type="button" id="btnAddMilestoneBtn" class="btn btn-outline btn-sm">➕ Add Milestone</button>
                 </div>
@@ -294,72 +347,134 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 4: MUTUAL DIGITAL AGREEMENT (CORE ENGINE A)               -->
+        <!-- TAB 4: MUTUAL DIGITAL AGREEMENT CONSOLE (CORE ENGINE A)       -->
         <!-- ============================================================= -->
         <section id="tabAgreement" class="tab-content mt-3 hidden">
-            <div class="card agreement-document-card">
-                <div class="agreement-header text-center">
-                    <span class="badge badge-primary" id="agreementVersionPill">Digital Project Agreement (v1.0)</span>
-                    <h2 class="mt-2" id="agreementTitleHeader">Mutual Terms &amp; Scope Ratification</h2>
-                    <p class="text-muted text-sm">Both parties must review and digitally sign. Once ratified, terms freeze to prevent unilateral scope changes.</p>
-                </div>
-
-                <!-- Cryptographic SHA-256 Scope Stamp -->
-                <div id="scopeHashContainer" class="mt-3 hidden" style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="card agreement-document-card" id="agreementPrintArea">
+                <div class="agreement-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1.25rem;">
                     <div>
-                        <div style="font-size: 0.75rem; color: #166534; font-weight: 700;">🔒 IMMUTABLE SCOPE BASELINE RATIFIED</div>
-                        <div id="scopeHashValue" style="font-family: monospace; font-size: 0.8rem; color: #14532d; word-break: break-all;">SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="badge badge-primary" id="agreementVersionPill">Digital Project Agreement (v1.0)</span>
+                            <span class="badge badge-success" id="agreementStatusBadge">DRAFT PROPOSAL</span>
+                        </div>
+                        <h2 class="mt-2" id="agreementTitleHeader" style="font-size: 1.5rem; margin-bottom: 0.25rem;">Master Services Agreement &amp; Scope Ratification</h2>
+                        <p class="text-muted text-sm" style="margin: 0;">Both parties must review and digitally sign. Once ratified, terms freeze cryptographically to eliminate scope creep.</p>
                     </div>
-                    <span class="badge badge-success">Engine A: Locked</span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button type="button" id="btnRequestClauseEdit" class="btn btn-outline btn-sm">💬 Propose Clause Edit</button>
+                        <button type="button" id="btnPrintAgreement" class="btn btn-outline btn-sm" onclick="window.print()">🖨️ Export / Print Contract</button>
+                    </div>
                 </div>
 
+                <!-- Deterministic SHA-256 Scope Fingerprint -->
+                <div id="scopeHashContainer" class="mt-3 hidden" style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: #166534; font-weight: 700; letter-spacing: 0.5px;">🔒 IMMUTABLE SCOPE BASELINE RATIFIED</div>
+                        <div id="scopeHashValue" style="font-family: monospace; font-size: 0.85rem; color: #14532d; word-break: break-all; margin-top: 0.25rem;">SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
+                    </div>
+                    <span class="badge badge-success">Cryptographic Lock Active</span>
+                </div>
+
+                <!-- Structured Legal Sections with Accordions & Granular Clauses -->
                 <div class="agreement-body mt-4">
+                    
+                    <!-- Clause 1 -->
                     <div class="agreement-section">
-                        <h4>1. Contracting Parties</h4>
-                        <p><strong>Client:</strong> <span id="agClientName">--</span></p>
-                        <p><strong>Service Provider:</strong> <span id="agProviderName">--</span></p>
-                    </div>
-
-                    <div class="agreement-section mt-3">
-                        <h4>2. Deliverables &amp; Scope Reference</h4>
-                        <p id="agDeliverablesText" class="text-muted">Bound to locked requirement specification.</p>
-                    </div>
-
-                    <div class="agreement-section mt-3">
-                        <h4>3. Timeline &amp; Delivery Target</h4>
-                        <p><strong>Target Delivery:</strong> <span id="agTimelineText">--</span></p>
-                    </div>
-
-                    <div class="agreement-section mt-3">
-                        <h4>4. Agreed Consideration / Milestone Budget</h4>
-                        <p><strong>Agreed Amount:</strong> <span id="agAmountText" class="text-success font-medium">--</span></p>
-                    </div>
-
-                    <!-- Digital Sign-off Verification -->
-                    <div class="agreement-sign-box mt-4">
-                        <div class="sign-status-col">
-                            <span class="font-medium">Client Signature:</span>
-                            <span class="badge badge-warning" id="agClientSignStatus">Pending</span>
-                            <small class="text-muted text-xs mt-1" id="agClientSignTimestamp"></small>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.35rem;">
+                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">1. Contracting Entities &amp; Authority</h4>
+                            <span class="badge badge-subtle">Clause 1.0</span>
                         </div>
-                        <div class="sign-status-col">
-                            <span class="font-medium">Provider Signature:</span>
-                            <span class="badge badge-warning" id="agProviderSignStatus">Pending</span>
-                            <small class="text-muted text-xs mt-1" id="agProviderSignTimestamp"></small>
+                        <div class="grid grid-2 mt-2" style="gap: 1rem;">
+                            <div class="p-2 border rounded" style="background: #f8fafc;">
+                                <strong style="display: block; font-size: 0.8rem; color: #64748b;">CLIENT PRINCIPAL</strong>
+                                <span id="agClientName" style="font-size: 0.95rem; font-weight: 600;">--</span>
+                            </div>
+                            <div class="p-2 border rounded" style="background: #f8fafc;">
+                                <strong style="display: block; font-size: 0.8rem; color: #64748b;">TECHNICAL SERVICE PROVIDER</strong>
+                                <span id="agProviderName" style="font-size: 0.95rem; font-weight: 600;">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clause 2 -->
+                    <div class="agreement-section mt-3">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.35rem;">
+                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">2. Scope Baseline &amp; Acceptance Governance</h4>
+                            <span class="badge badge-subtle">Clause 2.0</span>
+                        </div>
+                        <p id="agDeliverablesText" class="text-muted mt-2" style="line-height: 1.6; font-size: 0.9rem;">
+                            Work execution is strictly bounded by the functional requirements defined in the ratified specification version. All work products must satisfy the itemized criteria before milestone payout approvals. Unilateral scope expansion is void.
+                        </p>
+                    </div>
+
+                    <!-- Clause 3 -->
+                    <div class="agreement-section mt-3">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.35rem;">
+                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">3. Delivery Schedule &amp; Target Milestone SLA</h4>
+                            <span class="badge badge-subtle">Clause 3.0</span>
+                        </div>
+                        <div class="p-2 border rounded mt-2" style="background: #f8fafc;">
+                            <span class="text-muted" style="font-size: 0.85rem;">Target SLA Delivery Date:</span>
+                            <strong id="agTimelineText" style="display: block; font-size: 1rem; color: #0f172a; margin-top: 0.2rem;">--</strong>
+                        </div>
+                    </div>
+
+                    <!-- Clause 4 -->
+                    <div class="agreement-section mt-3">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.35rem;">
+                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">4. Commercial Consideration &amp; Weighted Payout Triggers</h4>
+                            <span class="badge badge-subtle">Clause 4.0</span>
+                        </div>
+                        <div class="p-2 border rounded mt-2" style="background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                            <div>
+                                <span class="text-muted" style="font-size: 0.85rem;">Agreed Fixed Consideration:</span>
+                                <strong id="agAmountText" class="text-success font-medium" style="display: block; font-size: 1.25rem; margin-top: 0.2rem;">--</strong>
+                            </div>
+                            <span class="badge badge-subtle">Released strictly upon Client-verified Git deliverable milestones</span>
+                        </div>
+                    </div>
+
+                    <!-- Clause 5 -->
+                    <div class="agreement-section mt-3">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.35rem;">
+                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">5. Multi-Round Scope Amendment &amp; Revision Protocol</h4>
+                            <span class="badge badge-subtle">Clause 5.0</span>
+                        </div>
+                        <p class="text-muted mt-2 text-xs" style="line-height: 1.5;">
+                            Neither party may verbally or asynchronously request alterations to the codebase without submitting a formal bilateral Scope Amendment (v2.0) with explicit budget and deadline delta calculations. Scope expansion without amendment approval holds no obligation on either party.
+                        </p>
+                    </div>
+
+                    <!-- Dual Digital Signatures Section -->
+                    <div class="agreement-sign-box mt-4" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="sign-status-col" style="padding: 1rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">CLIENT RATIFICATION</div>
+                            <div style="margin-top: 0.5rem;">
+                                <span class="badge badge-warning" id="agClientSignStatus">Pending</span>
+                            </div>
+                            <div class="text-muted text-xs mt-2" id="agClientSignTimestamp">Awaiting Client digital signature.</div>
+                        </div>
+                        <div class="sign-status-col" style="padding: 1rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">PROVIDER RATIFICATION</div>
+                            <div style="margin-top: 0.5rem;">
+                                <span class="badge badge-warning" id="agProviderSignStatus">Pending</span>
+                            </div>
+                            <div class="text-muted text-xs mt-2" id="agProviderSignTimestamp">Awaiting Provider digital signature.</div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Agreement Action Controls -->
                 <div class="agreement-footer mt-4 text-center" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     <button type="button" id="btnApproveAgreement" class="btn btn-success btn-lg">✍️ Approve &amp; Sign Agreement</button>
-                    <button type="button" id="btnRequestAgreementChange" class="btn btn-outline btn-lg">💬 Reopen for Discussion / Request Revision</button>
+                    <button type="button" id="btnRequestAgreementChange" class="btn btn-outline btn-lg">💬 Propose Scope Amendment / Revision</button>
                     <button type="button" id="btnProposeAmendment" class="btn btn-primary btn-lg hidden">📝 Propose Scope Amendment (v2.0)</button>
                 </div>
             </div>
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 5: DISCUSSIONS & DECISIONS                                -->
+        <!-- TAB 5: DISCUSSIONS & ARCHITECTURAL DECISIONS                  -->
         <!-- ============================================================= -->
         <section id="tabDiscussions" class="tab-content mt-3 hidden">
             <div class="workspace-split-layout">
@@ -398,13 +513,13 @@
                 <!-- Formal Decisions Journal -->
                 <div class="card decisions-container">
                     <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title" style="margin: 0;">Logged Decisions</h3>
+                        <h3 class="card-title" style="margin: 0;">Logged Decisions (ADR)</h3>
                         <button type="button" id="btnLogDecision" class="btn btn-outline btn-sm">➕ Log Decision</button>
                     </div>
                     <p class="text-muted text-xs mt-1">Permanent record of architectural and product choices agreed in chat.</p>
                     
                     <div id="decisionsList" class="decisions-list mt-3">
-                        <div class="text-center text-muted py-3">No architecture decisions recorded yet.</div>
+                        <div class="text-center text-muted py-3">No architecture decisions recorded yet. Click 'Log Decision' to record baseline choices.</div>
                     </div>
                 </div>
 
@@ -419,7 +534,7 @@
                 <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                         <h3 class="card-title" style="margin: 0;">Project Materials &amp; Asset Vault</h3>
-                        <p class="text-muted text-sm mt-1 mb-0">Client shares design wireframes, API docs, credentials, or Google Drive folders. Provider accesses them here.</p>
+                        <p class="text-muted text-sm mt-1 mb-0">Central repository for Figma wireframes, Swagger documentation, staging links, and API credentials.</p>
                     </div>
                     <button type="button" id="btnUploadResource" class="btn btn-primary">➕ Share Asset / Material</button>
                 </div>
@@ -448,7 +563,7 @@
     </main>
 
     <!-- ============================================================= -->
-    <!-- WORKSPACE MODALS                                              -->
+    <!-- WORKSPACE MODALS (10x ENTERPRISE DETAIL)                      -->
     <!-- ============================================================= -->
 
     <!-- Modal 1: Post Sprint / Daily Status Update -->
@@ -481,53 +596,101 @@
         </div>
     </div>
 
-    <!-- Modal 2: Submit Milestone Deliverable (Provider Action) -->
+    <!-- Modal 2: Submit Milestone Deliverable (Provider Git Proof Engine) -->
     <div id="milestoneActionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="milestoneModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title" id="milestoneModalTitle">Submit Milestone Deliverable</h3>
+                <div>
+                    <span class="badge badge-primary">Technical Deliverable Verification</span>
+                    <h3 class="modal-title mt-1" id="milestoneModalTitle">Submit Deliverable Proof</h3>
+                </div>
                 <button type="button" class="modal-close-btn" id="closeMilestoneModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <form id="milestoneActionForm">
                 <div class="modal-body">
                     <input type="hidden" id="actionMilestoneId">
+                    
                     <div class="form-group">
-                        <label for="deliverableUrlInput" class="form-label">Deliverable URL (GitHub PR, Figma, Live Link) *</label>
-                        <input type="url" id="deliverableUrlInput" class="form-control" placeholder="https://github.com/my-org/pull/1" required>
+                        <label for="deliverableUrlInput" class="form-label">Pull Request / Branch URL *</label>
+                        <input type="url" id="deliverableUrlInput" class="form-control" placeholder="https://github.com/org/repo/pull/42" required>
                     </div>
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="deliverableCommitHashInput" class="form-label">Commit SHA Hash (Optional)</label>
+                            <input type="text" id="deliverableCommitHashInput" class="form-control" placeholder="e.g. 7f2b9a1">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliverableBranchNameInput" class="form-label">Target Branch (Optional)</label>
+                            <input type="text" id="deliverableBranchNameInput" class="form-control" placeholder="e.g. main or feature/auth">
+                        </div>
+                    </div>
+
                     <div class="form-group mt-2">
-                        <label for="deliverableNotesInput" class="form-label">Deliverable Verification Notes</label>
-                        <textarea id="deliverableNotesInput" class="form-control" rows="3" placeholder="Describe the test cases and features built in this milestone..."></textarea>
+                        <label for="deliverableDemoUrlInput" class="form-label">Live Preview / Staging URL (Optional)</label>
+                        <input type="url" id="deliverableDemoUrlInput" class="form-control" placeholder="https://staging.app-domain.com">
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="deliverableNotesInput" class="form-label">Technical Release Notes &amp; Verification Instructions *</label>
+                        <textarea id="deliverableNotesInput" class="form-control" rows="3" placeholder="Detail the test cases covered, verification steps, and deliverable highlights..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="cancelMilestoneActionBtn">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="submitDeliverableBtn">Submit for Review</button>
+                    <button type="submit" class="btn btn-primary" id="submitDeliverableBtn">Submit Deliverable Proof</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal 3: Review Deliverable Proof (Client Verification Action) -->
+    <!-- Modal 3: Review Deliverable Proof (Client Verification & Sign-off) -->
     <div id="modalReviewProof" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="reviewProofModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title" id="reviewProofModalTitle">Review Deliverable Artifact</h3>
+                <div>
+                    <span class="badge badge-success">Deliverable Inspection Console</span>
+                    <h3 class="modal-title mt-1" id="reviewProofModalTitle">Verify Technical Deliverable Proof</h3>
+                </div>
                 <button type="button" class="modal-close-btn" id="closeReviewProofModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="reviewMilestoneId">
+                
                 <div class="form-group">
-                    <label class="form-label">Submitted Artifact Link</label>
+                    <label class="form-label">Pull Request / Deliverable Artifact Link</label>
                     <div class="p-2 border rounded" style="background: var(--bg-muted, #f8fafc); word-break: break-all;">
                         <a href="#" id="reviewProofLink" target="_blank" rel="noopener" style="font-weight: 600; color: var(--primary, #3b82f6);">
                             Opening Link...
                         </a>
                     </div>
                 </div>
-                <div class="form-group mt-2">
-                    <label class="form-label">Provider's Implementation Notes</label>
-                    <p class="text-sm text-muted" id="reviewProofNotes">No notes attached.</p>
+
+                <div id="reviewGitMetaContainer" class="grid grid-2 mt-2 hidden" style="gap: 0.5rem;">
+                    <div class="p-2 border rounded" style="background: #f8fafc;">
+                        <span class="text-xs text-muted" style="display:block;">COMMIT HASH</span>
+                        <code id="reviewCommitHash" style="font-size: 0.85rem; color: #0284c7;">--</code>
+                    </div>
+                    <div class="p-2 border rounded" style="background: #f8fafc;">
+                        <span class="text-xs text-muted" style="display:block;">TARGET BRANCH</span>
+                        <code id="reviewBranchName" style="font-size: 0.85rem; color: #0284c7;">--</code>
+                    </div>
+                </div>
+
+                <div id="reviewDemoContainer" class="form-group mt-2 hidden">
+                    <label class="form-label">Live Staging Preview</label>
+                    <div>
+                        <a href="#" id="reviewDemoLink" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="display: inline-block;">
+                            🔗 Open Live Preview Demo
+                        </a>
+                    </div>
+                </div>
+
+                <div class="form-group mt-3">
+                    <label class="form-label">Lead Engineer Release Notes</label>
+                    <div class="p-2 border rounded" style="background: #f8fafc;">
+                        <p class="text-sm text-muted" id="reviewProofNotes" style="margin: 0; line-height: 1.5;">No notes attached.</p>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -547,7 +710,7 @@
             <form id="revisionRequestForm">
                 <div class="modal-body">
                     <p class="text-sm text-muted">
-                        Requesting revision will revert the agreement to <strong>DRAFT</strong> and move the project back to the <strong>Scoping</strong> stage so both parties can refine requirements.
+                        Requesting revision resets the agreement to <strong>DRAFT</strong> and moves the project back to the <strong>Scoping</strong> stage so both parties can refine specifications.
                     </p>
                     <div class="form-group mt-2">
                         <label for="revisionFeedbackInput" class="form-label">Reason / Points to Discuss *</label>
@@ -566,18 +729,18 @@
     <div id="decisionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="decisionModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title" id="decisionModalTitle">Log Project Decision</h3>
+                <h3 class="modal-title" id="decisionModalTitle">Log Architectural Decision (ADR)</h3>
                 <button type="button" class="modal-close-btn" id="closeDecisionModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <form id="decisionForm">
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="decisionTitleInput" class="form-label">Decision Summary *</label>
-                        <input type="text" id="decisionTitleInput" class="form-control" placeholder="e.g. Selected Supabase PostgreSQL over H2 for serverless speed" required>
+                        <input type="text" id="decisionTitleInput" class="form-control" placeholder="e.g. Adopted Supabase PostgreSQL for Real-time WebSockets" required>
                     </div>
                     <div class="form-group mt-2">
-                        <label for="decisionRationaleInput" class="form-label">Rationale &amp; Architectural Consequences *</label>
-                        <textarea id="decisionRationaleInput" class="form-control" rows="3" placeholder="Why this path was chosen and what constraints apply..." required></textarea>
+                        <label for="decisionRationaleInput" class="form-label">Architectural Context &amp; Consequences *</label>
+                        <textarea id="decisionRationaleInput" class="form-control" rows="3" placeholder="Document why this choice was made, alternative options evaluated, and any operational constraints..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -588,33 +751,43 @@
         </div>
     </div>
 
-    <!-- Modal 6: Propose Scope Amendment (Core Engine A: v2.0) -->
+    <!-- Modal 6: Propose Scope Amendment (Core Engine A: v2.0 Protocol) -->
     <div id="amendmentModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="amendmentModalTitle">
         <div class="modal-card">
             <div class="modal-header">
                 <div class="modal-heading-group">
-                    <span class="badge badge-warning">Change Request Protocol</span>
-                    <h3 class="modal-title mt-1" id="amendmentModalTitle">Propose Scope Amendment (v2.0)</h3>
+                    <span class="badge badge-warning">Scope Amendment Protocol</span>
+                    <h3 class="modal-title mt-1" id="amendmentModalTitle">Propose Formal Scope Amendment (v2.0)</h3>
                 </div>
                 <button type="button" class="modal-close-btn" id="closeAmendmentModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <form id="amendmentForm">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="amendmentReasonInput" class="form-label">Reason for Amendment *</label>
-                        <input type="text" id="amendmentReasonInput" class="form-control" placeholder="e.g. Additional Payment Gateway integration required" required>
+                        <label for="amendmentReasonInput" class="form-label">Amendment Objective / Problem Statement *</label>
+                        <input type="text" id="amendmentReasonInput" class="form-control" placeholder="e.g. Additional Payment Gateway integration required for international users" required>
+                    </div>
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="amendmentBudgetDeltaInput" class="form-label">Budget Delta Adjustment ($)</label>
+                            <input type="number" id="amendmentBudgetDeltaInput" class="form-control" placeholder="e.g. +350 or 0">
+                        </div>
+                        <div class="form-group">
+                            <label for="amendmentTimelineDeltaInput" class="form-label">Timeline Delta (Days)</label>
+                            <input type="number" id="amendmentTimelineDeltaInput" class="form-control" placeholder="e.g. +7 days or 0">
+                        </div>
                     </div>
                     <div class="form-group mt-2">
-                        <label for="amendmentDetailsInput" class="form-label">Modified Scope &amp; Budget Adjustments *</label>
-                        <textarea id="amendmentDetailsInput" class="form-control" rows="4" placeholder="Detail the modifications to milestones and any change to total consideration..." required></textarea>
+                        <label for="amendmentDetailsInput" class="form-label">Itemized Modifications &amp; Deliverables *</label>
+                        <textarea id="amendmentDetailsInput" class="form-control" rows="4" placeholder="Detail the modifications to milestone acceptance criteria, newly added modules, and technical deliverables..." required></textarea>
                     </div>
                     <p class="text-xs text-muted mt-2">
-                        Current terms remain active (v1.0) until both parties accept this amendment, which will increment the contract to v2.0.
+                        Current baseline (v1.0) remains legally binding until both parties mutually ratify this amendment, which will elevate the contract version to v2.0.
                     </p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="cancelAmendmentBtn">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="submitAmendmentBtn">Submit Amendment Request</button>
+                    <button type="submit" class="btn btn-primary" id="submitAmendmentBtn">Submit Amendment Proposal</button>
                 </div>
             </form>
         </div>
@@ -649,7 +822,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="resourceTitleInput" class="form-label">Asset Title / Material Name *</label>
-                        <input type="text" id="resourceTitleInput" class="form-control" placeholder="e.g. Wireframes, API Docs, Drive Folder" required>
+                        <input type="text" id="resourceTitleInput" class="form-control" placeholder="e.g. Figma UI Designs, OpenAPI Spec, Staging Credentials" required>
                     </div>
                     <div class="form-group mt-2">
                         <label for="resourceTypeSelect" class="form-label">Asset Category</label>
@@ -663,7 +836,7 @@
                     </div>
                     <div class="form-group mt-2">
                         <label for="resourceUrlInput" class="form-label">Resource / Material URL *</label>
-                        <input type="url" id="resourceUrlInput" class="form-control" placeholder="https://drive.google.com/... or https://figma.com/..." required>
+                        <input type="url" id="resourceUrlInput" class="form-control" placeholder="https://figma.com/... or https://drive.google.com/..." required>
                     </div>
                 </div>
                 <div class="modal-footer">

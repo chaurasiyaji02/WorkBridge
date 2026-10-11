@@ -4,6 +4,7 @@
  * 
  * Direct cloud authentication backed by Supabase PostgreSQL `profiles` table.
  * Supports cross-device real-time registration and login with zero cold-start delay.
+ * Strict catalog safeguard: Registering establishes verified identity without auto-posting gigs.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // If user is already logged in with a valid session, redirect immediately
-    if (window.AuthState && window.AuthState.isLoggedIn()) {
+    if (window.AuthState && typeof window.AuthState.isLoggedIn === 'function' && window.AuthState.isLoggedIn()) {
         const currentUser = window.AuthState.getUser();
         redirectToTarget(currentUser ? currentUser.role : null);
         return;
@@ -52,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Role Toggle & Domain Visibility (Provider vs Client)
     // -------------------------------------------------------------------------
     function syncRoleFields() {
-        const selectedRole = document.querySelector('input[name="role"]:checked')?.value || ROLES.CLIENT;
+        const checkedRadio = document.querySelector('input[name="role"]:checked');
+        const selectedRole = checkedRadio ? checkedRadio.value : ROLES.CLIENT;
         if (providerDomainGroup) {
             if (selectedRole === ROLES.SERVICE_PROVIDER) {
                 providerDomainGroup.classList.remove('hidden');
@@ -78,21 +80,29 @@ document.addEventListener('DOMContentLoaded', () => {
         clearFieldErrors();
 
         if (mode === 'LOGIN') {
-            tabLogin?.classList.add('active');
-            tabLogin?.setAttribute('aria-selected', 'true');
-            tabRegister?.classList.remove('active');
-            tabRegister?.setAttribute('aria-selected', 'false');
+            if (tabLogin) {
+                tabLogin.classList.add('active');
+                tabLogin.setAttribute('aria-selected', 'true');
+            }
+            if (tabRegister) {
+                tabRegister.classList.remove('active');
+                tabRegister.setAttribute('aria-selected', 'false');
+            }
 
-            loginForm?.classList.remove('form-hidden');
-            registerForm?.classList.add('form-hidden');
+            if (loginForm) loginForm.classList.remove('form-hidden');
+            if (registerForm) registerForm.classList.add('form-hidden');
         } else {
-            tabRegister?.classList.add('active');
-            tabRegister?.setAttribute('aria-selected', 'true');
-            tabLogin?.classList.remove('active');
-            tabLogin?.setAttribute('aria-selected', 'false');
+            if (tabRegister) {
+                tabRegister.classList.add('active');
+                tabRegister.setAttribute('aria-selected', 'true');
+            }
+            if (tabLogin) {
+                tabLogin.classList.remove('active');
+                tabLogin.setAttribute('aria-selected', 'false');
+            }
 
-            registerForm?.classList.remove('form-hidden');
-            loginForm?.classList.add('form-hidden');
+            if (registerForm) registerForm.classList.remove('form-hidden');
+            if (loginForm) loginForm.classList.add('form-hidden');
             syncRoleFields();
         }
     }
@@ -115,8 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
             clearAlert();
             clearFieldErrors();
 
-            const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
-            const password = document.getElementById('loginPassword')?.value || '';
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+
+            const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
+            const password = passwordInput ? passwordInput.value : '';
 
             // Input Validation
             let hasError = false;
@@ -144,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .from('profiles')
                     .select('*')
                     .eq('email', email)
-                    .single();
+                    .maybeSingle();
 
                 if (error || !data) {
                     throw new Error('No account found with this email. Please register first.');
@@ -157,29 +170,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Profile verified: construct session user
                 const sessionUser = {
                     id: data.id,
-                    fullName: data.full_name,
+                    fullName: data.full_name || 'Member',
                     email: data.email,
-                    role: data.role,
-                    domain: data.domain,
-                    bio: data.bio,
-                    rating: data.rating,
-                    companyName: data.company_name,
-                    industry: data.industry,
-                    websiteUrl: data.website_url,
-                    hourlyRate: data.hourly_rate,
-                    skills: data.skills,
-                    githubUrl: data.github_url,
-                    portfolioUrl: data.portfolio_url
+                    role: data.role || ROLES.CLIENT,
+                    domain: data.domain || null,
+                    bio: data.bio || '',
+                    rating: data.rating || 5.0,
+                    companyName: data.company_name || null,
+                    industry: data.industry || null,
+                    websiteUrl: data.website_url || null,
+                    hourlyRate: data.hourly_rate || null,
+                    skills: data.skills || [],
+                    githubUrl: data.github_url || null,
+                    portfolioUrl: data.portfolio_url || null
                 };
 
                 const sessionToken = 'wb_sb_token_' + data.id;
 
-                if (window.AuthState && window.AuthState.setSession) {
+                if (window.AuthState && typeof window.AuthState.setSession === 'function') {
                     window.AuthState.setSession(sessionToken, sessionUser);
                 }
 
                 showAlert('Sign in verified! Opening workspace...', 'success');
-                if (window.Toast) window.Toast.success(`Welcome back, ${sessionUser.fullName}!`);
+                if (window.Toast) window.Toast.success('Welcome back, ' + sessionUser.fullName + '!');
 
                 setTimeout(() => {
                     redirectToTarget(sessionUser.role);
@@ -191,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(msg, 'danger');
                 if (window.Toast) window.Toast.error(msg);
             } finally {
-                setButtonLoading(loginSubmitBtn, false, 'Sign In to Workspace');
+                setButtonLoading(loginSubmitBtn, false, 'Authenticate & Enter Workspace');
             }
         });
     }
@@ -257,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('An account with this email already exists. Please sign in instead.');
                 }
 
-                // 2. Insert new profile record (NO automatic service post created here)
+                // 2. Insert new profile record (NO automatic service package created here)
                 const newProfile = {
                     email: email,
                     full_name: fullName,
@@ -265,8 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     role: role,
                     domain: role === ROLES.SERVICE_PROVIDER ? domain : null,
                     bio: role === ROLES.SERVICE_PROVIDER 
-                        ? `Verified technical service provider specializing in ${domain}.`
-                        : 'Technical project client on WorkBridge.',
+                        ? 'Verified technical lead specializing in ' + domain + '.'
+                        : 'Enterprise client commissioning milestone-governed projects.',
                     rating: 5.0,
                     hourly_rate: role === ROLES.SERVICE_PROVIDER ? 50 : null,
                     skills: role === ROLES.SERVICE_PROVIDER ? ['Java', 'Spring Boot', 'PostgreSQL', 'JavaScript'] : []
@@ -296,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const sessionToken = 'wb_sb_token_' + createdData.id;
 
-                if (window.AuthState && window.AuthState.setSession) {
+                if (window.AuthState && typeof window.AuthState.setSession === 'function') {
                     window.AuthState.setSession(sessionToken, sessionUser);
                 }
 
@@ -313,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(msg, 'danger');
                 if (window.Toast) window.Toast.error(msg);
             } finally {
-                setButtonLoading(registerSubmitBtn, false, 'Create Account');
+                setButtonLoading(registerSubmitBtn, false, 'Register Verified Account');
             }
         });
     }
@@ -327,13 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function clearFieldErrors() {
-        document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
+        document.querySelectorAll('.form-error').forEach(el => {
+            el.textContent = '';
+        });
     }
 
     function showAlert(message, type) {
         if (!authAlert) return;
         authAlert.textContent = message;
-        authAlert.className = `alert alert-${type === 'danger' ? 'danger' : type}`;
+        authAlert.className = 'alert alert-' + (type === 'danger' ? 'danger' : type);
         authAlert.classList.remove('alert-hidden');
     }
 

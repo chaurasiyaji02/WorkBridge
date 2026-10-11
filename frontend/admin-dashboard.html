@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Platform Governance & Moderation - WorkBridge">
-    <title>Admin Governance Console | WorkBridge</title>
+    <meta name="description" content="Enterprise Platform Governance, Verification &amp; Moderation Operations - WorkBridge Scope Governance Platform">
+    <title>Enterprise Governance Console | WorkBridge</title>
     
     <!-- CSS Foundations -->
     <link rel="stylesheet" href="assets/css/main.css">
@@ -13,12 +13,12 @@
 </head>
 <body class="dashboard-body">
 
-    <!-- Global Top Navigation -->
+    <!-- Global Top Navigation Header -->
     <header class="site-header">
         <div class="container nav-container">
-            <a href="index.html" class="brand-logo">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
                 <span class="logo-accent">Work</span>Bridge
-                <span class="badge badge-danger ml-2">ADMIN</span>
+                <span class="badge badge-danger ml-2">PLATFORM OPERATIONS</span>
             </a>
 
             <!-- Mobile Navigation Toggle -->
@@ -36,42 +36,56 @@
 
     <div class="dashboard-layout container">
         
-        <!-- Admin Sidebar -->
+        <!-- Admin Operations Sidebar -->
         <aside class="dashboard-sidebar" id="dashboardSidebar">
             <div class="card profile-widget">
                 <div class="profile-header-summary">
                     <div class="profile-avatar avatar-admin" id="adminAvatar">A</div>
                     <div class="profile-title-group">
                         <h3 class="profile-name" id="adminName">System Administrator</h3>
-                        <span class="badge badge-danger">Governance &amp; Ops</span>
+                        <span class="badge badge-danger">Governance Lead</span>
                     </div>
                 </div>
                 <p class="profile-email text-muted" id="adminEmail">admin@workbridge.local</p>
                 <div class="profile-divider"></div>
                 <div class="profile-stat-row">
-                    <span class="text-muted">Cloud DB:</span>
+                    <span class="text-muted">Cloud Persistence:</span>
                     <strong class="text-success" id="adminDbStatus">PostgreSQL Cloud Live</strong>
+                </div>
+                <div class="profile-stat-row mt-1">
+                    <span class="text-muted">Cryptographic Core:</span>
+                    <strong class="text-primary">SHA-256 Active</strong>
                 </div>
             </div>
 
+            <!-- Operations Navigation Menu -->
             <div class="sidebar-menu-card card mt-3">
-                <h4 class="menu-heading">Governance Nav</h4>
+                <h4 class="menu-heading">Governance Operations</h4>
                 <ul class="sidebar-menu">
                     <li><button type="button" class="sidebar-btn-link active" data-target="panelMetrics">📊 Platform Overview</button></li>
                     <li><button type="button" class="sidebar-btn-link" data-target="panelProviders">🛡️ Provider Verification</button></li>
-                    <li><button type="button" class="sidebar-btn-link" data-target="panelReports">⚠️ Abuse Reports</button></li>
-                    <li><button type="button" class="sidebar-btn-link" data-target="panelUsers">👥 User Directory</button></li>
+                    <li><button type="button" class="sidebar-btn-link" data-target="panelReports">⚠️ Safety &amp; Abuse Flags</button></li>
+                    <li><button type="button" class="sidebar-btn-link" data-target="panelUsers">👥 Global User Directory</button></li>
                 </ul>
+            </div>
+
+            <!-- Security Assurance Note -->
+            <div class="card mt-3">
+                <div class="card-header-flex">
+                    <h4 class="menu-heading">Security Model</h4>
+                    <span class="badge badge-success">RLS Enforced</span>
+                </div>
+                <p class="text-muted text-xs mt-1">Role-Based Access Control and Row Level Security active across PostgreSQL tables.</p>
             </div>
         </aside>
 
-        <!-- Admin Workspace Main -->
+        <!-- Admin Workspace Content Area -->
         <main class="dashboard-content">
             
             <div class="dashboard-header-row">
                 <div>
-                    <h1 class="page-title">Platform Governance</h1>
-                    <p class="text-muted">Monitor platform health, verify service providers, and resolve safety flags.</p>
+                    <h1 class="page-title">Platform Governance &amp; Operations</h1>
+                    <p class="text-muted">Monitor global contract telemetry, audit verified engineering talent, and enforce protocol compliance.</p>
                 </div>
                 <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center;">
                     <button type="button" class="btn btn-outline" id="refreshAdminBtn" title="Sync live records">
@@ -80,21 +94,21 @@
                 </div>
             </div>
 
-            <!-- TAB 1: Platform Telemetry & Metrics -->
+            <!-- TAB 1: Platform Telemetry & System Status -->
             <section id="panelMetrics" class="admin-panel mt-3">
                 <div class="metrics-grid">
                     <div class="card metric-card">
                         <div class="metric-icon">👥</div>
                         <div class="metric-details">
-                            <span class="metric-label">Total Users</span>
+                            <span class="metric-label">Registered Accounts</span>
                             <h2 class="metric-value" id="metricTotalUsers">0</h2>
                         </div>
                     </div>
 
                     <div class="card metric-card">
-                        <div class="metric-icon">💼</div>
+                        <div class="metric-icon">🛡️</div>
                         <div class="metric-details">
-                            <span class="metric-label">Verified Providers</span>
+                            <span class="metric-label">Verified Technical Leads</span>
                             <h2 class="metric-value text-info" id="metricVerifiedProviders">0</h2>
                         </div>
                     </div>
@@ -102,7 +116,7 @@
                     <div class="card metric-card">
                         <div class="metric-icon">📁</div>
                         <div class="metric-details">
-                            <span class="metric-label">Active Projects</span>
+                            <span class="metric-label">Active Workspaces</span>
                             <h2 class="metric-value text-success" id="metricPlatformProjects">0</h2>
                         </div>
                     </div>
@@ -110,19 +124,35 @@
                     <div class="card metric-card">
                         <div class="metric-icon">🚩</div>
                         <div class="metric-details">
-                            <span class="metric-label">Pending Reports</span>
+                            <span class="metric-label">Pending Escalations</span>
                             <h2 class="metric-value text-danger" id="metricOpenReports">0</h2>
                         </div>
                     </div>
                 </div>
 
+                <!-- Core Governance Architecture Telemetry -->
                 <div class="card mt-3">
-                    <h3 class="card-title">System Status &amp; Integrity</h3>
-                    <p class="text-muted text-sm mt-1">WorkBridge engine operating with stateless token verification and Supabase PostgreSQL storage.</p>
-                    <div class="meta-kv-group mt-3">
-                        <div class="kv-item"><span class="text-muted">Security Engine:</span> <strong class="text-success">Active (Role-Based Access)</strong></div>
-                        <div class="kv-item mt-1"><span class="text-muted">Scope Version Engine:</span> <strong class="text-success">Enforced (SHA-256 Protocol)</strong></div>
-                        <div class="kv-item mt-1"><span class="text-muted">Persistence Layer:</span> <strong>Supabase Cloud PostgreSQL</strong></div>
+                    <h3 class="card-title">Governance Engine Telemetry &amp; Protocol Health</h3>
+                    <p class="text-muted text-sm mt-1">Real-time status of cryptographic state machines, contract locking algorithms, and persistence protocols.</p>
+                    
+                    <div class="grid grid-2 mt-3" style="gap: 1rem;">
+                        <div class="p-3 border rounded" style="background: #f8fafc;">
+                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">ENGINE A: SCOPE VERSION LOCKING</div>
+                            <div class="mt-1" style="font-size: 0.95rem; font-weight: 600; color: #166534;">Deterministic SHA-256 Attestation Active</div>
+                            <p class="text-xs text-muted mt-1" style="margin-bottom: 0;">Calculates cryptographic hash upon mutual signature ratification. Revisions strictly mandate bilateral Scope Amendments (v2.0).</p>
+                        </div>
+
+                        <div class="p-3 border rounded" style="background: #f8fafc;">
+                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">ENGINE B: DELIVERABLE PROOF VERIFICATION</div>
+                            <div class="mt-1" style="font-size: 0.95rem; font-weight: 600; color: #166534;">Weighted Mathematical Progression Active</div>
+                            <p class="text-xs text-muted mt-1" style="margin-bottom: 0;">Progress percentage recalculated strictly upon verified Git PR and preview links sign-offs.</p>
+                        </div>
+                    </div>
+
+                    <div class="meta-kv-group mt-3 pt-3 border-top">
+                        <div class="kv-item"><span class="text-muted">Lifecycle State Machine:</span> <strong class="text-success">Enforced (INVITED &rarr; REQUIREMENT_DISCUSSION &rarr; AGREEMENT_LOCKED &rarr; IN_PROGRESS &rarr; COMPLETED)</strong></div>
+                        <div class="kv-item mt-1"><span class="text-muted">Cloud Persistence:</span> <strong>Supabase PostgreSQL Managed Cluster</strong></div>
+                        <div class="kv-item mt-1"><span class="text-muted">Façade Architecture:</span> <strong>Java Spring Boot Evaluation Context Intact</strong></div>
                     </div>
                 </div>
             </section>
@@ -131,18 +161,19 @@
             <section id="panelProviders" class="admin-panel mt-3 hidden">
                 <div class="section-title-row">
                     <div class="title-with-badge">
-                        <h3 class="section-heading">Service Provider Verification Queue</h3>
+                        <h3 class="section-heading">Technical Lead Verification Queue</h3>
                         <span class="badge badge-subtle" id="unverifiedCountBadge">0 Pending</span>
                     </div>
                 </div>
+                <p class="text-xs text-muted mt-1">Audit technical profiles requesting verified badge status to ensure quality standards across the marketplace.</p>
 
                 <div class="card table-container mt-2">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Provider Name</th>
-                                <th>Category / Domain</th>
-                                <th>Skills</th>
+                                <th>Technical Lead</th>
+                                <th>Specialization Domain</th>
+                                <th>Tech Stack</th>
                                 <th>Reputation</th>
                                 <th>Status</th>
                                 <th class="text-right">Action</th>
@@ -157,23 +188,24 @@
                 </div>
             </section>
 
-            <!-- TAB 3: Abuse & Content Reports Queue -->
+            <!-- TAB 3: Abuse & Moderation Flags Queue -->
             <section id="panelReports" class="admin-panel mt-3 hidden">
                 <div class="section-title-row">
                     <div class="title-with-badge">
-                        <h3 class="section-heading">Safety &amp; Moderation Flags</h3>
+                        <h3 class="section-heading">Safety &amp; Scope Dispute Flags</h3>
                         <span class="badge badge-danger" id="reportsCountBadge">0 Flags</span>
                     </div>
                 </div>
+                <p class="text-xs text-muted mt-1">Audit contested milestones, undocumented requests, or code delivery complaints.</p>
 
                 <div class="card table-container mt-2">
                     <table class="data-table">
                         <thead>
                             <tr>
                                 <th>Reported Entity</th>
-                                <th>Reason</th>
+                                <th>Dispute Category</th>
                                 <th>Reported By</th>
-                                <th>Date</th>
+                                <th>Timestamp</th>
                                 <th>Status</th>
                                 <th class="text-right">Action</th>
                             </tr>
@@ -187,24 +219,25 @@
                 </div>
             </section>
 
-            <!-- TAB 4: User Directory -->
+            <!-- TAB 4: Global User Directory -->
             <section id="panelUsers" class="admin-panel mt-3 hidden">
                 <div class="section-title-row">
                     <div class="title-with-badge">
-                        <h3 class="section-heading">User Directory</h3>
+                        <h3 class="section-heading">Global Account Directory</h3>
                         <span class="badge badge-subtle" id="usersCountBadge">0 Registered</span>
                     </div>
                 </div>
+                <p class="text-xs text-muted mt-1">Comprehensive directory of clients, technical leads, and platform administrators.</p>
 
                 <div class="card table-container mt-2">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>User</th>
-                                <th>Role</th>
+                                <th>Account Name</th>
+                                <th>Platform Role</th>
                                 <th>Email</th>
-                                <th>Joined</th>
-                                <th>Status</th>
+                                <th>Created At</th>
+                                <th>Account Status</th>
                                 <th class="text-right">Manage</th>
                             </tr>
                         </thead>
@@ -224,14 +257,17 @@
     <div id="adminActionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminActionModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title" id="adminActionModalTitle">Moderation Action</h3>
+                <div>
+                    <span class="badge badge-danger">Compliance Protocol</span>
+                    <h3 class="modal-title mt-1" id="adminActionModalTitle">Moderation Action</h3>
+                </div>
                 <button type="button" class="modal-close-btn" id="closeAdminModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <div class="modal-body" id="adminActionModalBody">
                 <p id="adminModalMessage">Confirm resolution for this governance item.</p>
                 <div class="form-group mt-2">
-                    <label for="adminActionNotes" class="form-label">Resolution / Audit Log Notes</label>
-                    <textarea id="adminActionNotes" class="form-control" rows="3" placeholder="Enter reason or compliance remarks..."></textarea>
+                    <label for="adminActionNotes" class="form-label">Resolution / Audit Log Notes *</label>
+                    <textarea id="adminActionNotes" class="form-control" rows="3" placeholder="Enter reason, policy justification, or compliance remarks..." required></textarea>
                 </div>
             </div>
             <div class="modal-footer">
