@@ -89,7 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data: profilesData, error: profilesErr } = await sb
                 .from('profiles')
                 .select('*')
-                .eq('role', 'SERVICE_PROVIDER')
                 .order('created_at', { ascending: false });
 
             if (profilesErr) {
@@ -209,6 +208,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ? `<span class="badge badge-success">⚡ Packaged Gig</span>`
                 : `<span class="badge badge-primary">Verified Engineer</span>`;
 
+            const slaDisplay = item.deliveryDays 
+                ? `<span class="text-muted text-xs ml-2">&bull; SLA: <strong>${item.deliveryDays}d</strong></span>` 
+                : '';
+
             card.innerHTML = `
                 <div>
                     <div class="provider-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
@@ -238,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="provider-card-footer mt-4" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                         <span class="text-muted text-xs">Rate: <strong>$${item.hourlyRate}/hr</strong></span>
-                        ${item.deliveryDays ? `<span class="text-muted text-xs ml-2">&bull; SLA: <strong>\${item.deliveryDays}d</strong></span>` : ''}
+                        ${slaDisplay}
                     </div>
                     <div style="display: flex; gap: 0.4rem; align-items: center;">
                         <button type="button" class="btn btn-outline btn-sm btn-preview-profile" data-id="${item.providerId}">
