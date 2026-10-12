@@ -3,10 +3,10 @@
  * File: js/pages/projectWorkspacePage.js
  * 
  * Orchestrating:
- * - Pillar 1: Rigid Lifecycle & Pending Invitation Guard (INVITED -> Scoping).
- * - Engine A: Scope Version Locking, Cryptographic WebCrypto SHA-256 Attestation, Bilateral Negotiation Stepper.
- * - Engine B: Milestone Proof Verification (PR, Commit SHA, Branch, Staging), Weighted Horizon Gantt, and Sprint Kanban Board.
- * - Real-time Standup Feed, Architectural Decision Records (ADR), and Material Vault.
+ * - Rigid Lifecycle & Stepper Synchronization (INVITED -> SCOPING -> AGREEMENT -> BUILDING -> REVIEW -> COMPLETED).
+ * - Engine A: Scope Version Locking, WebCrypto SHA-256 Attestation, Bilateral Stepper, Modular Matrix.
+ * - Engine B: Milestone Proof Verification (PR, Commit SHA, Branch, Staging), Weighted Horizon Gantt, Sprint Tasks Kanban.
+ * - Interactive Milestone Details Drawer, Standup Telemetry Feed, ADR Journal, and Resource Vault.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -99,9 +99,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const healthScopeStability = document.getElementById('healthScopeStability');
     const healthActiveBlockers = document.getElementById('healthActiveBlockers');
     const modalUpdateDetail = document.getElementById('modalUpdateDetail');
-    const modalUpdateDetailTitle = document.getElementById('modalUpdateDetailTitle');
-    const modalUpdateDetailBody = document.getElementById('modalUpdateDetailBody');
-    const closeUpdateDetailBtn = document.getElementById('closeUpdateDetailBtn');
+    const updateDetailTitle = document.getElementById('updateDetailTitle');
+    const updateDetailBody = document.getElementById('updateDetailBody');
+    const closeUpdateDetailModalBtn = document.getElementById('closeUpdateDetailModalBtn');
+    const closeUpdateDetailFooterBtn = document.getElementById('closeUpdateDetailFooterBtn');
 
     // Tab 2: Requirements & Modular Scope Matrix (Engine A)
     const currentReqVersionBadge = document.getElementById('currentReqVersionBadge');
@@ -115,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reqNonFunctional = document.getElementById('reqNonFunctional');
     const reqOutOfScope = document.getElementById('reqOutOfScope');
     const btnSaveReqDraft = document.getElementById('btnSaveReqDraft');
+    const btnViewSavedDraft = document.getElementById('btnViewSavedDraft');
     const reqLastSavedLabel = document.getElementById('reqLastSavedLabel');
     const btnLockRequirement = document.getElementById('btnLockRequirement');
     const btnProposeReqChange = document.getElementById('btnProposeReqChange');
@@ -122,10 +124,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiAuditResultPanel = document.getElementById('aiAuditResultPanel');
     const aiAuditContent = document.getElementById('aiAuditContent');
     const btnCloseAiPanel = document.getElementById('btnCloseAiPanel');
-    const modularScopeMatrixTable = document.getElementById('modularScopeMatrixTable');
+    const scopeModulesList = document.getElementById('scopeModulesList');
     const btnAddScopeModuleBtn = document.getElementById('btnAddScopeModuleBtn');
     const modalSavedDraft = document.getElementById('modalSavedDraft');
+    const savedDraftBody = document.getElementById('savedDraftBody');
     const closeSavedDraftModalBtn = document.getElementById('closeSavedDraftModalBtn');
+    const closeSavedDraftFooterBtn = document.getElementById('closeSavedDraftFooterBtn');
 
     // Tab 3: Milestones, Sprint Board & Tasks (Engine B)
     const milestonesContainer = document.getElementById('milestonesContainer');
@@ -133,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnViewRoadmapMode = document.getElementById('btnViewRoadmapMode');
     const btnViewTasksMode = document.getElementById('btnViewTasksMode');
     const tasksGridContainer = document.getElementById('tasksGridContainer');
-    const roadmapContainerWrapper = document.getElementById('roadmapContainerWrapper');
+    const sprintsTasksBoard = document.getElementById('sprintsTasksBoard');
     const taskListTodo = document.getElementById('taskListTodo');
     const taskListInProgress = document.getElementById('taskListInProgress');
     const taskListDone = document.getElementById('taskListDone');
@@ -142,8 +146,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const addTaskForm = document.getElementById('addTaskForm');
     const closeAddTaskModalBtn = document.getElementById('closeAddTaskModalBtn');
     const cancelAddTaskBtn = document.getElementById('cancelAddTaskBtn');
+    const taskMilestoneSelect = document.getElementById('taskMilestoneSelect');
+
+    // Milestone Inspection Modal
     const modalMilestoneDetail = document.getElementById('modalMilestoneDetail');
+    const milestoneDetailTitle = document.getElementById('milestoneDetailTitle');
+    const milestoneDetailBody = document.getElementById('milestoneDetailBody');
     const closeMilestoneDetailModalBtn = document.getElementById('closeMilestoneDetailModalBtn');
+    const closeMilestoneDetailFooterBtn = document.getElementById('closeMilestoneDetailFooterBtn');
 
     // Tab 4: Mutual Agreement & Bilateral Negotiation (Engine A)
     const agreementVersionPill = document.getElementById('agreementVersionPill');
@@ -161,21 +171,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const agProviderSignTimestamp = document.getElementById('agProviderSignTimestamp');
     const btnApproveAgreement = document.getElementById('btnApproveAgreement');
     const btnRequestAgreementChange = document.getElementById('btnRequestAgreementChange');
-    const btnRequestClauseEdit = document.getElementById('btnRequestClauseEdit');
     const btnProposeAmendment = document.getElementById('btnProposeAmendment');
-    const btnEditProposalTerms = document.getElementById('btnEditProposalTerms');
+    const btnEditProposalClauses = document.getElementById('btnEditProposalClauses');
     const modalEditProposal = document.getElementById('modalEditProposal');
-    const editProposalTermsInput = document.getElementById('editProposalTermsInput');
-    const saveProposalBtn = document.getElementById('saveProposalBtn');
-    const closeEditProposalBtn = document.getElementById('closeEditProposalBtn');
+    const editProposalForm = document.getElementById('editProposalForm');
+    const proposalBudgetInput = document.getElementById('proposalBudgetInput');
+    const proposalSlaInput = document.getElementById('proposalSlaInput');
+    const proposalTermsInput = document.getElementById('proposalTermsInput');
+    const closeEditProposalModalBtn = document.getElementById('closeEditProposalModalBtn');
     const cancelEditProposalBtn = document.getElementById('cancelEditProposalBtn');
 
     // Bilateral Stepper Nodes
-    const stepDraft = document.getElementById('stepDraft');
-    const stepClientReview = document.getElementById('stepClientReview');
-    const stepProviderReview = document.getElementById('stepProviderReview');
-    const stepDualSign = document.getElementById('stepDualSign');
-    const stepLocked = document.getElementById('stepLocked');
+    const nodeAgDraft = document.getElementById('nodeAgDraft');
+    const nodeAgClientReview = document.getElementById('nodeAgClientReview');
+    const nodeAgProviderReview = document.getElementById('nodeAgProviderReview');
+    const nodeAgCleared = document.getElementById('nodeAgCleared');
+    const nodeAgLocked = document.getElementById('nodeAgLocked');
 
     // Tab 5: Discussions & ADR Journal
     const chatMessagesFeed = document.getElementById('chatMessagesFeed');
@@ -192,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resourceTableBody = document.getElementById('resourceTableBody');
     const btnUploadResource = document.getElementById('btnUploadResource');
 
-    // General Modals
+    // Modals
     const modalPostUpdate = document.getElementById('modalPostUpdate');
     const postUpdateForm = document.getElementById('postUpdateForm');
     const closePostUpdateModalBtn = document.getElementById('closePostUpdateModalBtn');
@@ -324,7 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Overview, Telemetry & Pillar 1 Guard Enforcement
+    // 5. Overview, Telemetry & Stage Stepper (1 to 6)
     // -------------------------------------------------------------------------
     async function loadProjectOverview() {
         const { data, error } = await sb
@@ -333,7 +344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             .eq('id', projectId)
             .single();
 
-        if (error || !data) throw new Error(error?.message || 'Project record unreachable.');
+        if (error || !data) throw new Error(error ? error.message : 'Project record unreachable.');
         projectRecord = data;
 
         if (projectTitleEl) projectTitleEl.textContent = data.title || 'Untitled Project';
@@ -364,13 +375,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             PROJECT_STAGES.COMPLETED
         ];
 
-        const currentIdx = stagesOrder.indexOf(stage);
+        let currentIdx = stagesOrder.indexOf(stage);
+        if (currentIdx === -1) {
+            currentIdx = 1;
+        }
 
         stageSteps.forEach((step, idx) => {
             step.classList.remove('active', 'completed');
             if (idx < currentIdx) step.classList.add('completed');
             if (idx === currentIdx) step.classList.add('active');
         });
+
+        for (let i = 1; i <= 5; i++) {
+            const connector = document.getElementById('connector-' + i);
+            if (connector) {
+                if (i <= currentIdx) {
+                    connector.classList.add('completed');
+                } else {
+                    connector.classList.remove('completed');
+                }
+            }
+        }
 
         if (targetStageSelect) {
             targetStageSelect.innerHTML = stagesOrder
@@ -379,7 +404,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .join('');
         }
 
-        // Pillar 1 Guard Enforcement
         const isInvitedStage = stage === PROJECT_STAGES.INVITED;
         if (invitationGuardBanner) {
             if (isInvitedStage) {
@@ -393,7 +417,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ? 'You have been invited to lead this technical project. Review baseline terms and accept to unlock interactive scoping.'
                         : 'Invitation dispatched to technical lead. Scoping tools and milestone submissions remain read-only until acceptance.';
                 }
-
                 disableWorkspaceInteractions(true);
             } else {
                 invitationGuardBanner.classList.add('hidden');
@@ -411,10 +434,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnProposeStageAdvance) btnProposeStageAdvance.disabled = disabled;
         if (btnAddScopeModuleBtn) btnAddScopeModuleBtn.disabled = disabled;
         if (btnOpenAddTaskModal) btnOpenAddTaskModal.disabled = disabled;
-        if (btnEditProposalTerms) btnEditProposalTerms.disabled = disabled;
+        if (btnEditProposalClauses) btnEditProposalClauses.disabled = disabled;
     }
 
-    // Provider Acceptance Controls (Pillar 1)
+    // Provider Acceptance Controls
     if (btnAcceptInvitation) {
         btnAcceptInvitation.addEventListener('click', async () => {
             if (!sb || !projectId) return;
@@ -438,7 +461,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: currentUser?.id,
                     sender_name: currentUser?.fullName || 'Technical Lead',
                     sender_role: 'SERVICE_PROVIDER',
-                    message: '✅ Technical Lead accepted project invitation. Workspace unlocked for collaborative scoping.'
+                    message: 'Technical Lead accepted project invitation. Workspace unlocked for collaborative scoping.'
                 }]);
 
                 if (window.Toast) window.Toast.success('Invitation accepted! Collaborative scoping unlocked.');
@@ -465,7 +488,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Requirements Sync, Modular Scope Matrix & AI Audit (Engine A)
+    // 6. Requirements Sync, Modular Scope Matrix & AI Audit
     // -------------------------------------------------------------------------
     async function loadRequirementsDetails() {
         const { data } = await sb
@@ -486,75 +509,128 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (reqLastSavedLabel && data.updated_at) {
                 reqLastSavedLabel.textContent = 'Synced: ' + formatTime(data.updated_at);
             }
-            populateModularScopeTable(data.modular_scope);
+            populateModularScopeCards(data.modular_scope);
         } else if (projectRecord) {
             if (reqObjective && !reqObjective.value) reqObjective.value = projectRecord.title || '';
             if (reqFeatures && !reqFeatures.value) reqFeatures.value = projectRecord.description || '';
-            populateModularScopeTable(null);
+            populateModularScopeCards(null);
         }
     }
 
-    function populateModularScopeTable(modulesData) {
-        if (!modularScopeMatrixTable) return;
-        const tbody = modularScopeMatrixTable.querySelector('tbody') || modularScopeMatrixTable;
-        tbody.innerHTML = '';
+    function populateModularScopeCards(modulesData) {
+        if (!scopeModulesList) return;
+        scopeModulesList.innerHTML = '';
 
         let modules = [];
-        if (Array.isArray(modulesData)) {
+        if (Array.isArray(modulesData) && modulesData.length > 0) {
             modules = modulesData;
         } else {
-            // Defaults if fresh
             modules = [
-                { name: 'Core Architecture & Security', criteria: 'RBAC, RLS policies, Auth guard', complexity: 'HIGH' },
-                { name: 'API Layer & Data Models', criteria: 'PostgreSQL schema, indexes, endpoints', complexity: 'MEDIUM' }
+                { name: 'Core Architecture & Auth Engine', criteria: 'RBAC, RLS policies, WebCrypto SHA-256 session guard', complexity: 'HIGH', weight: 40 },
+                { name: 'Database Schemas & Real-time Persistence', criteria: 'PostgreSQL tables, indexes, Supabase client listeners', complexity: 'MEDIUM', weight: 30 },
+                { name: 'UI Orchestration & Milestone Stepper', criteria: 'Responsive desktop/mobile workspace layout, Gantt view', complexity: 'MEDIUM', weight: 30 }
             ];
         }
 
-        modules.forEach(m => addModularScopeRow(m.name, m.criteria, m.complexity));
+        modules.forEach(m => addModularScopeItem(m.name, m.criteria, m.complexity, m.weight));
     }
 
-    function addModularScopeRow(name = '', criteria = '', complexity = 'MEDIUM') {
-        if (!modularScopeMatrixTable) return;
-        const tbody = modularScopeMatrixTable.querySelector('tbody') || modularScopeMatrixTable;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="form-control form-control-sm module-name-input" value="${escapeHtml(name)}" placeholder="e.g. Auth Engine" required></td>
-            <td><input type="text" class="form-control form-control-sm module-criteria-input" value="${escapeHtml(criteria)}" placeholder="Acceptance definition..." required></td>
-            <td>
-                <select class="form-control form-control-sm module-complexity-select">
-                    <option value="LOW" ${complexity === 'LOW' ? 'selected' : ''}>Low</option>
-                    <option value="MEDIUM" ${complexity === 'MEDIUM' ? 'selected' : ''}>Medium</option>
-                    <option value="HIGH" ${complexity === 'HIGH' ? 'selected' : ''}>High</option>
-                </select>
-            </td>
-            <td class="text-right" style="text-align: right;">
-                <button type="button" class="btn btn-outline btn-sm btn-remove-scope-row" style="padding: 0.2rem 0.5rem;">✕</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+    function addModularScopeItem(name = '', criteria = '', complexity = 'MEDIUM', weight = 25) {
+        if (!scopeModulesList) return;
+        const row = document.createElement('div');
+        row.className = 'card p-2 scope-module-row';
+        row.style.background = '#ffffff';
+        row.style.border = '1px solid var(--border-color)';
 
-        tr.querySelector('.btn-remove-scope-row').addEventListener('click', () => tr.remove());
+        row.innerHTML = ''
+            + '<div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">'
+            + '  <div style="flex: 2; min-width: 180px;">'
+            + '    <label class="form-label-sm">Module Name</label>'
+            + '    <input type="text" class="form-control form-control-sm module-name-input" value="' + escapeHtml(name) + '" placeholder="e.g. Real-time Notifications" required>'
+            + '  </div>'
+            + '  <div style="flex: 3; min-width: 220px;">'
+            + '    <label class="form-label-sm">Acceptance &amp; Verification Criteria</label>'
+            + '    <input type="text" class="form-control form-control-sm module-criteria-input" value="' + escapeHtml(criteria) + '" placeholder="e.g. Unit tests passing, PR merged" required>'
+            + '  </div>'
+            + '  <div style="flex: 1; min-width: 110px;">'
+            + '    <label class="form-label-sm">Complexity</label>'
+            + '    <select class="form-control form-control-sm module-complexity-select">'
+            + '      <option value="LOW"' + (complexity === 'LOW' ? ' selected' : '') + '>Low</option>'
+            + '      <option value="MEDIUM"' + (complexity === 'MEDIUM' ? ' selected' : '') + '>Medium</option>'
+            + '      <option value="HIGH"' + (complexity === 'HIGH' ? ' selected' : '') + '>High</option>'
+            + '    </select>'
+            + '  </div>'
+            + '  <div style="flex: 1; min-width: 90px;">'
+            + '    <label class="form-label-sm">Weight (%)</label>'
+            + '    <input type="number" class="form-control form-control-sm module-weight-input" value="' + (weight || 25) + '" min="1" max="100">'
+            + '  </div>'
+            + '  <div style="display: flex; align-items: flex-end; padding-top: 1.25rem;">'
+            + '    <button type="button" class="btn btn-outline btn-sm btn-remove-module" style="color: #ef4444; border-color: #fca5a5;">X</button>'
+            + '  </div>'
+            + '</div>';
+
+        scopeModulesList.appendChild(row);
+
+        row.querySelector('.btn-remove-module').addEventListener('click', () => row.remove());
     }
 
     if (btnAddScopeModuleBtn) {
         btnAddScopeModuleBtn.addEventListener('click', () => {
-            addModularScopeRow();
+            addModularScopeItem('', '', 'MEDIUM', 20);
         });
     }
+
+    // View Active Draft Modal Trigger
+    if (btnViewSavedDraft) {
+        btnViewSavedDraft.addEventListener('click', () => {
+            if (!modalSavedDraft || !savedDraftBody) return;
+            const obj = reqObjective ? reqObjective.value : 'None specified';
+            const feat = reqFeatures ? reqFeatures.value : 'None specified';
+            const users = reqTargetUsers ? reqTargetUsers.value : 'Standard users';
+            const tech = reqTechPreferences ? reqTechPreferences.value : 'Vanilla JS & Supabase';
+            const exclusions = reqOutOfScope ? reqOutOfScope.value : 'None';
+
+            savedDraftBody.innerHTML = ''
+                + '<div class="mb-3">'
+                + '  <strong style="color: var(--primary);">Objective:</strong>'
+                + '  <p class="text-sm mt-1">' + escapeHtml(obj) + '</p>'
+                + '</div>'
+                + '<div class="mb-3">'
+                + '  <strong style="color: var(--primary);">Target Audience:</strong>'
+                + '  <p class="text-sm mt-1">' + escapeHtml(users) + '</p>'
+                + '</div>'
+                + '<div class="mb-3">'
+                + '  <strong style="color: var(--primary);">Itemized Functional Scope:</strong>'
+                + '  <p class="text-sm mt-1" style="white-space: pre-wrap;">' + escapeHtml(feat) + '</p>'
+                + '</div>'
+                + '<div class="mb-3">'
+                + '  <strong style="color: var(--primary);">Architectural Constraints:</strong>'
+                + '  <p class="text-sm mt-1">' + escapeHtml(tech) + '</p>'
+                + '</div>'
+                + '<div class="mb-3">'
+                + '  <strong style="color: #ef4444;">Explicit Exclusions:</strong>'
+                + '  <p class="text-sm mt-1">' + escapeHtml(exclusions) + '</p>'
+                + '</div>';
+
+            modalSavedDraft.classList.remove('hidden');
+        });
+    }
+    if (closeSavedDraftModalBtn) closeSavedDraftModalBtn.addEventListener('click', () => modalSavedDraft?.classList.add('hidden'));
+    if (closeSavedDraftFooterBtn) closeSavedDraftFooterBtn.addEventListener('click', () => modalSavedDraft?.classList.add('hidden'));
 
     if (requirementForm) {
         requirementForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!sb) return;
 
-            // Extract modular rows
             const moduleRows = [];
-            if (modularScopeMatrixTable) {
-                modularScopeMatrixTable.querySelectorAll('tbody tr').forEach(row => {
+            if (scopeModulesList) {
+                scopeModulesList.querySelectorAll('.scope-module-row').forEach(row => {
                     const name = row.querySelector('.module-name-input')?.value.trim();
                     const criteria = row.querySelector('.module-criteria-input')?.value.trim();
                     const complexity = row.querySelector('.module-complexity-select')?.value;
-                    if (name) moduleRows.push({ name, criteria, complexity });
+                    const weight = parseInt(row.querySelector('.module-weight-input')?.value, 10) || 20;
+                    if (name) moduleRows.push({ name, criteria, complexity, weight });
                 });
             }
 
@@ -591,13 +667,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             } finally {
                 if (btnSaveReqDraft) {
                     btnSaveReqDraft.disabled = false;
-                    btnSaveReqDraft.textContent = '💾 Save Draft';
+                    btnSaveReqDraft.textContent = 'Save Draft';
                 }
             }
         });
     }
 
-    // Propose Scope Lock
     if (btnLockRequirement) {
         btnLockRequirement.addEventListener('click', async () => {
             if (!confirm('Proposing scope lock will finalize requirement baseline v1.0. Proceed?')) return;
@@ -611,29 +686,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // AI Requirement Audit
     if (btnAiAnalyzeReq) {
         btnAiAnalyzeReq.addEventListener('click', () => {
             if (aiAuditResultPanel) aiAuditResultPanel.classList.remove('hidden');
             if (aiAuditContent) {
                 const text = (reqFeatures?.value || '') + ' ' + (reqObjective?.value || '');
-                const hasTech = text.includes('Spring') || text.includes('React') || text.includes('Postgres') || text.includes('API') || text.includes('Docker');
+                const hasTech = text.includes('Spring') || text.includes('React') || text.includes('Postgres') || text.includes('API') || text.includes('Docker') || text.includes('Vanilla');
                 const hasExclusions = Boolean(reqOutOfScope?.value?.trim());
                 const score = (hasTech ? 50 : 25) + (text.length > 100 ? 30 : 15) + (hasExclusions ? 20 : 10);
                 const badgeClass = score >= 80 ? 'badge-success' : 'badge-warning';
 
-                aiAuditContent.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <strong>Specification Health Score:</strong>
-                        <span class="badge ${badgeClass}">${score} / 100</span>
-                    </div>
-                    <p class="text-sm">Requirements analyzed against WorkBridge anti-drift protocol.</p>
-                    <ul class="text-xs text-muted mt-2 pl-3">
-                        <li>${hasTech ? '✅ Concrete tech stacks identified.' : '⚠️ Ambiguity detected: specify exact frameworks and databases.'}</li>
-                        <li>${hasExclusions ? '✅ Scope creep boundaries defined in out-of-scope clauses.' : '⚠️ Recommended: explicitly define out-of-scope modules.'}</li>
-                        <li>✅ Verification method: verifiable pull requests & commits linked to milestones.</li>
-                    </ul>
-                `;
+                aiAuditContent.innerHTML = ''
+                    + '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">'
+                    + '  <strong>Specification Health Score:</strong>'
+                    + '  <span class="badge ' + badgeClass + '">' + score + ' / 100</span>'
+                    + '</div>'
+                    + '<p class="text-sm">Requirements analyzed against WorkBridge anti-drift protocol.</p>'
+                    + '<ul class="text-xs text-muted mt-2 pl-3">'
+                    + '  <li>' + (hasTech ? 'Concrete tech stacks identified.' : 'Ambiguity detected: specify exact frameworks and databases.') + '</li>'
+                    + '  <li>' + (hasExclusions ? 'Scope creep boundaries defined in out-of-scope clauses.' : 'Recommended: explicitly define out-of-scope modules.') + '</li>'
+                    + '  <li>Verification method: verifiable pull requests &amp; commits linked to milestones.</li>'
+                    + '</ul>';
             }
         });
     }
@@ -645,7 +718,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 7. Mutual Agreement & Cryptographic WebCrypto SHA-256 Engine (Engine A)
+    // 7. Mutual Agreement & Cryptographic WebCrypto SHA-256 Engine
     // -------------------------------------------------------------------------
     async function loadAgreementDetails() {
         const { data } = await sb
@@ -674,7 +747,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (scopeLockTopBadge) {
-            scopeLockTopBadge.textContent = isLocked ? '🔒 Scope Locked (' + versionStr + ')' : '📝 Scope Draft (' + versionStr + ')';
+            scopeLockTopBadge.textContent = isLocked ? 'Scope Locked (' + versionStr + ')' : 'Scope Draft (' + versionStr + ')';
             scopeLockTopBadge.className = 'badge ' + (isLocked ? 'badge-success' : 'badge-warning');
         }
 
@@ -694,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (agAmountText) agAmountText.textContent = '$' + Number(data.agreed_amount || projectRecord?.budget || 1000).toLocaleString();
 
         if (agClientSignStatus) {
-            agClientSignStatus.textContent = data.client_signed ? '✅ Ratified' : '⏳ Pending';
+            agClientSignStatus.textContent = data.client_signed ? 'Ratified' : 'Pending';
             agClientSignStatus.className = 'badge ' + (data.client_signed ? 'badge-success' : 'badge-warning');
         }
         if (agClientSignTimestamp) {
@@ -702,17 +775,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (agProviderSignStatus) {
-            agProviderSignStatus.textContent = data.provider_signed ? '✅ Ratified' : '⏳ Pending';
+            agProviderSignStatus.textContent = data.provider_signed ? 'Ratified' : 'Pending';
             agProviderSignStatus.className = 'badge ' + (data.provider_signed ? 'badge-success' : 'badge-warning');
         }
         if (agProviderSignTimestamp) {
             agProviderSignTimestamp.textContent = data.provider_signed_at ? 'Signed: ' + new Date(data.provider_signed_at).toLocaleString() : 'Awaiting Provider digital signature.';
         }
 
-        // Drive 5-Node Bilateral Negotiation Stepper
         updateBilateralNegotiationStepper(data, isLocked);
 
-        // Cryptographic Hash & Telemetry Binding
         if (isLocked) {
             const hash = data.scope_hash || await computeSha256Fingerprint(projectId, data.version, data.agreed_amount);
             if (scopeHashContainer) scopeHashContainer.classList.remove('hidden');
@@ -723,7 +794,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (ribbonFingerprint) ribbonFingerprint.textContent = 'UNRATIFIED';
         }
 
-        // Freeze requirement inputs if locked
         [reqObjective, reqTargetUsers, reqFeatures, reqTechPreferences, reqNonFunctional, reqOutOfScope].forEach(el => {
             if (el) el.disabled = isLocked;
         });
@@ -732,51 +802,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnLockRequirement) btnLockRequirement.style.display = isLocked ? 'none' : 'inline-block';
         if (btnProposeReqChange) btnProposeReqChange.classList.toggle('hidden', !isLocked);
         if (btnProposeAmendment) btnProposeAmendment.classList.toggle('hidden', !isLocked);
-        if (btnEditProposalTerms) btnEditProposalTerms.classList.toggle('hidden', isLocked);
 
-        // Sign Button States
         if (btnApproveAgreement) {
             const hasUserSigned = currentUser?.role === ROLES.CLIENT ? data.client_signed : data.provider_signed;
             if (hasUserSigned) {
                 btnApproveAgreement.disabled = true;
-                btnApproveAgreement.textContent = 'You Have Signed (Immutable) ✅';
+                btnApproveAgreement.textContent = 'You Have Signed (Immutable)';
             } else {
                 btnApproveAgreement.disabled = false;
-                btnApproveAgreement.textContent = '✍️ Approve & Sign Agreement';
+                btnApproveAgreement.textContent = 'Approve & Sign Agreement';
             }
         }
     }
 
     function updateBilateralNegotiationStepper(agreement, isLocked) {
-        [stepDraft, stepClientReview, stepProviderReview, stepDualSign, stepLocked].forEach(el => {
+        [nodeAgDraft, nodeAgClientReview, nodeAgProviderReview, nodeAgCleared, nodeAgLocked].forEach(el => {
             if (el) el.classList.remove('active', 'completed');
         });
 
         if (isLocked) {
-            [stepDraft, stepClientReview, stepProviderReview, stepDualSign, stepLocked].forEach(el => {
+            [nodeAgDraft, nodeAgClientReview, nodeAgProviderReview, nodeAgCleared, nodeAgLocked].forEach(el => {
                 if (el) el.classList.add('completed');
             });
-            if (stepLocked) stepLocked.classList.add('active');
+            if (nodeAgLocked) nodeAgLocked.classList.add('active');
             return;
         }
 
-        if (stepDraft) stepDraft.classList.add('completed');
+        if (nodeAgDraft) nodeAgDraft.classList.add('completed');
 
         if (agreement.client_signed && !agreement.provider_signed) {
-            if (stepClientReview) stepClientReview.classList.add('completed');
-            if (stepProviderReview) stepProviderReview.classList.add('active');
+            if (nodeAgClientReview) nodeAgClientReview.classList.add('completed');
+            if (nodeAgProviderReview) nodeAgProviderReview.classList.add('active');
         } else if (!agreement.client_signed && agreement.provider_signed) {
-            if (stepProviderReview) stepProviderReview.classList.add('completed');
-            if (stepClientReview) stepClientReview.classList.add('active');
+            if (nodeAgProviderReview) nodeAgProviderReview.classList.add('completed');
+            if (nodeAgClientReview) nodeAgClientReview.classList.add('active');
         } else {
-            if (stepClientReview) stepClientReview.classList.add('active');
-            if (stepProviderReview) stepProviderReview.classList.add('active');
+            if (nodeAgClientReview) nodeAgClientReview.classList.add('active');
+            if (nodeAgProviderReview) nodeAgProviderReview.classList.add('active');
         }
     }
 
-    /**
-     * Native WebCrypto Deterministic SHA-256 Baseline Fingerprinting
-     */
     async function computeSha256Fingerprint(projId, version, amount) {
         try {
             const payload = 'WORKBRIDGE-PROTOCOL:' + projId + ':V' + (version || '1.0') + ':AMOUNT' + (amount || 1000);
@@ -789,7 +854,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Sign Agreement Button Handler
     if (btnApproveAgreement) {
         btnApproveAgreement.addEventListener('click', async () => {
             if (!agreementRecord || !sb) return;
@@ -826,7 +890,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         sender_id: currentUser?.id,
                         sender_name: 'WorkBridge Protocol Engine',
                         sender_role: 'SYSTEM',
-                        message: '🔒 Master Agreement ratified by both parties. Immutable Baseline Version 1.0 established. (SHA-256: ' + computedHash.slice(0, 16) + '...)'
+                        message: 'Master Agreement ratified by both parties. Immutable Baseline Version 1.0 established. (SHA-256: ' + computedHash.slice(0, 16) + '...)'
                     }]);
                 }
 
@@ -840,26 +904,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Edit Proposal Terms Handler
-    if (btnEditProposalTerms) {
-        btnEditProposalTerms.addEventListener('click', () => {
-            if (!agreementRecord || !modalEditProposal) return;
-            if (editProposalTermsInput) editProposalTermsInput.value = agreementRecord.terms_and_conditions || '';
-            modalEditProposal.classList.remove('hidden');
+    if (btnEditProposalClauses) {
+        btnEditProposalClauses.addEventListener('click', () => {
+            if (!agreementRecord) return;
+            const isLocked = agreementRecord.status === 'LOCKED' || (agreementRecord.client_signed && agreementRecord.provider_signed);
+
+            if (isLocked) {
+                if (window.Toast) window.Toast.info('Terms are locked. Initiating Formal Scope Amendment (v2.0).');
+                if (amendmentModal) amendmentModal.classList.remove('hidden');
+                return;
+            }
+
+            if (modalEditProposal) {
+                if (proposalBudgetInput) proposalBudgetInput.value = agreementRecord.agreed_amount || projectRecord?.budget || 1000;
+                if (proposalSlaInput) proposalSlaInput.value = agreementRecord.target_delivery_date || projectRecord?.target_sla_date || '';
+                if (proposalTermsInput) proposalTermsInput.value = agreementRecord.terms_and_conditions || '';
+                modalEditProposal.classList.remove('hidden');
+            }
         });
     }
 
-    if (closeEditProposalBtn) closeEditProposalBtn.addEventListener('click', () => modalEditProposal?.classList.add('hidden'));
+    if (closeEditProposalModalBtn) closeEditProposalModalBtn.addEventListener('click', () => modalEditProposal?.classList.add('hidden'));
     if (cancelEditProposalBtn) cancelEditProposalBtn.addEventListener('click', () => modalEditProposal?.classList.add('hidden'));
 
-    if (saveProposalBtn) {
-        saveProposalBtn.addEventListener('click', async () => {
-            const updatedTerms = editProposalTermsInput ? editProposalTermsInput.value.trim() : '';
-            if (!updatedTerms || !sb || !agreementRecord) return;
+    if (editProposalForm) {
+        editProposalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const budget = parseFloat(proposalBudgetInput ? proposalBudgetInput.value : 0) || 1000;
+            const sla = proposalSlaInput ? proposalSlaInput.value : null;
+            const terms = proposalTermsInput ? proposalTermsInput.value.trim() : '';
+
+            if (!terms || !sb || !agreementRecord) return;
 
             try {
                 await sb.from('agreements').update({
-                    terms_and_conditions: updatedTerms,
+                    agreed_amount: budget,
+                    target_delivery_date: sla,
+                    terms_and_conditions: terms,
                     client_signed: false,
                     provider_signed: false,
                     status: 'DRAFT'
@@ -870,12 +951,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: currentUser?.id,
                     sender_name: currentUser?.fullName || 'Collaborator',
                     sender_role: currentUser?.role || 'CLIENT',
-                    message: '📝 Updated Agreement terms proposal. Mutual signatures reset for counter-clearance.'
+                    message: 'Updated Agreement proposal terms. Dual ratification reset for renegotiation.'
                 }]);
 
-                if (window.Toast) window.Toast.info('Agreement counter-proposal updated.');
+                if (window.Toast) window.Toast.info('Proposal counter-terms saved. Both parties must re-sign.');
                 modalEditProposal.classList.add('hidden');
                 await loadAgreementDetails();
+                await loadProjectOverview();
                 await loadChatMessages();
             } catch (err) {
                 if (window.Toast) window.Toast.error('Could not save proposal terms.');
@@ -883,14 +965,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Clause Edit / Revision Request Modal Triggers
     if (btnRequestAgreementChange) {
         btnRequestAgreementChange.addEventListener('click', () => {
-            if (modalRevisionRequest) modalRevisionRequest.classList.remove('hidden');
-        });
-    }
-    if (btnRequestClauseEdit) {
-        btnRequestClauseEdit.addEventListener('click', () => {
             if (modalRevisionRequest) modalRevisionRequest.classList.remove('hidden');
         });
     }
@@ -920,7 +996,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: currentUser?.id,
                     sender_name: currentUser?.fullName || 'Collaborator',
                     sender_role: currentUser?.role || 'CLIENT',
-                    message: '⚠️ Reopened Terms for Clause Discussion: "' + feedback + '"'
+                    message: 'Reopened Terms for Clause Discussion: "' + feedback + '"'
                 }]);
 
                 if (window.Toast) window.Toast.info('Terms reverted to draft. Returned to Scoping phase.');
@@ -936,7 +1012,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Formal Scope Amendment Protocol (v2.0)
     if (btnProposeAmendment) {
         btnProposeAmendment.addEventListener('click', () => {
             if (amendmentModal) amendmentModal.classList.remove('hidden');
@@ -974,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: currentUser?.id,
                     sender_name: currentUser?.fullName || 'Collaborator',
                     sender_role: currentUser?.role || 'CLIENT',
-                    message: '📝 Formal Scope Amendment Proposed (v2.0): "' + reason + '". Budget Delta: +\$' + budgetDelta + ', Timeline Delta: +' + timelineDelta + ' days.'
+                    message: 'Formal Scope Amendment Proposed (v2.0): "' + reason + '". Budget Delta: +$' + budgetDelta + ', Timeline Delta: +' + timelineDelta + ' days.'
                 }]);
 
                 if (window.Toast) window.Toast.success('Scope amendment proposal submitted for mutual review!');
@@ -988,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Milestones, Gantt Horizon & Technical Git Proof (Engine B)
+    // 8. Milestones, Gantt Horizon & Milestone Inspection Drawer
     // -------------------------------------------------------------------------
     async function loadMilestonesList() {
         const { data } = await sb
@@ -1001,13 +1076,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderMilestonesList(milestonesList);
         calculateWeightedProgress(milestonesList);
         renderGanttTimelineHorizon(milestonesList);
+        populateTaskMilestoneDropdown(milestonesList);
+    }
+
+    function populateTaskMilestoneDropdown(milestones) {
+        if (!taskMilestoneSelect) return;
+        taskMilestoneSelect.innerHTML = milestones.length > 0
+            ? milestones.map(m => '<option value="' + m.id + '">' + escapeHtml(m.title) + ' (' + (m.weight_percentage || 25) + '%)</option>').join('')
+            : '<option value="">Default Project Sprint</option>';
     }
 
     function calculateWeightedProgress(milestones) {
         if (!milestones || milestones.length === 0) {
             if (projectProgressPercent) projectProgressPercent.textContent = '0%';
             if (projectProgressBar) projectProgressBar.style.width = '0%';
-            if (ribbonEscrowReleased) ribbonEscrowReleased.textContent = '\$0.00 (0%)';
+            if (ribbonEscrowReleased) ribbonEscrowReleased.textContent = '$0.00 (0%)';
             return;
         }
 
@@ -1028,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (projectProgressPercent) projectProgressPercent.textContent = calculated + '%';
         if (projectProgressBar) projectProgressBar.style.width = calculated + '%';
-        if (ribbonEscrowReleased) ribbonEscrowReleased.textContent = '\$' + releasedAmount.toLocaleString() + ' (' + calculated + '%)';
+        if (ribbonEscrowReleased) ribbonEscrowReleased.textContent = '$' + releasedAmount.toLocaleString() + ' (' + calculated + '%)';
 
         if (sb && calculated !== projectRecord?.completion_percentage) {
             sb.from('projects').update({ completion_percentage: calculated }).eq('id', projectId);
@@ -1044,26 +1127,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        const horizonRow = document.createElement('div');
+        horizonRow.style.display = 'flex';
+        horizonRow.style.gap = '0.75rem';
+        horizonRow.style.width = '100%';
+
         milestones.forEach((m, idx) => {
             const isApproved = m.status === 'APPROVED';
             const isReview = m.status === 'SUBMITTED_FOR_REVIEW';
             const block = document.createElement('div');
             block.style.flex = '1';
-            block.style.minWidth = '110px';
-            block.style.padding = '0.5rem';
-            block.style.borderRadius = '6px';
+            block.style.minWidth = '140px';
+            block.style.padding = '0.65rem 0.85rem';
+            block.style.borderRadius = '8px';
+            block.style.cursor = 'pointer';
             block.style.border = '1px solid var(--border-color, #e2e8f0)';
-            block.style.background = isApproved ? '#f0fdf4' : (isReview ? '#fffbeb' : '#f8fafc');
-            block.innerHTML = `
-                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;">
-                    <strong>Sprint ${idx + 1}</strong>
-                    <span class="badge ${isApproved ? 'badge-success' : (isReview ? 'badge-warning' : 'badge-subtle')}">${isApproved ? 'Done' : (isReview ? 'Review' : 'Pending')}</span>
-                </div>
-                <div class="text-xs font-bold mt-1 text-truncate" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</div>
-                <div class="text-xs text-muted mt-1">${m.target_date || 'SLA Paced'}</div>
-            `;
-            ganttTimelineHorizon.appendChild(block);
+            block.style.background = isApproved ? '#f0fdf4' : (isReview ? '#fffbeb' : '#ffffff');
+            block.title = 'Click to inspect ' + m.title;
+
+            block.innerHTML = ''
+                + '<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">'
+                + '  <strong>Sprint ' + (idx + 1) + '</strong>'
+                + '  <span class="badge ' + (isApproved ? 'badge-success' : (isReview ? 'badge-warning' : 'badge-subtle')) + '">' + (isApproved ? 'Done' : (isReview ? 'Review' : 'Pending')) + '</span>'
+                + '</div>'
+                + '<div class="text-xs font-bold mt-1 text-truncate">' + escapeHtml(m.title) + '</div>'
+                + '<div class="text-xs text-muted mt-1" style="display: flex; justify-content: space-between;">'
+                + '  <span>' + (m.target_date || 'SLA Paced') + '</span>'
+                + '  <span>' + (m.weight_percentage || 25) + '% wt</span>'
+                + '</div>';
+
+            block.addEventListener('click', () => openMilestoneDetailModal(m));
+            horizonRow.appendChild(block);
         });
+
+        ganttTimelineHorizon.appendChild(horizonRow);
 
         if (healthDeliveryPacing) healthDeliveryPacing.textContent = '100% On Track';
         if (healthScopeStability) healthScopeStability.textContent = agreementRecord?.status === 'LOCKED' ? 'Tamper Locked' : 'Draft Flexible';
@@ -1074,11 +1171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         milestonesContainer.innerHTML = '';
 
         if (milestones.length === 0) {
-            milestonesContainer.innerHTML = `
-                <div class="card empty-state text-center py-4">
-                    <p class="text-muted">No milestones defined yet. Click '+ Add Milestone' to establish deliverable roadmap.</p>
-                </div>
-            `;
+            milestonesContainer.innerHTML = '<div class="card empty-state text-center py-4"><p class="text-muted">No milestones defined yet. Click \'+ Add Milestone\' to establish deliverable roadmap.</p></div>';
             return;
         }
 
@@ -1089,40 +1182,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.className = 'card mb-3 milestone-item';
             card.style.borderLeft = '4px solid ' + (m.status === 'APPROVED' ? 'var(--success, #10b981)' : (m.status === 'SUBMITTED_FOR_REVIEW' ? '#f59e0b' : 'var(--primary, #3b82f6)'));
             card.style.padding = '1rem 1.25rem';
+            card.style.cursor = 'pointer';
 
             const isApproved = m.status === 'APPROVED';
             const isReview = m.status === 'SUBMITTED_FOR_REVIEW';
 
             let actionButtons = '';
             if (isApproved) {
-                actionButtons = '<div class="mt-2"><span class="badge badge-success">✅ Deliverable Verified &amp; Progress Released</span></div>';
+                actionButtons = '<div class="mt-2"><span class="badge badge-success">Deliverable Verified &amp; Progress Released</span></div>';
             } else if (isReview) {
                 if (isClient) {
-                    actionButtons = `
-                        <div class="mt-2" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-primary btn-sm btn-review-proof" 
-                                data-id="${m.id}" 
-                                data-url="${escapeHtml(m.deliverable_url || '')}" 
-                                data-commit="${escapeHtml(m.commit_hash || '')}" 
-                                data-branch="${escapeHtml(m.branch_name || '')}" 
-                                data-demo="${escapeHtml(m.demo_url || '')}" 
-                                data-notes="${escapeHtml(m.notes || '')}">
-                                🔍 Inspect Deliverable Proof
-                            </button>
-                        </div>
-                    `;
+                    actionButtons = '<div class="mt-2" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">'
+                        + '<button type="button" class="btn btn-primary btn-sm btn-review-proof" '
+                        + 'data-id="' + m.id + '" '
+                        + 'data-url="' + escapeHtml(m.deliverable_url || '') + '" '
+                        + 'data-commit="' + escapeHtml(m.commit_hash || '') + '" '
+                        + 'data-branch="' + escapeHtml(m.branch_name || '') + '" '
+                        + 'data-demo="' + escapeHtml(m.demo_url || '') + '" '
+                        + 'data-notes="' + escapeHtml(m.notes || '') + '">'
+                        + 'Inspect Deliverable Proof'
+                        + '</button>'
+                        + '</div>';
                 } else {
-                    actionButtons = '<div class="mt-2"><span class="badge badge-warning">⏳ Deliverable Under Client Inspection</span></div>';
+                    actionButtons = '<div class="mt-2"><span class="badge badge-warning">Deliverable Under Client Inspection</span></div>';
                 }
             } else {
                 if (!isClient) {
-                    actionButtons = `
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-outline btn-sm btn-submit-milestone" data-id="${m.id}">
-                                🚀 Submit Technical Proof (PR &amp; Commit)
-                            </button>
-                        </div>
-                    `;
+                    actionButtons = '<div class="mt-2">'
+                        + '<button type="button" class="btn btn-outline btn-sm btn-submit-milestone" data-id="' + m.id + '">'
+                        + 'Submit Technical Proof (PR &amp; Commit)'
+                        + '</button>'
+                        + '</div>';
                 } else {
                     actionButtons = '<div class="mt-2"><span class="badge badge-subtle">Awaiting Technical Delivery</span></div>';
                 }
@@ -1134,46 +1224,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let proofPillsHtml = '';
             if (m.deliverable_url) {
-                const commitPill = m.commit_hash ? `<span class="badge badge-subtle" style="font-family: monospace;">Commit: #${escapeHtml(m.commit_hash)}</span>` : '';
-                const branchPill = m.branch_name ? `<span class="badge badge-subtle">Branch: ${escapeHtml(m.branch_name)}</span>` : '';
-                const demoPill = m.demo_url ? `<a href="${escapeHtml(m.demo_url)}" target="_blank" rel="noopener" class="badge badge-success">Staging Demo &nearr;</a>` : '';
+                const commitPill = m.commit_hash ? '<span class="badge badge-subtle" style="font-family: monospace;">Commit: #' + escapeHtml(m.commit_hash) + '</span>' : '';
+                const branchPill = m.branch_name ? '<span class="badge badge-subtle">Branch: ' + escapeHtml(m.branch_name) + '</span>' : '';
+                const demoPill = m.demo_url ? '<a href="' + escapeHtml(m.demo_url) + '" target="_blank" rel="noopener" class="badge badge-success">Staging Demo &rarr;</a>' : '';
 
-                proofPillsHtml = `
-                    <div class="mt-2" style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-                        <a href="${escapeHtml(m.deliverable_url)}" target="_blank" rel="noopener" class="badge badge-subtle" style="text-decoration: underline;">
-                            PR Link &nearr;
-                        </a>
-                        ${commitPill}
-                        ${branchPill}
-                        ${demoPill}
-                    </div>
-                `;
+                proofPillsHtml = '<div class="mt-2" style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">'
+                    + '<a href="' + escapeHtml(m.deliverable_url) + '" target="_blank" rel="noopener" class="badge badge-subtle" style="text-decoration: underline;">PR Link &rarr;</a>'
+                    + commitPill + branchPill + demoPill
+                    + '</div>';
             }
 
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <strong style="font-size: 1rem;">${escapeHtml(m.title)}</strong>
-                            <span class="badge ${weightClass}">${m.weight_percentage || 25}% Progress Weight</span>
-                        </div>
-                        <p class="text-sm text-muted mt-1 mb-0">${escapeHtml(m.deliverables || 'Deliverables verified via Git pull request.')}</p>
-                        ${proofPillsHtml}
-                    </div>
-                    <div>
-                        <span class="badge ${statusClass}">
-                            ${statusLabel}
-                        </span>
-                    </div>
-                </div>
-                ${actionButtons}
-            `;
+            card.innerHTML = ''
+                + '<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">'
+                + '  <div>'
+                + '    <div style="display: flex; align-items: center; gap: 0.5rem;">'
+                + '      <strong style="font-size: 1rem;" class="btn-inspect-milestone" data-id="' + m.id + '">' + escapeHtml(m.title) + '</strong>'
+                + '      <span class="badge ' + weightClass + '">' + (m.weight_percentage || 25) + '% Progress Weight</span>'
+                + '    </div>'
+                + '    <p class="text-sm text-muted mt-1 mb-0">' + escapeHtml(m.deliverables || 'Deliverables verified via Git pull request.') + '</p>'
+                + proofPillsHtml
+                + '  </div>'
+                + '  <div>'
+                + '    <span class="badge ' + statusClass + '">' + statusLabel + '</span>'
+                + '  </div>'
+                + '</div>'
+                + actionButtons;
+
+            card.querySelector('.btn-inspect-milestone').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openMilestoneDetailModal(m);
+            });
+
             milestonesContainer.appendChild(card);
         });
 
-        // Review Proof Trigger (Client)
+        // Review Proof Trigger
         milestonesContainer.querySelectorAll('.btn-review-proof').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const mid = btn.getAttribute('data-id');
                 const url = btn.getAttribute('data-url');
                 const commit = btn.getAttribute('data-commit');
@@ -1211,9 +1299,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Submit Milestone Trigger (Provider)
+        // Submit Milestone Trigger
         milestonesContainer.querySelectorAll('.btn-submit-milestone').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const id = btn.getAttribute('data-id');
                 if (actionMilestoneId) actionMilestoneId.value = id;
                 if (milestoneActionModal) milestoneActionModal.classList.remove('hidden');
@@ -1221,7 +1310,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Client Proof Verification Handlers
+    function openMilestoneDetailModal(milestone) {
+        if (!modalMilestoneDetail || !milestoneDetailBody) return;
+        if (milestoneDetailTitle) milestoneDetailTitle.textContent = milestone.title || 'Milestone Specification';
+
+        const totalBudget = Number(projectRecord?.budget || 1000);
+        const weight = Number(milestone.weight_percentage) || 25;
+        const allocatedEscrow = Math.round((weight / 100) * totalBudget);
+
+        let proofHtml = '<div class="text-xs text-muted mt-2">No technical PR proof submitted yet.</div>';
+        if (milestone.deliverable_url) {
+            proofHtml = '<div class="mt-3 p-3 border rounded" style="background: #f0fdf4;">'
+                + '<strong style="font-size: 0.85rem; color: #166534; display: block; margin-bottom: 0.4rem;">VERIFIED CODEBASE ARTIFACTS</strong>'
+                + '<div style="font-size: 0.85rem;">'
+                + '  <div>PR Link: <a href="' + escapeHtml(milestone.deliverable_url) + '" target="_blank" rel="noopener" style="font-weight: 600; text-decoration: underline;">' + escapeHtml(milestone.deliverable_url) + ' &rarr;</a></div>'
+                + (milestone.commit_hash ? '<div class="mt-1">Commit Hash: <code style="color: #0369a1;">#' + escapeHtml(milestone.commit_hash) + '</code></div>' : '')
+                + (milestone.demo_url ? '<div class="mt-1">Staging Demo: <a href="' + escapeHtml(milestone.demo_url) + '" target="_blank" rel="noopener">' + escapeHtml(milestone.demo_url) + ' &rarr;</a></div>' : '')
+                + '</div></div>';
+        }
+
+        milestoneDetailBody.innerHTML = ''
+            + '<div class="grid grid-2 mb-3" style="gap: 0.75rem;">'
+            + '  <div class="p-2 border rounded" style="background: #f8fafc;">'
+            + '    <span class="text-xs text-muted" style="display:block;">PROGRESS WEIGHTAGE</span>'
+            + '    <strong class="text-primary">' + weight + '% of Total Contract</strong>'
+            + '  </div>'
+            + '  <div class="p-2 border rounded" style="background: #f8fafc;">'
+            + '    <span class="text-xs text-muted" style="display:block;">ESCROW ALLOCATION</span>'
+            + '    <strong class="text-success">$' + allocatedEscrow.toLocaleString() + ' USD</strong>'
+            + '  </div>'
+            + '</div>'
+            + '<div class="mb-3">'
+            + '  <span class="text-xs text-muted font-bold" style="letter-spacing: 0.5px; display: block; margin-bottom: 0.35rem;">EXPECTED DELIVERABLES &amp; ACCEPTANCE CRITERIA</span>'
+            + '  <div class="p-3 border rounded" style="background: #ffffff; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap;">'
+            + escapeHtml(milestone.deliverables || 'Specifications governed by ratified requirements.')
+            + '  </div>'
+            + '</div>'
+            + '<div class="mb-3">'
+            + '  <span class="text-xs text-muted font-bold" style="letter-spacing: 0.5px; display: block; margin-bottom: 0.35rem;">DELIVERY TARGET &amp; STATUS</span>'
+            + '  <div style="display: flex; justify-content: space-between; align-items: center;" class="p-2 border rounded">'
+            + '    <span>Target Delivery Date: <strong>' + (milestone.target_date || 'Standard SLA') + '</strong></span>'
+            + '    <span class="badge ' + (milestone.status === 'APPROVED' ? 'badge-success' : 'badge-warning') + '">' + (milestone.status || 'PENDING') + '</span>'
+            + '  </div>'
+            + '</div>'
+            + proofHtml;
+
+        modalMilestoneDetail.classList.remove('hidden');
+    }
+
+    if (closeMilestoneDetailModalBtn) closeMilestoneDetailModalBtn.addEventListener('click', () => modalMilestoneDetail?.classList.add('hidden'));
+    if (closeMilestoneDetailFooterBtn) closeMilestoneDetailFooterBtn.addEventListener('click', () => modalMilestoneDetail?.classList.add('hidden'));
+
     if (btnApproveFromProof) {
         btnApproveFromProof.addEventListener('click', async () => {
             const mid = reviewMilestoneId ? reviewMilestoneId.value : null;
@@ -1243,7 +1382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (window.Toast) window.Toast.error('Could not approve milestone deliverable.');
             } finally {
                 btnApproveFromProof.disabled = false;
-                btnApproveFromProof.textContent = '✅ Approve & Release Progress';
+                btnApproveFromProof.textContent = 'Approve & Release Progress';
             }
         });
     }
@@ -1265,7 +1404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: currentUser?.id,
                     sender_name: currentUser?.fullName || 'Client Principal',
                     sender_role: 'CLIENT',
-                    message: '⚠️ Deliverable Revision Requested on Milestone: "' + feedback + '"'
+                    message: 'Deliverable Revision Requested on Milestone: "' + feedback + '"'
                 }]);
 
                 if (window.Toast) window.Toast.info('Revision requested. Milestone status reset to pending.');
@@ -1279,21 +1418,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 9. Sprint Tasks Kanban Board Execution (Dual View Mode)
+    // 9. Sprint Tasks Kanban Board Execution
     // -------------------------------------------------------------------------
     if (btnViewRoadmapMode && btnViewTasksMode) {
         btnViewRoadmapMode.addEventListener('click', () => {
             btnViewRoadmapMode.classList.add('active');
             btnViewTasksMode.classList.remove('active');
-            if (roadmapContainerWrapper) roadmapContainerWrapper.classList.remove('hidden');
-            if (tasksGridContainer) tasksGridContainer.classList.add('hidden');
+            if (milestonesContainer) milestonesContainer.classList.remove('hidden');
+            if (sprintsTasksBoard) sprintsTasksBoard.classList.add('hidden');
         });
 
         btnViewTasksMode.addEventListener('click', () => {
             btnViewTasksMode.classList.add('active');
             btnViewRoadmapMode.classList.remove('active');
-            if (roadmapContainerWrapper) roadmapContainerWrapper.classList.add('hidden');
-            if (tasksGridContainer) tasksGridContainer.classList.remove('hidden');
+            if (milestonesContainer) milestonesContainer.classList.add('hidden');
+            if (sprintsTasksBoard) sprintsTasksBoard.classList.remove('hidden');
         });
     }
 
@@ -1320,25 +1459,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.className = 'card task-item mb-2 p-2';
             card.style.fontSize = '0.85rem';
             card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-            card.innerHTML = `
-                <div style="font-weight: 600;">${escapeHtml(t.title)}</div>
-                <div class="text-xs text-muted mt-1">${escapeHtml(t.description || 'Sprint task')}</div>
-                <div class="mt-2" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="badge ${t.priority === 'HIGH' ? 'badge-danger' : 'badge-subtle'}">${t.priority || 'MEDIUM'}</span>
-                    <select class="form-control form-control-sm select-task-status" data-id="${t.id}" style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem;">
-                        <option value="TODO" ${t.status === 'TODO' ? 'selected' : ''}>To Do</option>
-                        <option value="IN_PROGRESS" ${t.status === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
-                        <option value="DONE" ${t.status === 'DONE' ? 'selected' : ''}>Verified</option>
-                    </select>
-                </div>
-            `;
+
+            card.innerHTML = ''
+                + '<div style="font-weight: 600;">' + escapeHtml(t.title) + '</div>'
+                + '<div class="text-xs text-muted mt-1">' + escapeHtml(t.description || 'Sprint task') + '</div>'
+                + '<div class="mt-2" style="display: flex; justify-content: space-between; align-items: center;">'
+                + '  <span class="badge ' + (t.priority === 'HIGH' ? 'badge-danger' : 'badge-subtle') + '">' + (t.priority || 'MEDIUM') + '</span>'
+                + '  <select class="form-control form-control-sm select-task-status" data-id="' + t.id + '" style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem;">'
+                + '    <option value="TODO"' + (t.status === 'TODO' ? ' selected' : '') + '>To Do</option>'
+                + '    <option value="IN_PROGRESS"' + (t.status === 'IN_PROGRESS' ? ' selected' : '') + '>In Progress</option>'
+                + '    <option value="DONE"' + (t.status === 'DONE' ? ' selected' : '') + '>Verified</option>'
+                + '  </select>'
+                + '</div>';
 
             if (t.status === 'IN_PROGRESS') taskListInProgress.appendChild(card);
             else if (t.status === 'DONE') taskListDone.appendChild(card);
             else taskListTodo.appendChild(card);
         });
 
-        // Wire task status transitions
         document.querySelectorAll('.select-task-status').forEach(sel => {
             sel.addEventListener('change', async (e) => {
                 const taskId = sel.getAttribute('data-id');
@@ -1367,6 +1505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const titleInput = document.getElementById('taskTitleInput');
             const descInput = document.getElementById('taskDescriptionInput');
             const priorityInput = document.getElementById('taskPrioritySelect');
+            const milestoneId = taskMilestoneSelect?.value || null;
 
             const title = titleInput ? titleInput.value.trim() : '';
             const desc = descInput ? descInput.value.trim() : '';
@@ -1377,6 +1516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 await sb.from('tasks').insert([{
                     project_id: projectId,
+                    milestone_id: milestoneId,
                     title,
                     description: desc,
                     priority,
@@ -1407,46 +1547,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         updatesTimeline.innerHTML = '';
         if (!data || data.length === 0) {
-            updatesTimeline.innerHTML = '<div class="text-center text-muted py-3">No project updates posted yet. Click \'Post Status Update\' above.</div>';
+            updatesTimeline.innerHTML = '<div class="text-center text-muted py-3">No project updates posted yet. Click \'Post Detailed Update\' above.</div>';
             return;
         }
 
         let blockerCount = 0;
 
         data.forEach(u => {
-            if (u.content && u.content.toLowerCase().includes('blocker')) blockerCount++;
+            if ((u.content && u.content.toLowerCase().includes('critical')) || u.category === 'BLOCKER') blockerCount++;
 
             const item = document.createElement('div');
             item.className = 'timeline-item mb-3 pb-2 border-b';
             item.style.cursor = 'pointer';
-            item.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="font-size: 0.95rem;">${escapeHtml(u.title || 'Engineering Standup')}</strong>
-                    <span class="text-xs text-muted">${formatTime(u.created_at)}</span>
-                </div>
-                <p class="text-sm mt-1 mb-0 text-truncate" style="color: var(--text-main);">${escapeHtml(u.content)}</p>
-                <div class="text-xs text-muted mt-1">Author: <strong>${escapeHtml(u.author_name || 'Collaborator')}</strong> &bull; Click to inspect</div>
-            `;
+            item.innerHTML = ''
+                + '<div style="display: flex; justify-content: space-between; align-items: center;">'
+                + '  <strong style="font-size: 0.95rem;">' + escapeHtml(u.title || 'Engineering Standup') + '</strong>'
+                + '  <span class="text-xs text-muted">' + formatTime(u.created_at) + '</span>'
+                + '</div>'
+                + '<p class="text-sm mt-1 mb-0 text-truncate" style="color: var(--text-main);">' + escapeHtml(u.content) + '</p>'
+                + '<div class="text-xs text-muted mt-1">Author: <strong>' + escapeHtml(u.author_name || 'Collaborator') + '</strong> &bull; Click to inspect full breakdown</div>';
+
             item.addEventListener('click', () => openUpdateDetailModal(u));
             updatesTimeline.appendChild(item);
         });
 
-        if (healthActiveBlockers) healthActiveBlockers.textContent = blockerCount > 0 ? `${blockerCount} Flags` : '0 Active';
+        if (healthActiveBlockers) healthActiveBlockers.textContent = blockerCount > 0 ? (blockerCount + ' Unresolved') : '0 Unresolved';
     }
 
     function openUpdateDetailModal(update) {
         if (!modalUpdateDetail) return;
-        if (modalUpdateDetailTitle) modalUpdateDetailTitle.textContent = update.title || 'Engineering Standup';
-        if (modalUpdateDetailBody) {
-            modalUpdateDetailBody.innerHTML = `
-                <div class="text-xs text-muted mb-2">Posted by: <strong>${escapeHtml(update.author_name)}</strong> on ${new Date(update.created_at).toLocaleString()}</div>
-                <p style="white-space: pre-wrap; line-height: 1.5; font-size: 0.9rem;">${escapeHtml(update.content)}</p>
-            `;
+        if (updateDetailTitle) updateDetailTitle.textContent = update.title || 'Engineering Standup';
+        if (updateDetailBody) {
+            updateDetailBody.innerHTML = ''
+                + '<div class="text-xs text-muted mb-2">Posted by: <strong>' + escapeHtml(update.author_name) + '</strong> on ' + new Date(update.created_at).toLocaleString() + '</div>'
+                + '<div class="p-3 border rounded mb-3" style="background: #f8fafc; white-space: pre-wrap; line-height: 1.5; font-size: 0.9rem;">'
+                + escapeHtml(update.content)
+                + '</div>'
+                + (update.artifact_url ? '<div>Artifact PR: <a href="' + escapeHtml(update.artifact_url) + '" target="_blank" rel="noopener" class="badge badge-primary">Open Code PR &rarr;</a></div>' : '');
         }
         modalUpdateDetail.classList.remove('hidden');
     }
 
-    if (closeUpdateDetailBtn) closeUpdateDetailBtn.addEventListener('click', () => modalUpdateDetail?.classList.add('hidden'));
+    if (closeUpdateDetailModalBtn) closeUpdateDetailModalBtn.addEventListener('click', () => modalUpdateDetail?.classList.add('hidden'));
+    if (closeUpdateDetailFooterBtn) closeUpdateDetailFooterBtn.addEventListener('click', () => modalUpdateDetail?.classList.add('hidden'));
 
     if (btnPostUpdate) {
         btnPostUpdate.addEventListener('click', () => {
@@ -1458,23 +1601,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         postUpdateForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const titleInput = document.getElementById('updateTitleInput');
-            const progressInput = document.getElementById('updateProgressNotesInput');
+            const typeInput = document.getElementById('updateTypeSelect');
+            const blockerSeverity = document.getElementById('updateBlockerSeveritySelect')?.value || 'NONE';
+            const completedInput = document.getElementById('updateCompletedInput');
+            const pendingInput = document.getElementById('updatePendingInput');
             const blockersInput = document.getElementById('updateBlockersInput');
+            const artifactUrlInput = document.getElementById('updateArtifactUrlInput');
+            const stagingUrlInput = document.getElementById('updateStagingUrlInput');
 
             const title = titleInput ? titleInput.value.trim() : '';
-            const progress = progressInput ? progressInput.value.trim() : '';
+            const completed = completedInput ? completedInput.value.trim() : '';
+            const pending = pendingInput ? pendingInput.value.trim() : '';
             const blockers = blockersInput ? blockersInput.value.trim() : '';
+            const artifactUrl = artifactUrlInput ? artifactUrlInput.value.trim() : null;
+            const stagingUrl = stagingUrlInput ? stagingUrlInput.value.trim() : null;
 
-            if (!title || !progress || !sb) return;
+            if (!title || !completed || !sb) return;
 
-            const fullContent = progress + (blockers ? '\n\nNext Steps / Blockers:\n' + blockers : '');
+            let fullContent = 'COMPLETED WORK:\n' + completed;
+            if (pending) fullContent += '\n\nPENDING / IN-FLIGHT:\n' + pending;
+            if (blockers) fullContent += '\n\nBLOCKERS & ACTION REQUIRED (' + blockerSeverity + '):\n' + blockers;
+            if (stagingUrl) fullContent += '\n\nSTAGING URL: ' + stagingUrl;
 
             try {
                 await sb.from('project_updates').insert([{
                     project_id: projectId,
                     author_name: currentUser?.fullName || 'Collaborator',
                     title: title,
-                    content: fullContent
+                    category: typeInput?.value || 'PROGRESS',
+                    content: fullContent,
+                    artifact_url: artifactUrl
                 }]);
 
                 if (window.Toast) window.Toast.success('Engineering update published to feed!');
@@ -1511,14 +1667,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isMine = msg.sender_id === currentUser?.id || msg.sender_name === currentUser?.fullName;
             const bubble = document.createElement('div');
             bubble.className = 'chat-bubble ' + (isMine ? 'mine' : 'theirs');
-            bubble.innerHTML = `
-                <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.2rem;">
-                    ${escapeHtml(msg.sender_name || (isMine ? 'You' : 'Collaborator'))} 
-                    <span style="font-size: 0.7rem; font-weight: 400; opacity: 0.8;">(${escapeHtml(msg.sender_role || 'COLLABORATOR')})</span>
-                </div>
-                <div>${escapeHtml(msg.message)}</div>
-                <div class="chat-meta text-xs text-muted mt-1">${formatTime(msg.created_at)}</div>
-            `;
+            bubble.innerHTML = ''
+                + '<div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.2rem;">'
+                + escapeHtml(msg.sender_name || (isMine ? 'You' : 'Collaborator'))
+                + ' <span style="font-size: 0.7rem; font-weight: 400; opacity: 0.8;">(' + escapeHtml(msg.sender_role || 'COLLABORATOR') + ')</span>'
+                + '</div>'
+                + '<div>' + escapeHtml(msg.message) + '</div>'
+                + '<div class="chat-meta text-xs text-muted mt-1">' + formatTime(msg.created_at) + '</div>';
+
             chatMessagesFeed.appendChild(bubble);
         });
 
@@ -1591,11 +1747,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         data.forEach(d => {
             const card = document.createElement('div');
             card.className = 'decision-card mt-2 p-2 border rounded card';
-            card.innerHTML = `
-                <div style="font-weight: 700; font-size: 0.95rem;">📌 ${escapeHtml(d.title)}</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4;">${escapeHtml(d.rationale)}</div>
-                <div class="text-xs text-muted mt-2">Recorded by <strong>${escapeHtml(d.recorded_by || 'Member')}</strong> • ${formatTime(d.created_at)}</div>
-            `;
+            card.innerHTML = ''
+                + '<div style="font-weight: 700; font-size: 0.95rem;">' + escapeHtml(d.title) + '</div>'
+                + '<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4;">' + escapeHtml(d.rationale) + '</div>'
+                + '<div class="text-xs text-muted mt-2">Recorded by <strong>' + escapeHtml(d.recorded_by || 'Member') + '</strong> &bull; ' + formatTime(d.created_at) + '</div>';
+
             decisionsList.appendChild(card);
         });
     }
@@ -1652,15 +1808,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         data.forEach(r => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${escapeHtml(r.title)}</strong></td>
-                <td><span class="badge badge-subtle">Asset</span></td>
-                <td>${escapeHtml(r.uploaded_by)}</td>
-                <td>${new Date(r.created_at).toLocaleDateString()}</td>
-                <td class="text-right" style="text-align: right;">
-                    <a href="${escapeHtml(r.resource_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Access Artifact &rarr;</a>
-                </td>
-            `;
+            tr.innerHTML = ''
+                + '<td><strong>' + escapeHtml(r.title) + '</strong></td>'
+                + '<td><span class="badge badge-subtle">Asset</span></td>'
+                + '<td>' + escapeHtml(r.uploaded_by) + '</td>'
+                + '<td>' + new Date(r.created_at).toLocaleDateString() + '</td>'
+                + '<td class="text-right" style="text-align: right;">'
+                + '  <a href="' + escapeHtml(r.resource_url) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Access Artifact &rarr;</a>'
+                + '</td>';
+
             resourceTableBody.appendChild(tr);
         });
     }
@@ -1669,41 +1825,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 13. General Modals Setup
     // -------------------------------------------------------------------------
     function setupWorkspaceModals() {
-        // Sync Live Button
         if (btnSyncWorkspace) {
             btnSyncWorkspace.addEventListener('click', async () => {
                 btnSyncWorkspace.disabled = true;
-                btnSyncWorkspace.textContent = '🔄 Syncing...';
+                btnSyncWorkspace.textContent = 'Syncing...';
                 await hydrateWorkspace();
                 if (window.Toast) window.Toast.info('Workspace synchronized with Cloud persistence.');
                 btnSyncWorkspace.disabled = false;
-                btnSyncWorkspace.textContent = '🔄 Sync Live';
+                btnSyncWorkspace.textContent = 'Sync Live';
             });
         }
 
-        // Post Update Close
         if (closePostUpdateModalBtn) closePostUpdateModalBtn.addEventListener('click', () => { if (modalPostUpdate) modalPostUpdate.classList.add('hidden'); });
         if (cancelPostUpdateBtn) cancelPostUpdateBtn.addEventListener('click', () => { if (modalPostUpdate) modalPostUpdate.classList.add('hidden'); });
 
-        // Review Proof Close
         if (closeReviewProofModalBtn) closeReviewProofModalBtn.addEventListener('click', () => { if (modalReviewProof) modalReviewProof.classList.add('hidden'); });
 
-        // Revision Request Close
         if (closeRevisionModalBtn) closeRevisionModalBtn.addEventListener('click', () => { if (modalRevisionRequest) modalRevisionRequest.classList.add('hidden'); });
         if (cancelRevisionModalBtn) cancelRevisionModalBtn.addEventListener('click', () => { if (modalRevisionRequest) modalRevisionRequest.classList.add('hidden'); });
 
-        // Decision Close
         if (closeDecisionModalBtn) closeDecisionModalBtn.addEventListener('click', () => { if (decisionModal) decisionModal.classList.add('hidden'); });
         if (cancelDecisionBtn) cancelDecisionBtn.addEventListener('click', () => { if (decisionModal) decisionModal.classList.add('hidden'); });
 
-        // Amendment Close
         if (closeAmendmentModalBtn) closeAmendmentModalBtn.addEventListener('click', () => { if (amendmentModal) amendmentModal.classList.add('hidden'); });
         if (cancelAmendmentBtn) cancelAmendmentBtn.addEventListener('click', () => { if (amendmentModal) amendmentModal.classList.add('hidden'); });
 
-        // Saved Draft Modal Close
-        if (closeSavedDraftModalBtn) closeSavedDraftModalBtn.addEventListener('click', () => modalSavedDraft?.classList.add('hidden'));
-
-        // Milestone Action (Provider Submit Proof)
         if (closeMilestoneModalBtn) closeMilestoneModalBtn.addEventListener('click', () => { if (milestoneActionModal) milestoneActionModal.classList.add('hidden'); });
         if (cancelMilestoneActionBtn) cancelMilestoneActionBtn.addEventListener('click', () => { if (milestoneActionModal) milestoneActionModal.classList.add('hidden'); });
 
@@ -1735,7 +1881,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         sender_id: currentUser?.id,
                         sender_name: currentUser?.fullName || 'Technical Lead',
                         sender_role: 'SERVICE_PROVIDER',
-                        message: '🚀 Technical Proof Submitted for Milestone: PR (' + prUrl + '), Branch (' + branch + ')' + commitMsg + '.'
+                        message: 'Technical Proof Submitted for Milestone: PR (' + prUrl + '), Branch (' + branch + ')' + commitMsg + '.'
                     }]);
 
                     if (window.Toast) window.Toast.success('Deliverable proof submitted for client review!');
@@ -1749,7 +1895,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Add Milestone Modal
         if (btnAddMilestoneBtn) btnAddMilestoneBtn.addEventListener('click', () => { if (addMilestoneModal) addMilestoneModal.classList.remove('hidden'); });
         if (closeAddMilestoneModalBtn) closeAddMilestoneModalBtn.addEventListener('click', () => { if (addMilestoneModal) addMilestoneModal.classList.add('hidden'); });
         if (cancelAddMilestoneBtn) cancelAddMilestoneBtn.addEventListener('click', () => { if (addMilestoneModal) addMilestoneModal.classList.add('hidden'); });
@@ -1758,14 +1903,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             addMilestoneForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const titleInput = document.getElementById('milestoneTitleInput');
+                const categoryInput = document.getElementById('milestoneCategorySelect');
                 const weightInput = document.getElementById('milestoneWeightInput');
                 const deliverablesInput = document.getElementById('milestoneDeliverablesInput');
                 const targetDateInput = document.getElementById('milestoneTargetDateInput');
+                const escrowInput = document.getElementById('milestoneEscrowAmountInput');
 
                 const title = titleInput ? titleInput.value.trim() : '';
+                const category = categoryInput ? categoryInput.value : 'BACKEND';
                 const weight = weightInput ? parseFloat(weightInput.value) || 25 : 25;
                 const deliverables = deliverablesInput ? deliverablesInput.value.trim() : '';
                 const targetDate = targetDateInput && targetDateInput.value ? targetDateInput.value : null;
+                const escrow = escrowInput ? parseFloat(escrowInput.value) || 0 : 0;
 
                 if (!title || !deliverables || !sb) return;
 
@@ -1773,7 +1922,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await sb.from('milestones').insert([{
                         project_id: projectId,
                         title,
+                        category,
                         weight_percentage: weight,
+                        escrow_allocation: escrow,
                         deliverables,
                         target_date: targetDate,
                         status: 'PENDING'
@@ -1789,7 +1940,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Stage Advance Modal
         if (btnProposeStageAdvance) btnProposeStageAdvance.addEventListener('click', () => { if (stageAdvanceModal) stageAdvanceModal.classList.remove('hidden'); });
         if (closeStageModalBtn) closeStageModalBtn.addEventListener('click', () => { if (stageAdvanceModal) stageAdvanceModal.classList.add('hidden'); });
         if (cancelStageModalBtn) cancelStageModalBtn.addEventListener('click', () => { if (stageAdvanceModal) stageAdvanceModal.classList.add('hidden'); });
@@ -1802,35 +1952,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 try {
                     await sb.from('projects').update({ stage: targetStage }).eq('id', projectId);
-                    if (window.Toast) window.Toast.success('Project advanced to ' + targetStage + '!');
+
+                    await sb.from('workspace_messages').insert([{
+                        project_id: projectId,
+                        sender_id: currentUser?.id,
+                        sender_name: currentUser?.fullName || 'Collaborator',
+                        sender_role: currentUser?.role || 'CLIENT',
+                        message: 'Project lifecycle advanced to: ' + targetStage.replace(/_/g, ' ') + '.'
+                    }]);
+
+                    if (window.Toast) window.Toast.success('Project advanced to ' + targetStage.replace(/_/g, ' ') + '!');
                     if (stageAdvanceModal) stageAdvanceModal.classList.add('hidden');
                     await loadProjectOverview();
+                    await loadChatMessages();
                 } catch (err) {
                     if (window.Toast) window.Toast.error('Could not advance lifecycle stage.');
                 }
             });
         }
 
-        // Audit History Modal
         if (btnViewAuditHistory) {
             btnViewAuditHistory.addEventListener('click', async () => {
                 if (auditHistoryModal) auditHistoryModal.classList.remove('hidden');
                 if (auditTimelineContainer) {
-                    auditTimelineContainer.innerHTML = `
-                        <div class="timeline-event mb-3 pb-2 border-b">
-                            <span class="badge badge-primary">v1.0 Baseline</span>
-                            <div style="font-weight: 600; margin-top: 0.25rem;">Project Initialized &amp; Cryptographic Baseline Recorded</div>
-                            <div class="text-xs text-muted">Client: ${escapeHtml(projectRecord?.client_name || 'Client')} • Provider: ${escapeHtml(projectRecord?.assigned_provider_name || 'Technical Lead')}</div>
-                            <div class="text-xs text-mono text-muted mt-1">Hash: ${projectRecord?.scope_hash || 'SHA-256 Active'}</div>
-                        </div>
-                    `;
+                    auditTimelineContainer.innerHTML = ''
+                        + '<div class="timeline-event mb-3 pb-2 border-b">'
+                        + '  <span class="badge badge-primary">v1.0 Baseline</span>'
+                        + '  <div style="font-weight: 600; margin-top: 0.25rem;">Project Initialized &amp; Cryptographic Baseline Recorded</div>'
+                        + '  <div class="text-xs text-muted">Client: ' + escapeHtml(projectRecord?.client_name || 'Client') + ' &bull; Provider: ' + escapeHtml(projectRecord?.assigned_provider_name || 'Technical Lead') + '</div>'
+                        + '  <div class="text-xs text-mono text-muted mt-1">Hash: ' + (projectRecord?.scope_hash || 'SHA-256 Active') + '</div>'
+                        + '</div>';
                 }
             });
         }
         if (closeAuditModalBtn) closeAuditModalBtn.addEventListener('click', () => { if (auditHistoryModal) auditHistoryModal.classList.add('hidden'); });
         if (closeAuditModalFooterBtn) closeAuditModalFooterBtn.addEventListener('click', () => { if (auditHistoryModal) auditHistoryModal.classList.add('hidden'); });
 
-        // Resource Upload Modal
         if (btnUploadResource) btnUploadResource.addEventListener('click', () => { if (resourceModal) resourceModal.classList.remove('hidden'); });
         if (modalResourceClose) modalResourceClose.addEventListener('click', () => { if (resourceModal) resourceModal.classList.add('hidden'); });
         if (modalResourceCancel) modalResourceCancel.addEventListener('click', () => { if (resourceModal) resourceModal.classList.add('hidden'); });

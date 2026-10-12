@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Unified Governance Workspace - WorkBridge Milestone, Scope &amp; Task Execution Platform. Cryptographic baselines, immutable mutual agreements, sprint tracking, and verified Git deliverables.">
+    <meta name="description" content="Unified Governance Workspace - WorkBridge Milestone, Scope & Task Execution Platform. Cryptographic baselines, immutable mutual agreements, sprint tracking, and verified Git deliverables.">
     <title>Project Governance Workspace | WorkBridge</title>
     
     <!-- CSS Foundations -->
@@ -113,35 +113,35 @@
                 </div>
             </div>
 
-            <!-- Project Stage & Progress Pipeline Stepper -->
+            <!-- Project Stage & Progress Pipeline Stepper (Steps 1 to 6) -->
             <div class="stage-pipeline-scroll-wrapper mt-3">
-                <div class="stage-pipeline-container">
-                    <div class="stage-step" data-stage="INVITED" title="Step 1: Invitation dispatched. Awaiting provider response.">
+                <div class="stage-pipeline-container" id="stagePipelineContainer">
+                    <div class="stage-step" data-stage="INVITED" data-step="1" title="Step 1: Invitation dispatched. Awaiting provider response.">
                         <div class="step-circle">1</div>
                         <span class="step-label">Invited</span>
                     </div>
-                    <div class="step-connector"></div>
-                    <div class="stage-step" data-stage="REQUIREMENT_DISCUSSION" title="Step 2: Collaborative scoping and requirement formulation">
+                    <div class="step-connector" id="connector-1"></div>
+                    <div class="stage-step" data-stage="REQUIREMENT_DISCUSSION" data-step="2" title="Step 2: Collaborative scoping and requirement formulation">
                         <div class="step-circle">2</div>
                         <span class="step-label">Scoping</span>
                     </div>
-                    <div class="step-connector"></div>
-                    <div class="stage-step" data-stage="AGREEMENT_LOCKED" title="Step 3: Agreement signed by both parties, scope version locked">
+                    <div class="step-connector" id="connector-2"></div>
+                    <div class="stage-step" data-stage="AGREEMENT_LOCKED" data-step="3" title="Step 3: Agreement signed by both parties, scope version locked">
                         <div class="step-circle">3</div>
                         <span class="step-label">Agreement</span>
                     </div>
-                    <div class="step-connector"></div>
-                    <div class="stage-step" data-stage="IN_PROGRESS" title="Step 4: Active technical building and milestone submissions">
+                    <div class="step-connector" id="connector-3"></div>
+                    <div class="stage-step" data-stage="IN_PROGRESS" data-step="4" title="Step 4: Active technical building and milestone submissions">
                         <div class="step-circle">4</div>
                         <span class="step-label">Building</span>
                     </div>
-                    <div class="step-connector"></div>
-                    <div class="stage-step" data-stage="REVIEW" title="Step 5: Final deliverable acceptance review">
+                    <div class="step-connector" id="connector-4"></div>
+                    <div class="stage-step" data-stage="REVIEW" data-step="5" title="Step 5: Final deliverable acceptance review">
                         <div class="step-circle">5</div>
                         <span class="step-label">Review</span>
                     </div>
-                    <div class="step-connector"></div>
-                    <div class="stage-step" data-stage="COMPLETED" title="Step 6: Project accepted, finalized, and closed">
+                    <div class="step-connector" id="connector-5"></div>
+                    <div class="stage-step" data-stage="COMPLETED" data-step="6" title="Step 6: Project accepted, finalized, and closed">
                         <div class="step-circle">6</div>
                         <span class="step-label">Completed</span>
                     </div>
@@ -205,12 +205,12 @@
                         <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <h3 class="card-title" style="margin: 0;">Milestone &amp; Sprint Horizon</h3>
-                                <p class="text-muted text-xs mt-1 mb-0">Visual delivery timeline. Compares target dates against current execution pacing.</p>
+                                <p class="text-muted text-xs mt-1 mb-0">Visual delivery timeline. Click any milestone bar to inspect criteria.</p>
                             </div>
                             <span class="badge badge-success" id="timelineHealthBadge">Schedule: On Track</span>
                         </div>
-                        <div id="ganttTimelineHorizon" class="mt-3 p-3 border rounded" style="background: #f8fafc; min-height: 110px; display: flex; flex-direction: column; justify-content: center;">
-                            <!-- Dynamically populated or rendered via Vanilla SVG/CSS -->
+                        <div id="ganttTimelineHorizon" class="mt-3 p-3 border rounded" style="background: #f8fafc; min-height: 110px; display: flex; flex-direction: column; justify-content: center; overflow-x: auto;">
+                            <!-- Populated dynamically via JS -->
                             <div class="text-center text-muted text-xs">Timeline horizon populates upon milestone definition.</div>
                         </div>
                     </div>
@@ -220,7 +220,7 @@
                         <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                             <div>
                                 <h3 class="card-title" style="margin: 0;">Engineering Status &amp; Updates</h3>
-                                <p class="text-muted text-xs mt-1 mb-0">Asynchronous standup feed. Click any card to inspect the complete work breakdown.</p>
+                                <p class="text-muted text-xs mt-1 mb-0">Asynchronous standup feed. Click any card to inspect complete work breakdown.</p>
                             </div>
                             <button type="button" id="btnPostUpdate" class="btn btn-primary btn-sm">
                                 ➕ Post Detailed Update
@@ -322,12 +322,12 @@
                     <div class="mt-3 p-3 border rounded" style="background: #f8fafc;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                             <div>
-                                <strong style="font-size: 0.95rem;">Modular Scope Matrix (Optional Deep Tracking)</strong>
-                                <p class="text-muted text-xs mb-0">Deconstruct project into specific modules with priority rankings and verification criteria.</p>
+                                <strong style="font-size: 0.95rem;">Modular Scope Matrix (Interactive Module Decomposition)</strong>
+                                <p class="text-muted text-xs mb-0">Deconstruct project into specific modules with priority rankings, deliverable weights, and verification criteria.</p>
                             </div>
                             <button type="button" id="btnAddScopeModuleBtn" class="btn btn-outline btn-sm">➕ Add Module Row</button>
                         </div>
-                        <div id="scopeModulesList" class="mt-2" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div id="scopeModulesList" class="mt-3" style="display: flex; flex-direction: column; gap: 0.75rem;">
                             <!-- Populated dynamically via JS -->
                         </div>
                     </div>
@@ -366,7 +366,7 @@
                 <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                         <h3 class="card-title" style="margin: 0;">Deliverable Roadmap &amp; Technical Execution</h3>
-                        <p class="text-muted text-sm mt-1 mb-0">Milestones define verified deliverable payouts. Click any milestone to inspect complete criteria and Git proof.</p>
+                        <p class="text-muted text-sm mt-1 mb-0">Milestones define verified deliverable payouts. Click any milestone to inspect complete criteria, acceptance proofs, and Git PR verification.</p>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <div class="btn-group" role="group">
@@ -567,7 +567,7 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 5: DISCUSSIONS & ARCHITECTURAL DECISIONS                  -->
+        <!-- TAB 5: DISCUSSIONS & ARCHITECTURAL DECISIONS                 -->
         <!-- ============================================================= -->
         <section id="tabDiscussions" class="tab-content mt-3 hidden">
             <div class="workspace-split-layout">
@@ -659,44 +659,80 @@
     <!-- WORKSPACE MODALS (100x ENTERPRISE DETAIL SUITE)                -->
     <!-- ============================================================= -->
 
-    <!-- Modal 1: Post Detailed Status Update -->
+    <!-- Modal 1: Post Detailed Status Update (Enhanced Scrollable Enterprise Drawer) -->
     <div id="modalPostUpdate" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="postUpdateModalTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 92dvh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h3 class="modal-title" id="postUpdateModalTitle">Post Detailed Project Update</h3>
+                <div>
+                    <span class="badge badge-primary">Engineering Telemetry</span>
+                    <h3 class="modal-title mt-1" id="postUpdateModalTitle">Post Detailed Sprint &amp; Work Progress</h3>
+                </div>
                 <button type="button" class="modal-close-btn" id="closePostUpdateModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <form id="postUpdateForm">
-                <div class="modal-body">
+            <form id="postUpdateForm" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
                     <div class="form-group">
                         <label for="updateTitleInput" class="form-label">Update Title *</label>
-                        <input type="text" id="updateTitleInput" class="form-control" placeholder="e.g. Sprint 2: Core Auth &amp; Database Migration Completed" required>
+                        <input type="text" id="updateTitleInput" class="form-control" placeholder="e.g. Sprint 2: Core Auth, PostgREST Schema &amp; Live Socket Subscriptions Complete" required>
                     </div>
-                    <div class="form-group mt-2">
-                        <label for="updateTypeSelect" class="form-label">Update Category</label>
-                        <select id="updateTypeSelect" class="form-control">
-                            <option value="PROGRESS">Sprint Standup / General Progress</option>
-                            <option value="DELIVERABLE">Milestone Deliverable Hand-off</option>
-                            <option value="BLOCKER">Blocker / Technical Query</option>
-                            <option value="DECISION">Architectural Clarification</option>
-                        </select>
+                    
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="updateTypeSelect" class="form-label">Update Category</label>
+                            <select id="updateTypeSelect" class="form-control">
+                                <option value="PROGRESS">Sprint Standup / General Progress</option>
+                                <option value="DELIVERABLE">Milestone Deliverable Hand-off</option>
+                                <option value="BLOCKER">Blocker / Technical Query</option>
+                                <option value="DECISION">Architectural Clarification</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="updateBlockerSeveritySelect" class="form-label">Blocker Severity Level</label>
+                            <select id="updateBlockerSeveritySelect" class="form-control">
+                                <option value="NONE">🟢 None (Full Velocity)</option>
+                                <option value="LOW">🟡 Low (Minor Dependency)</option>
+                                <option value="CRITICAL">🔴 Critical (Immediate Client Action Required)</option>
+                            </select>
+                        </div>
                     </div>
+
                     <div class="form-group mt-2">
-                        <label for="updateCompletedInput" class="form-label">Completed Work &amp; Features *</label>
+                        <label for="updateCompletedInput" class="form-label">Completed Work, Modules &amp; PR Highlights *</label>
                         <textarea id="updateCompletedInput" class="form-control" rows="3" placeholder="List itemized deliverables finished in this cycle..." required></textarea>
                     </div>
+
                     <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
                         <div class="form-group">
                             <label for="updatePendingInput" class="form-label">Pending / In-Flight Tasks</label>
                             <textarea id="updatePendingInput" class="form-control" rows="2" placeholder="What is currently being worked on?"></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="updateBlockersInput" class="form-label">Blockers &amp; Client Action Required</label>
+                            <label for="updateBlockersInput" class="form-label">Action Items Required from Client</label>
                             <textarea id="updateBlockersInput" class="form-control" rows="2" placeholder="Any pending credentials, design inputs, or API approvals?"></textarea>
                         </div>
                     </div>
+
+                    <!-- Enterprise Integration & Verification References -->
+                    <div class="mt-3 p-3 border rounded" style="background: #f8fafc;">
+                        <span class="text-xs font-bold text-muted" style="letter-spacing: 0.5px; display: block; margin-bottom: 0.5rem;">VERIFICATION LINKS &amp; CODEBASE ARTIFACTS</span>
+                        <div class="grid grid-2" style="gap: 0.75rem;">
+                            <div class="form-group mb-0">
+                                <label for="updateArtifactUrlInput" class="form-label-sm">GitHub PR / Commit Reference URL</label>
+                                <input type="url" id="updateArtifactUrlInput" class="form-control" placeholder="https://github.com/org/repo/pull/12">
+                            </div>
+                            <div class="form-group mb-0">
+                                <label for="updateStagingUrlInput" class="form-label-sm">Live Staging Preview Link</label>
+                                <input type="url" id="updateStagingUrlInput" class="form-control" placeholder="https://staging.workbridge.app">
+                            </div>
+                        </div>
+                        <div class="form-group mt-2 mb-0">
+                            <label for="updateTestStatusInput" class="form-label-sm">Automated Test &amp; QA Status (Optional)</label>
+                            <input type="text" id="updateTestStatusInput" class="form-control" placeholder="e.g. 48 Unit & Integration tests passing (100% Green)">
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer">
+
+                <div class="modal-footer" style="flex-shrink: 0; background: var(--bg-surface-alt); border-top: 1px solid var(--border-color); padding: 0.85rem 1.25rem;">
                     <button type="button" class="btn btn-secondary" id="cancelPostUpdateBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="savePostUpdateBtn">Publish Detailed Update</button>
                 </div>
@@ -706,7 +742,7 @@
 
     <!-- Modal 2: View Complete Update Details (Inspector) -->
     <div id="modalUpdateDetail" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="updateDetailTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
                     <span class="badge badge-primary" id="updateDetailBadge">Engineering Update</span>
@@ -714,16 +750,16 @@
                 </div>
                 <button type="button" class="modal-close-btn" id="closeUpdateDetailModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <div class="modal-body" id="updateDetailBody"></div>
+            <div class="modal-body" id="updateDetailBody" style="overflow-y: auto; flex: 1;"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="closeUpdateDetailFooterBtn">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal 3: Interactive Milestone Inspection -->
+    <!-- Modal 3: Interactive Milestone Inspection (Detailed Scope Breakdown) -->
     <div id="modalMilestoneDetail" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="milestoneDetailTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
                     <span class="badge badge-primary" id="milestoneDetailBadge">Milestone Node</span>
@@ -731,7 +767,9 @@
                 </div>
                 <button type="button" class="modal-close-btn" id="closeMilestoneDetailModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <div class="modal-body" id="milestoneDetailBody"></div>
+            <div class="modal-body" id="milestoneDetailBody" style="overflow-y: auto; flex: 1;">
+                <!-- Populated dynamically via JS -->
+            </div>
             <div class="modal-footer" id="milestoneDetailFooter">
                 <button type="button" class="btn btn-secondary" id="closeMilestoneDetailFooterBtn">Close</button>
             </div>
@@ -776,14 +814,17 @@
         </div>
     </div>
 
-    <!-- Modal 5: View Saved Draft -->
+    <!-- Modal 5: View Saved Draft (Active Scope Inspection) -->
     <div id="modalSavedDraft" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="savedDraftTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h3 class="modal-title" id="savedDraftTitle">Active Scope Draft Details</h3>
+                <div>
+                    <span class="badge badge-primary">Technical Specification Document</span>
+                    <h3 class="modal-title mt-1" id="savedDraftTitle">Active Scope Draft Details</h3>
+                </div>
                 <button type="button" class="modal-close-btn" id="closeSavedDraftModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <div class="modal-body" id="savedDraftBody"></div>
+            <div class="modal-body" id="savedDraftBody" style="overflow-y: auto; flex: 1;"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="closeSavedDraftFooterBtn">Close</button>
             </div>
@@ -832,7 +873,7 @@
 
     <!-- Modal 7: Submit Milestone Deliverable -->
     <div id="milestoneActionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="milestoneModalTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 92dvh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
                     <span class="badge badge-primary">Technical Deliverable Verification</span>
@@ -840,8 +881,8 @@
                 </div>
                 <button type="button" class="modal-close-btn" id="closeMilestoneModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <form id="milestoneActionForm">
-                <div class="modal-body">
+            <form id="milestoneActionForm" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="overflow-y: auto; flex: 1;">
                     <input type="hidden" id="actionMilestoneId">
                     <div class="form-group">
                         <label for="deliverableUrlInput" class="form-label">Pull Request / Branch URL *</label>
@@ -866,7 +907,7 @@
                         <textarea id="deliverableNotesInput" class="form-control" rows="3" placeholder="Detail the test cases covered, verification steps, and deliverable highlights..." required></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="flex-shrink: 0;">
                     <button type="button" class="btn btn-secondary" id="cancelMilestoneActionBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="submitDeliverableBtn">Submit Deliverable Proof</button>
                 </div>
@@ -1032,33 +1073,57 @@
         </div>
     </div>
 
-    <!-- Modal 13: Add Milestone Definition -->
+    <!-- Modal 13: Add Milestone Definition (Enterprise Depth Extension) -->
     <div id="addMilestoneModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="addMilestoneModalTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 92dvh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h3 class="modal-title" id="addMilestoneModalTitle">Create Project Milestone</h3>
+                <div>
+                    <span class="badge badge-primary">Roadmap Architect</span>
+                    <h3 class="modal-title mt-1" id="addMilestoneModalTitle">Create Project Milestone &amp; Escrow Trigger</h3>
+                </div>
                 <button type="button" class="modal-close-btn" id="closeAddMilestoneModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <form id="addMilestoneForm">
-                <div class="modal-body">
+            <form id="addMilestoneForm" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="overflow-y: auto; flex: 1;">
                     <div class="form-group">
                         <label for="milestoneTitleInput" class="form-label">Milestone Title *</label>
-                        <input type="text" id="milestoneTitleInput" class="form-control" placeholder="e.g. Phase 1: Architecture, Auth &amp; DB Schema" required>
+                        <input type="text" id="milestoneTitleInput" class="form-control" placeholder="e.g. Phase 2: Supabase Schema, JWT Auth &amp; REST Adapters" required>
                     </div>
-                    <div class="form-group mt-2">
-                        <label for="milestoneWeightInput" class="form-label">Weight Percentage (% of Total Project) *</label>
-                        <input type="number" id="milestoneWeightInput" class="form-control" placeholder="e.g. 25" min="1" max="100" required>
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="milestoneCategorySelect" class="form-label">Execution Domain</label>
+                            <select id="milestoneCategorySelect" class="form-control">
+                                <option value="BACKEND">⚙️ Backend &amp; Database Architecture</option>
+                                <option value="FRONTEND">🎨 UI/UX &amp; State Orchestration</option>
+                                <option value="INTEGRATION">🔗 Full-Stack API Integration</option>
+                                <option value="QA_TESTING">🧪 QA, Auditing &amp; Security Tests</option>
+                                <option value="DEPLOYMENT">🚀 Production Cloud Deployment</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="milestoneTargetDateInput" class="form-label">Estimated Delivery Target *</label>
+                            <input type="date" id="milestoneTargetDateInput" class="form-control" required>
+                        </div>
                     </div>
-                    <div class="form-group mt-2">
-                        <label for="milestoneTargetDateInput" class="form-label">Estimated Delivery Date</label>
-                        <input type="date" id="milestoneTargetDateInput" class="form-control">
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="milestoneWeightInput" class="form-label">Progress Weight Percentage (% of Total) *</label>
+                            <input type="number" id="milestoneWeightInput" class="form-control" placeholder="e.g. 25" min="1" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="milestoneEscrowAmountInput" class="form-label">Escrow Allocation ($ USD Optional)</label>
+                            <input type="number" id="milestoneEscrowAmountInput" class="form-control" placeholder="e.g. 375">
+                        </div>
                     </div>
+
                     <div class="form-group mt-2">
-                        <label for="milestoneDeliverablesInput" class="form-label">Expected Deliverables &amp; Acceptance Criteria *</label>
-                        <textarea id="milestoneDeliverablesInput" class="form-control" rows="3" placeholder="What specific APIs, UI components, or test suites must be demonstrated?" required></textarea>
+                        <label for="milestoneDeliverablesInput" class="form-label">Expected Deliverables &amp; Git Acceptance Criteria *</label>
+                        <textarea id="milestoneDeliverablesInput" class="form-control" rows="3" placeholder="What specific APIs, UI components, Git branch commits or demo URLs must be demonstrated for acceptance?" required></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="flex-shrink: 0;">
                     <button type="button" class="btn btn-secondary" id="cancelAddMilestoneBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="saveMilestoneBtn">Add to Project</button>
                 </div>
