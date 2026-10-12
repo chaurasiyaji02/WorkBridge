@@ -16,8 +16,8 @@
     gap: 0.5rem;
     font-size: 0.875rem;
     font-weight: 600;
-    min-height: 38px;
-    padding: 0.45rem 1rem;
+    min-height: 40px; /* Touch target baseline */
+    padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
     border: 1px solid transparent;
     cursor: pointer;
@@ -29,6 +29,7 @@
     -webkit-user-select: none;
     white-space: nowrap;
     letter-spacing: -0.01em;
+    touch-action: manipulation;
 }
 
 .btn:active {
@@ -131,16 +132,16 @@
 }
 
 .btn-sm {
-    min-height: 32px;
-    padding: 0.3rem 0.75rem;
+    min-height: 34px;
+    padding: 0.35rem 0.75rem;
     font-size: 0.8125rem;
     border-radius: var(--radius-sm);
 }
 
 .btn-lg {
-    min-height: 46px;
-    padding: 0.7rem 1.5rem;
-    font-size: 0.975rem;
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
     border-radius: var(--radius-lg);
 }
 
@@ -156,7 +157,12 @@
     cursor: pointer;
     color: var(--text-muted);
     line-height: 1;
-    padding: 0.25rem;
+    padding: 0.5rem;
+    min-height: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: var(--radius-sm);
 }
 
@@ -170,11 +176,12 @@
    -------------------------------------------------------------------------- */
 .form-group {
     margin-bottom: 1.15rem;
+    width: 100%;
 }
 
 .form-label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
     margin-bottom: 0.35rem;
     color: var(--text-main);
@@ -194,18 +201,28 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 }
 
 .form-control {
     width: 100%;
-    min-height: 40px;
-    padding: 0.55rem 0.85rem;
-    font-size: 0.95rem;
+    min-height: 44px; /* Eliminates tap delays & feels native on mobile */
+    padding: 0.6rem 0.85rem;
+    font-size: 1rem; /* 16px threshold stops mobile browser auto-zoom */
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     color: var(--text-main);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+@media (min-width: 768px) {
+    .form-control {
+        min-height: 40px;
+        font-size: 0.95rem;
+        padding: 0.55rem 0.85rem;
+    }
 }
 
 .form-control:focus {
@@ -229,7 +246,7 @@
 
 textarea.form-control {
     resize: vertical;
-    min-height: 90px;
+    min-height: 95px;
     line-height: 1.5;
 }
 
@@ -261,13 +278,14 @@ select.form-control {
 .auth-tabs {
     display: flex;
     border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+    width: 100%;
 }
 
 .auth-tab {
     flex: 1;
     text-align: center;
-    padding: 0.75rem;
+    padding: 0.85rem 0.5rem;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -285,8 +303,9 @@ select.form-control {
 
 .role-selector-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 0.75rem;
+    width: 100%;
 }
 
 .role-option input[type="radio"] {
@@ -335,9 +354,17 @@ select.form-control {
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1.15rem;
     box-shadow: var(--shadow-card);
     transition: box-shadow var(--transition-normal), border-color var(--transition-normal), transform var(--transition-fast);
+    width: 100%;
+    overflow: hidden;
+}
+
+@media (min-width: 640px) {
+    .card {
+        padding: 1.25rem;
+    }
 }
 
 @media (min-width: 768px) {
@@ -355,12 +382,14 @@ select.form-control {
     font-weight: 700;
     margin-bottom: 0.35rem;
     letter-spacing: -0.015em;
+    word-break: break-word;
 }
 
 .card-text {
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     line-height: 1.5;
+    word-break: break-word;
 }
 
 .card-icon {
@@ -368,22 +397,29 @@ select.form-control {
     margin-bottom: 0.75rem;
 }
 
-/* Metric Cards */
+/* Metric Cards (Prevent cutoffs on 320-360px phones) */
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 0.75rem;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .metrics-grid {
+        gap: 1rem;
+    }
 }
 
 .metric-card {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1.15rem;
+    gap: 0.85rem;
+    padding: 1rem;
 }
 
 .metric-icon {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     background-color: var(--bg-surface-alt);
     width: 44px;
     height: 44px;
@@ -405,7 +441,7 @@ select.form-control {
 }
 
 .metric-value {
-    font-size: clamp(1.35rem, 2vw, 1.65rem);
+    font-size: clamp(1.25rem, 3.5vw, 1.65rem);
     font-weight: 800;
     line-height: 1.1;
     margin-top: 0.2rem;
@@ -416,8 +452,9 @@ select.form-control {
 /* Project Cards in Dashboard */
 .projects-list-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
     gap: 1rem;
+    width: 100%;
 }
 
 .project-card,
@@ -492,6 +529,7 @@ select.form-control {
 .sidebar-btn-link {
     display: flex;
     align-items: center;
+    min-height: 40px;
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
     color: var(--text-secondary);
@@ -513,7 +551,7 @@ select.form-control {
 }
 
 /* --------------------------------------------------------------------------
-   4. Badges, Indicators & Version Banners
+   4. Badges, Indicators & Filter Pills
    -------------------------------------------------------------------------- */
 .badge {
     display: inline-flex;
@@ -575,13 +613,17 @@ select.form-control {
 .filter-pill {
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
-    padding: 0.3rem 0.8rem;
+    padding: 0.35rem 0.85rem;
+    min-height: 32px;
     border-radius: var(--radius-full);
     font-size: 0.8rem;
     font-weight: 500;
     color: var(--text-muted);
     cursor: pointer;
     transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    touch-action: manipulation;
 }
 
 .filter-pill:hover,
@@ -603,6 +645,7 @@ select.form-control {
     border-radius: var(--radius-lg);
     background-color: var(--bg-surface);
     box-shadow: var(--shadow-xs);
+    position: relative;
 }
 
 .data-table {
@@ -610,7 +653,7 @@ select.form-control {
     border-collapse: collapse;
     font-size: 0.875rem;
     text-align: left;
-    min-width: 600px;
+    min-width: 520px; /* Reduced from 600px for easier horizontal pan */
 }
 
 .data-table th {
@@ -641,7 +684,7 @@ select.form-control {
 }
 
 /* --------------------------------------------------------------------------
-   6. Accessible Responsive Modals
+   6. Accessible Responsive Modals (Mobile Bottom-Sheet on <640px)
    -------------------------------------------------------------------------- */
 .modal-backdrop {
     position: fixed;
@@ -650,14 +693,14 @@ select.form-control {
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    background-color: rgba(15, 23, 42, 0.55);
+    background-color: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow-y: auto;
 }
 
@@ -666,7 +709,7 @@ select.form-control {
     border-radius: var(--radius-xl);
     width: 100%;
     max-width: 560px;
-    max-height: calc(100dvh - 2.5rem);
+    max-height: calc(100dvh - 1.5rem);
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-xl);
@@ -676,7 +719,7 @@ select.form-control {
 }
 
 @keyframes modal-pop {
-    0% { transform: scale(0.96) translateY(4px); opacity: 0; }
+    0% { transform: scale(0.96) translateY(6px); opacity: 0; }
     100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
@@ -684,15 +727,22 @@ select.form-control {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.15rem 1.5rem;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
 
+@media (min-width: 640px) {
+    .modal-header {
+        padding: 1.15rem 1.5rem;
+    }
+}
+
 .modal-title {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: -0.015em;
+    word-break: break-word;
 }
 
 .modal-close-btn {
@@ -702,7 +752,9 @@ select.form-control {
     cursor: pointer;
     color: var(--text-muted);
     line-height: 1;
-    padding: 0.25rem;
+    padding: 0.5rem;
+    min-width: 40px;
+    min-height: 40px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -716,9 +768,16 @@ select.form-control {
 }
 
 .modal-body {
-    padding: 1.5rem;
+    padding: 1.25rem;
     overflow-y: auto;
     flex: 1;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 640px) {
+    .modal-body {
+        padding: 1.5rem;
+    }
 }
 
 .modal-footer {
@@ -726,24 +785,57 @@ select.form-control {
     align-items: center;
     justify-content: flex-end;
     gap: 0.65rem;
-    padding: 1rem 1.5rem;
+    padding: 0.85rem 1.25rem;
     border-top: 1px solid var(--border-color);
     background-color: var(--bg-surface-alt);
     flex-shrink: 0;
     flex-wrap: wrap;
 }
 
+@media (min-width: 640px) {
+    .modal-footer {
+        padding: 1rem 1.5rem;
+    }
+}
+
+/* Mobile Modal Stacking: Buttons go full width for thumb taps */
+@media (max-width: 639px) {
+    .modal-backdrop {
+        align-items: flex-end; /* Mobile Bottom-Sheet UX */
+        padding: 0;
+    }
+
+    .modal-card {
+        max-height: 92dvh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
+
 /* --------------------------------------------------------------------------
    7. Alert Boxes & Floating Toast Notifications
    -------------------------------------------------------------------------- */
 .alert {
-    padding: 0.85rem 1.15rem;
+    padding: 0.85rem 1rem;
     border-radius: var(--radius-md);
     font-size: 0.875rem;
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    word-break: break-word;
 }
 
 .alert-hidden {
@@ -771,8 +863,8 @@ select.form-control {
 .toast-container {
     position: fixed;
     bottom: 1rem;
-    right: 1rem;
-    left: 1rem;
+    right: 0.75rem;
+    left: 0.75rem;
     z-index: 9999;
     display: flex;
     flex-direction: column;
@@ -791,11 +883,11 @@ select.form-control {
 
 .toast {
     width: 100%;
-    padding: 0.85rem 1.15rem;
+    padding: 0.85rem 1rem;
     border-radius: var(--radius-md);
     background-color: var(--secondary);
     color: var(--text-inverse);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 500;
     box-shadow: var(--shadow-lg);
     display: flex;
@@ -805,6 +897,7 @@ select.form-control {
     pointer-events: auto;
     transition: opacity var(--transition-normal), transform var(--transition-normal);
     border-left: 4px solid var(--primary);
+    word-break: break-word;
 }
 
 .toast-success {
@@ -834,7 +927,12 @@ select.form-control {
     font-size: 1.25rem;
     cursor: pointer;
     line-height: 1;
-    padding: 0.2rem;
+    padding: 0.35rem;
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .toast-close-btn:hover {
@@ -870,11 +968,17 @@ select.form-control {
 }
 
 .empty-state {
-    padding: 3rem 1.5rem;
+    padding: 2.5rem 1rem;
     text-align: center;
 }
 
+@media (min-width: 640px) {
+    .empty-state {
+        padding: 3rem 1.5rem;
+    }
+}
+
 .empty-icon {
-    font-size: 2.75rem;
+    font-size: 2.5rem;
     margin-bottom: 0.75rem;
 }
