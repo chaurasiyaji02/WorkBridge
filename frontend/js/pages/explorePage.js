@@ -3,8 +3,8 @@
  * File: js/pages/explorePage.js
  * 
  * Powered by direct Supabase PostgreSQL queries (`services` & `profiles` tables).
- * Supports real-time gig discovery, provider profile credentials preview,
- * dual filter toggling (Gigs vs Talent), and direct invitation dispatching.
+ * Supports real-time gig discovery, multi-criteria filtering & sorting,
+ * provider credentials preview, and structured project invitation dispatching.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
     const minRatingFilter = document.getElementById('minRatingFilter');
+    const rateBracketFilter = document.getElementById('rateBracketFilter');
+    const catalogSortSelect = document.getElementById('catalogSortSelect');
     const resetFilterBtn = document.getElementById('resetFilterBtn');
     const clearSearchStateBtn = document.getElementById('clearSearchStateBtn');
     const btnRefreshCatalog = document.getElementById('btnRefreshCatalog');
@@ -32,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const detailAvatar = document.getElementById('detailAvatar');
     const detailProviderName = document.getElementById('detailProviderName');
     const detailProviderDomain = document.getElementById('detailProviderDomain');
+    const detailVerifiedBadge = document.getElementById('detailVerifiedBadge');
     const detailBio = document.getElementById('detailBio');
     const detailSkillsContainer = document.getElementById('detailSkillsContainer');
     const detailRate = document.getElementById('detailRate');
@@ -104,8 +107,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 title: svc.title,
                 domain: svc.domain || svc.title,
                 category: svc.category || 'WEB_DEVELOPMENT',
-                hourlyRate: svc.hourly_rate || 50,
-                deliveryDays: svc.delivery_days || 14,
+                hourlyRate: Number(svc.hourly_rate) || 50,
+                deliveryDays: Number(svc.delivery_days) || 14,
                 skills: parseSkills(svc.skills),
                 description: svc.description || 'Full technical service package with milestone-locked commitments.',
                 rating: Number(svc.average_rating || 5.0).toFixed(1),
@@ -124,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     title: prof.domain || 'Technical Service Provider',
                     domain: prof.domain || 'Software Engineering',
                     category: 'WEB_DEVELOPMENT',
-                    hourlyRate: prof.hourly_rate || 50,
+                    hourlyRate: Number(prof.hourly_rate) || 50,
                     deliveryDays: 14,
                     skills: parseSkills(prof.skills),
                     description: prof.bio || 'Verified provider on WorkBridge ready for milestone-locked technical delivery.',
@@ -172,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 2. Render Cards to Grid
+    // 2. Render Cards to Grid (Cleaned String Interpolation)
     // -------------------------------------------------------------------------
     function renderCatalog(items) {
         if (!providerGrid) return;
@@ -288,6 +291,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (detailRate) detailRate.textContent = `$${item.hourlyRate || 50}/hr`;
         if (detailDeliveryDays) detailDeliveryDays.textContent = `${item.deliveryDays || 14} Days SLA`;
 
+        if (detailVerifiedBadge) {
+            detailVerifiedBadge.textContent = item.isLiveService ? 'Verified Service Package' : 'Verified Engineer';
+        }
+
         if (detailSkillsContainer) {
             detailSkillsContainer.innerHTML = item.skills
                 .map(s => `<span class="badge badge-subtle">${escapeHtml(s)}</span>`)
@@ -332,19 +339,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 4. Multi-Criteria Filtering Logic
+    // 4. Multi-Criteria Filtering & Sorting Engine
     // -------------------------------------------------------------------------
     function applyFilters() {
         const query = (searchInput?.value || '').toLowerCase().trim();
         const selectedCategory = (categoryFilter?.value || '').toUpperCase().trim();
         const minRating = parseFloat(minRatingFilter?.value) || 0;
+        const selectedRateBracket = rateBracketFilter?.value || 'ALL';
+        const sortOrder = catalogSortSelect?.value || 'RATING_DESC';
 
-        const filtered = allCatalogItems.filter(item => {
-            // Pill filter match
+        let filtered = allCatalogItems.filter(item => {
+            // 1. Pill filter match
             if (currentFilterType !== 'ALL' && item.type !== currentFilterType) {
                 return false;
             }
 
+            // 2. Search query match
             const providerName = (item.providerName || '').toLowerCase();
             const description = (item.description || '').toLowerCase();
             const title = (item.title || '').toLowerCase();
@@ -356,13 +366,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 title.includes(query) || 
                 skills.some(s => s.includes(query));
 
+            // 3. Domain category match
             const itemCategory = (item.category || '').toUpperCase();
             const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || itemCategory.includes(selectedCategory);
 
+            // 4. Rating match
             const rating = parseFloat(item.rating || 5.0);
             const matchesRating = rating >= minRating;
 
-            return matchesQuery && matchesCategory && matchesRating;
+            // 5. Rate bracket filter match
+            const rate = Number(item.hourlyRate) || 0;
+            let matchesBracket = true;
+            if (selectedRateBracket === 'UNDER_50') matchesBracket = rate < 50;
+            else if (selectedRateBracket === '50_100') matchesBracket = rate >= 50 && rate <= 100;
+            else if (selectedRateBracket === 'ABOVE_100') matchesBracket = rate > 100;
+
+            return matchesQuery && matchesCategory && matchesRating && matchesBracket;
+        });
+
+        // 6. Sort results
+        filtered.sort((a, b) => {
+            if (sortOrder === 'RATE_ASC') return (a.hourlyRate || 0) - (b.hourlyRate || 0);
+            if (sortOrder === 'RATE_DESC') return (b.hourlyRate || 0) - (a.hourlyRate || 0);
+            if (sortOrder === 'SLA_ASC') return (a.deliveryDays || 14) - (b.deliveryDays || 14);
+            return parseFloat(b.rating || 5.0) - parseFloat(a.rating || 5.0); // RATING_DESC
         });
 
         renderCatalog(filtered);
@@ -389,11 +416,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (searchInput) searchInput.addEventListener('input', applyFilters);
         if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
         if (minRatingFilter) minRatingFilter.addEventListener('change', applyFilters);
+        if (rateBracketFilter) rateBracketFilter.addEventListener('change', applyFilters);
+        if (catalogSortSelect) catalogSortSelect.addEventListener('change', applyFilters);
 
         function resetFilters() {
             if (searchInput) searchInput.value = '';
             if (categoryFilter) categoryFilter.value = '';
             if (minRatingFilter) minRatingFilter.value = '0';
+            if (rateBracketFilter) rateBracketFilter.value = 'ALL';
+            if (catalogSortSelect) catalogSortSelect.value = 'RATING_DESC';
             currentFilterType = 'ALL';
             filterPills.forEach(p => p.classList.toggle('active', p.getAttribute('data-type') === 'ALL'));
             applyFilters();
@@ -415,7 +446,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Project Invitation Modal & Direct Supabase Insertion
+    // 5. Project Invitation Modal Setup
     // -------------------------------------------------------------------------
     function handleInviteClick(providerId, providerName, providerDomain) {
         const isLoggedIn = window.AuthState ? window.AuthState.isLoggedIn() : false;
@@ -471,7 +502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Submit Invitation -> Directly Insert into Supabase `projects`
+    // 6. Submit Invitation -> Direct Insert into Supabase `projects` & `agreements`
     // -------------------------------------------------------------------------
     if (inviteProjectForm) {
         inviteProjectForm.addEventListener('submit', async (e) => {
@@ -483,6 +514,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const category = document.getElementById('projectCategorySelect')?.value || 'WEB_DEVELOPMENT';
             const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
             const budget = parseFloat(document.getElementById('projectBudgetInput')?.value) || 1500;
+            const targetSla = document.getElementById('projectTargetSlaInput')?.value || null;
+            const milestoneCount = parseInt(document.getElementById('projectEstimatedMilestonesSelect')?.value, 10) || 3;
+            const repoUrl = (document.getElementById('projectRepoRefInput')?.value || '').trim();
 
             if (!title || !summary) {
                 if (window.Toast) window.Toast.error('Please enter a project title and initial scope summary.');
@@ -513,7 +547,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 description: summary,
                 summary: summary,
                 stage: 'INVITED',
-                completion_percentage: 0
+                completion_percentage: 0,
+                target_sla_date: targetSla,
+                milestone_count: milestoneCount,
+                repository_url: repoUrl || null
             };
 
             try {
@@ -534,7 +571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         version: '1.0',
                         status: 'DRAFT',
                         agreed_amount: budget,
-                        terms_and_conditions: 'Mutual scope baseline governed by WorkBridge milestone protocol.'
+                        terms_and_conditions: `Mutual scope baseline governed by WorkBridge milestone protocol. Estimated Milestones: ${milestoneCount}. Target SLA: ${targetSla || 'Standard'}.`
                     }])
                     .select()
                     .maybeSingle();
@@ -557,7 +594,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } finally {
                 if (modalSubmitBtn) {
                     modalSubmitBtn.disabled = false;
-                    modalSubmitBtn.textContent = 'Send Invitation';
+                    modalSubmitBtn.textContent = 'Dispatch Invitation';
                 }
             }
         });

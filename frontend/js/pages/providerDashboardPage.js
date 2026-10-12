@@ -3,8 +3,8 @@
  * File: js/pages/providerDashboardPage.js
  * 
  * Powered by direct Supabase PostgreSQL queries.
- * Manages provider route guards, live incoming invitations, active projects,
- * real-time published service offerings (gigs), and cloud-synchronized creation.
+ * Manages provider route guards, live incoming invitations with SLA inspection,
+ * realized escrow metrics, active projects across 6 stages, and structured gig publishing.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const metricActiveProjects = document.getElementById('metricActiveProjects');
     const metricDraftAgreements = document.getElementById('metricDraftAgreements');
     const metricCompletedProjects = document.getElementById('metricCompletedProjects');
+    const metricEscrowRealized = document.getElementById('metricEscrowRealized');
     const invitesBadge = document.getElementById('invitesBadge');
     const activeProjectsCountBadge = document.getElementById('activeProjectsCountBadge');
 
@@ -154,11 +155,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 id: p.id,
                 title: p.title,
                 category: p.category,
-                budget: p.budget,
+                budget: Number(p.budget) || 0,
                 description: p.description,
                 summary: p.summary,
                 clientName: p.client_name,
                 clientEmail: p.client_email,
+                targetSlaDate: p.target_sla_date,
+                milestoneCount: p.milestone_count,
+                repositoryUrl: p.repository_url,
                 stage: p.stage,
                 createdAt: p.created_at
             }));
@@ -167,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 id: p.id,
                 title: p.title,
                 category: p.category,
-                budget: p.budget,
+                budget: Number(p.budget) || 0,
                 description: p.description,
                 summary: p.summary,
                 clientName: p.client_name,
@@ -222,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 3. Compute Metrics
+    // 3. Compute Metrics (Including Realized Escrow Settlement)
     // -------------------------------------------------------------------------
     function updateMetrics() {
         const invitesCount = pendingInvitations.length;
@@ -236,6 +240,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             p.stage === PROJECT_STAGES.AGREEMENT_LOCKED || 
             (p.agreement && (p.agreement.status === 'LOCKED' || p.agreement.status === 'ACTIVE'))
         ).length;
+
+        // Compute cumulative realized escrow revenue from completed projects
+        const realizedEscrow = providerProjects
+            .filter(p => p.stage === PROJECT_STAGES.COMPLETED)
+            .reduce((sum, p) => sum + (p.budget || 0), 0);
+
+        if (metricEscrowRealized) {
+            metricEscrowRealized.textContent = `$${realizedEscrow.toLocaleString()}`;
+        }
 
         if (metricActiveProjects) metricActiveProjects.textContent = activeCount;
         if (metricCompletedProjects) metricCompletedProjects.textContent = completedCount;
@@ -268,19 +281,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             const budgetDisplay = invite.budget ? `$${Number(invite.budget).toLocaleString()}` : 'Negotiable';
             const clientNameDisplay = invite.clientName || invite.clientEmail || 'Client';
             const dateStr = invite.createdAt ? ` &bull; <span>${new Date(invite.createdAt).toLocaleDateString()}</span>` : '';
+            const slaStr = invite.targetSlaDate ? ` &bull; <span>SLA: <strong>${invite.targetSlaDate}</strong></span>` : '';
 
             inviteCard.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 260px;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap;">
                             <span class="badge badge-info">Project Invitation</span>
                             <span class="badge badge-subtle">Budget: ${budgetDisplay}</span>
+                            ${invite.milestoneCount ? `<span class="badge badge-subtle">\${invite.milestoneCount} Milestones</span>` : ''}
                         </div>
                         <h3 class="card-title" style="font-size: 1.15rem; margin-top: 0.25rem;">${escapeHtml(invite.title || 'Untitled Project')}</h3>
                         <p class="card-text text-sm mt-1">${escapeHtml(invite.summary || invite.description || 'Client has requested your technical collaboration.')}</p>
                         <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted, #64748b);">
                             <span>Requested by: <strong>${escapeHtml(clientNameDisplay)}</strong></span>
                             ${dateStr}
+                            ${slaStr}
                         </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; align-self: center; flex-wrap: wrap;">
@@ -311,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Render Active Engagements
+    // 5. Render Active Engagements across 6 Stages
     // -------------------------------------------------------------------------
     function renderFilteredProjects() {
         if (!providerProjectsList || !noProviderProjectsState) return;
@@ -399,7 +415,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Render My Published Services / Gigs
+    // 6. Render Published Gigs with Enhanced Delivery Badges
     // -------------------------------------------------------------------------
     function renderPublishedServices() {
         if (!myServicesGrid || !noServicesState) return;
@@ -429,9 +445,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .map(s => `<span class="badge badge-subtle">${escapeHtml(s)}</span>`)
                 .join(' ');
 
+            const verificationLabel = svc.verification_type === 'GIT_PR' 
+                ? 'PR Review' 
+                : (svc.verification_type === 'STAGING_DEMO' ? 'Staging Demo' : 'Code Hand-off');
+
             card.innerHTML = `
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.35rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
                         <span class="badge badge-success">Live on Explore</span>
                         <strong class="text-primary" style="font-size: 0.95rem;">$${svc.hourly_rate || 50}/hr</strong>
                     </div>
@@ -446,9 +466,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
 
-                <div class="mt-3 pt-2" style="border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
-                    <span>SLA: <strong>${svc.delivery_days || 14} Days</strong></span>
-                    <a href="provider-explore.html" class="text-link">View in Marketplace &rarr;</a>
+                <div class="mt-3 pt-2" style="border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; gap: 0.35rem;">
+                    <div>
+                        <span>SLA: <strong>${svc.delivery_days || 14}d</strong></span>
+                        <span class="ml-1">&bull; Format: <strong>${verificationLabel}</strong></span>
+                    </div>
+                    <a href="provider-explore.html" class="text-link">View in Market &rarr;</a>
                 </div>
             `;
 
@@ -510,7 +533,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }, 500);
 
             } else {
-                // Decline invite
                 const { error } = await sb
                     .from('projects')
                     .update({
@@ -552,33 +574,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (invitationModalContent) {
             const budgetText = invite.budget ? `$${Number(invite.budget).toLocaleString()}` : 'To be scoped';
             const clientName = invite.clientName || invite.clientEmail || 'Verified Client';
+            const slaText = invite.targetSlaDate ? invite.targetSlaDate : 'Standard SLA Turnaround';
+            const milestonesText = invite.milestoneCount ? `${invite.milestoneCount} Checkpoints` : '3 Checkpoints (Default)';
 
             invitationModalContent.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <div>
-                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-muted, #64748b);">Client Description &amp; Scope Objectives</h4>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-muted, #64748b);">Client Scope Objectives</h4>
                         <p style="margin-top: 0.35rem; line-height: 1.5; font-size: 0.95rem;">
                             ${escapeHtml(invite.description || invite.summary || 'No detailed scope notes provided.')}
                         </p>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; background: var(--bg-muted, #f8fafc); padding: 0.75rem; border-radius: 6px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; background: var(--bg-muted, #f8fafc); padding: 0.75rem; border-radius: 6px;">
                         <div>
                             <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Client</span>
                             <div style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(clientName)}</div>
                         </div>
                         <div>
-                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Initial Budget</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Target Budget</span>
                             <div style="font-weight: 600; font-size: 0.9rem; color: var(--success, #10b981);">${budgetText}</div>
                         </div>
                         <div>
-                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Contract Type</span>
-                            <div style="font-weight: 600; font-size: 0.9rem;">Milestone-Locked</div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Target Delivery</span>
+                            <div style="font-weight: 600; font-size: 0.9rem;">${slaText}</div>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted, #64748b);">Milestone Sprints</span>
+                            <div style="font-weight: 600; font-size: 0.9rem;">${milestonesText}</div>
                         </div>
                     </div>
 
+                    ${invite.repositoryUrl ? `
+                        <div class="p-2 border rounded" style="background: #f8fafc; font-size: 0.8rem;">
+                            <span class="text-muted">Reference Specification / Repo:</span>
+                            <a href="\${escapeHtml(invite.repositoryUrl)}" target="_blank" rel="noopener" style="display: block; color: var(--primary); font-weight: 600; word-break: break-all;">
+                                \${escapeHtml(invite.repositoryUrl)} &nearr;
+                            </a>
+                        </div>
+                    ` : ''}
+
                     <p class="text-xs text-muted" style="margin: 0;">
-                        Accepting will initialize a collaborative workspace where both parties finalize milestones before the agreement is version-locked.
+                        Accepting initializes a collaborative workspace in Scoping mode where both parties ratify milestones before cryptographic lock.
                     </p>
                 </div>
             `;
@@ -607,7 +644,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 9. Event Listeners & Live Cloud Service Publishing to Supabase
+    // 9. Event Listeners & Publishing Extended Service Fields
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Stage Filter Pills
@@ -674,6 +711,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const domainText = document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || 'Full-Stack Web Development';
                 const hourlyRate = parseFloat(document.getElementById('serviceRateInput')?.value) || 50.0;
                 const deliveryDays = parseInt(document.getElementById('serviceDeliveryDaysInput')?.value, 10) || 14;
+                const verificationType = document.getElementById('serviceVerificationTypeSelect')?.value || 'GIT_PR';
+                const revisionLimit = document.getElementById('serviceRevisionLimitSelect')?.value || '3 Rounds';
                 const skillsText = (document.getElementById('serviceSkillsInput')?.value || '').trim();
                 const description = (document.getElementById('serviceDescriptionInput')?.value || '').trim();
 
@@ -704,6 +743,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     domain: domainText,
                     hourly_rate: hourlyRate,
                     delivery_days: deliveryDays,
+                    verification_type: verificationType,
+                    revision_limit: revisionLimit,
                     skills: parsedSkills,
                     description: description,
                     average_rating: 5.0
@@ -752,7 +793,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             case PROJECT_STAGES.IN_PROGRESS:
                 return `<span class="badge badge-primary">Building</span>`;
             case PROJECT_STAGES.REVIEW:
-                return `<span class="badge badge-warning">Review</span>`;
+                return `<span class="badge badge-warning">Under Review</span>`;
             case PROJECT_STAGES.COMPLETED:
                 return `<span class="badge badge-success">Completed</span>`;
             default:

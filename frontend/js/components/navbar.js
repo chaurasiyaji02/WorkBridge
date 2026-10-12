@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = window.AuthState ? window.AuthState.isLoggedIn() : false;
     const user = window.AuthState ? window.AuthState.getUser() : null;
     const currentPath = window.location.pathname;
+    const activeProjectId = window.AuthState && typeof window.AuthState.getActiveProjectId === 'function'
+        ? window.AuthState.getActiveProjectId()
+        : localStorage.getItem(config.STORAGE_KEYS?.ACTIVE_PROJECT_ID || 'workbridge_active_prj_id');
 
     // Helper to determine active link state
     const isActive = (path) => {
@@ -55,28 +58,34 @@ document.addEventListener('DOMContentLoaded', () => {
         // ROLE-AWARE AUTHENTICATED NAVIGATION
         // ==========================================
         let roleLinks = '';
-        let dashboardUrl = 'index.html';
+        let workspaceQuickLink = '';
+
+        if (activeProjectId && !currentPath.includes('project-view.html')) {
+            workspaceQuickLink = `<a href="project-view.html?id=${encodeURIComponent(activeProjectId)}" class="nav-link text-primary font-bold">⚡ Active Workspace</a>`;
+        }
 
         if (user.role === ROLES.CLIENT) {
-            dashboardUrl = 'client-dashboard.html';
             roleLinks = `
                 <a href="client-dashboard.html" class="nav-link ${isActive('client-dashboard.html')}">Dashboard</a>
                 <a href="provider-explore.html" class="nav-link ${isActive('provider-explore.html')}">Explore Talent</a>
+                ${workspaceQuickLink}
             `;
         } else if (user.role === ROLES.SERVICE_PROVIDER) {
-            dashboardUrl = 'provider-dashboard.html';
             roleLinks = `
                 <a href="provider-dashboard.html" class="nav-link ${isActive('provider-dashboard.html')}">Workspace Hub</a>
                 <a href="provider-explore.html" class="nav-link ${isActive('provider-explore.html')}">Explore Market</a>
+                ${workspaceQuickLink}
             `;
         } else if (user.role === ROLES.ADMIN) {
-            dashboardUrl = 'admin-dashboard.html';
             roleLinks = `
                 <a href="admin-dashboard.html" class="nav-link ${isActive('admin-dashboard.html')}">Governance Console</a>
+                <a href="provider-explore.html" class="nav-link ${isActive('provider-explore.html')}">Explore Audits</a>
             `;
         }
 
-        const displayName = escapeHtml(user.fullName || user.username || user.email || 'My Profile');
+        const rawName = user.fullName || user.username || user.email || 'My Profile';
+        const truncatedName = rawName.length > 16 ? `${rawName.slice(0, 14)}…` : rawName;
+        const displayName = escapeHtml(truncatedName);
 
         navContainer.innerHTML = `
             ${roleLinks}

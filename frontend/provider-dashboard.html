@@ -116,7 +116,7 @@
                 </div>
             </div>
 
-            <!-- Metric Cards Grid -->
+            <!-- Metric Cards Grid (Enriched with Escrow Realization Telemetry) -->
             <section class="metrics-grid mt-3">
                 <div class="card metric-card">
                     <div class="metric-icon">📩</div>
@@ -149,6 +149,14 @@
                         <h2 class="metric-value text-success" id="metricCompletedProjects">0</h2>
                     </div>
                 </div>
+
+                <div class="card metric-card">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Escrow Realized</span>
+                        <h2 class="metric-value text-highlight" id="metricEscrowRealized">$0.00</h2>
+                    </div>
+                </div>
             </section>
 
             <!-- Incoming Invitations Section (Pillar 1 Gate) -->
@@ -177,7 +185,7 @@
                 </div>
             </section>
 
-            <!-- Active Engagements Section -->
+            <!-- Active Engagements Section with Complete Lifecycle Filters -->
             <section id="providerProjectsSection" class="mt-4">
                 <div class="section-title-row">
                     <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -187,9 +195,11 @@
                     
                     <div class="filter-pill-group">
                         <button type="button" class="filter-pill active" data-filter="ALL">All</button>
+                        <button type="button" class="filter-pill" data-filter="INVITED">Invited</button>
                         <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Under Scoping</button>
                         <button type="button" class="filter-pill" data-filter="AGREEMENT_LOCKED">Scope Locked</button>
                         <button type="button" class="filter-pill" data-filter="IN_PROGRESS">Building</button>
+                        <button type="button" class="filter-pill" data-filter="REVIEW">Under Client Review</button>
                         <button type="button" class="filter-pill" data-filter="COMPLETED">Completed</button>
                     </div>
                 </div>
@@ -236,7 +246,7 @@
         </main>
     </div>
 
-    <!-- Review Invitation & Scope Modal (Pillar 1 Lifecycle) -->
+    <!-- Review Invitation & Scope Modal (Enriched Operational Parameters) -->
     <div class="modal-backdrop hidden" id="invitationModal" role="dialog" aria-modal="true" aria-labelledby="invitationModalTitle">
         <div class="modal-card">
             <div class="modal-header">
@@ -256,7 +266,7 @@
         </div>
     </div>
 
-    <!-- Post New Service / Gig Modal (Strict Validation) -->
+    <!-- Post New Service / Gig Modal (Enhanced Validation & Verification Formats) -->
     <div class="modal-backdrop hidden" id="postServiceModal" role="dialog" aria-modal="true" aria-labelledby="postServiceModalTitle">
         <div class="modal-card">
             <div class="modal-header">
@@ -285,16 +295,33 @@
                         </select>
                     </div>
 
-                    <div class="form-group mt-2">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                            <div>
-                                <label for="serviceRateInput" class="form-label">Standard Hourly Consideration ($/hr) *</label>
-                                <input type="number" id="serviceRateInput" class="form-control" placeholder="50" min="10" value="50" required>
-                            </div>
-                            <div>
-                                <label for="serviceDeliveryDaysInput" class="form-label">Estimated Delivery Turnaround (Days)</label>
-                                <input type="number" id="serviceDeliveryDaysInput" class="form-control" placeholder="14" min="1" value="14">
-                            </div>
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="serviceRateInput" class="form-label">Standard Hourly Consideration ($/hr) *</label>
+                            <input type="number" id="serviceRateInput" class="form-control" placeholder="50" min="10" value="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="serviceDeliveryDaysInput" class="form-label">Estimated Delivery Turnaround (Days)</label>
+                            <input type="number" id="serviceDeliveryDaysInput" class="form-control" placeholder="14" min="1" value="14">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="serviceDeliverableTypeSelect" class="form-label">Primary Verification Format</label>
+                            <select id="serviceDeliverableTypeSelect" class="form-control">
+                                <option value="GIT_PR">Verified Git Pull Request + CI Checks</option>
+                                <option value="STAGING_DEMO">Live Staging Deployment + Testing</option>
+                                <option value="CONTAINER">Docker Container / Package Handover</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="serviceRevisionLimitSelect" class="form-label">Standard Bilateral Revision Allowance</label>
+                            <select id="serviceRevisionLimitSelect" class="form-control">
+                                <option value="1">1 Formal Review Cycle</option>
+                                <option value="2" selected>2 Formal Review Cycles</option>
+                                <option value="3">3 Formal Review Cycles</option>
+                            </select>
                         </div>
                     </div>
 

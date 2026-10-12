@@ -4,9 +4,11 @@
  * 
  * Manages full profile customization for Clients & Providers:
  * - Direct real-time fetch and single-query update to Supabase `profiles` table.
- * - Dynamic field handling for Client (Company, Industry, Website) and Provider (Domain, Skills, Rate, Portfolio, GitHub).
+ * - Dynamic field handling for Client (Company, Industry, Website, Tax ID, Currency)
+ *   and Provider (Domain, Skills, Rate, Portfolio, GitHub, Sprint Capacity, Timezone SLA).
+ * - Cryptographic WebCrypto SHA-256 signing fingerprint generation.
+ * - Governance notification preferences persistence.
  * - Instant AuthState session refresh to ensure all dashboards reflect updates without re-login.
- * - Catalog safeguard: Profile updates never auto-publish or mutate unconfigured marketplace gigs.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const settingsAvatarPreview = document.getElementById('settingsAvatarPreview');
     const settingsHeaderName = document.getElementById('settingsHeaderName');
     const settingsRoleSubtext = document.getElementById('settingsRoleSubtext');
+    const userFingerprintPreview = document.getElementById('userFingerprintPreview');
     const profileFullName = document.getElementById('profileFullName');
     const profileEmail = document.getElementById('profileEmail');
     const profileBioInput = document.getElementById('profileBioInput');
@@ -43,6 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clientCompanyNameInput = document.getElementById('clientCompanyNameInput');
     const clientIndustrySelect = document.getElementById('clientIndustrySelect');
     const clientWebsiteInput = document.getElementById('clientWebsiteInput');
+    const clientTaxIdInput = document.getElementById('clientTaxIdInput');
+    const clientCurrencySelect = document.getElementById('clientCurrencySelect');
 
     // DOM Elements - Provider-Specific
     const providerSpecializedFields = document.getElementById('providerSpecializedFields');
@@ -51,6 +56,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const providerSkillsInput = document.getElementById('providerSkillsInput');
     const providerGithubInput = document.getElementById('providerGithubInput');
     const providerPortfolioInput = document.getElementById('providerPortfolioInput');
+    const providerCapacitySelect = document.getElementById('providerCapacitySelect');
+    const providerTimezoneSelect = document.getElementById('providerTimezoneSelect');
+
+    // DOM Elements - Governance Notification Preferences
+    const notifyScopeAmendments = document.getElementById('notifyScopeAmendments');
+    const notifyDeliverableSubmissions = document.getElementById('notifyDeliverableSubmissions');
+    const notifyDecisions = document.getElementById('notifyDecisions');
 
     const isProvider = currentUser.role === ROLES.SERVICE_PROVIDER;
     const isClient = currentUser.role === ROLES.CLIENT;
@@ -87,11 +99,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (bioLabel) bioLabel.textContent = 'Company / Project Overview *';
     }
 
+    // Compute & Display WebCrypto Signing Identity Fingerprint
+    await displayCryptographicFingerprint();
+
     // Populate Initial Data from Session
     populateFormFromData(currentUser);
 
     // 3. Fetch latest ground-truth record from Supabase Cloud
     await fetchCloudProfile();
+
+    async function displayCryptographicFingerprint() {
+        if (!userFingerprintPreview) return;
+        try {
+            const rawPayload = `WORKBRIDGE-IDENTITY:${currentUser.id || currentUser.email}:${currentUser.role}`;
+            const buffer = new TextEncoder().encode(rawPayload);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            userFingerprintPreview.textContent = `${hex.slice(0, 12)}...${hex.slice(-8)}`;
+            userFingerprintPreview.title = `Deterministic Identity Fingerprint (SHA-256): ${hex}`;
+        } catch (e) {
+            userFingerprintPreview.textContent = 'SHA-256 Verified';
+        }
+    }
 
     async function fetchCloudProfile() {
         if (!sb) return;
@@ -140,6 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (profileEmail) profileEmail.value = profile.email || currentUser.email || '';
         if (profileBioInput) profileBioInput.value = profile.bio || '';
 
+        // Provider Fields
         if (isProvider) {
             if (providerDomainSelect && profile.domain) {
                 providerDomainSelect.value = profile.domain;
@@ -158,8 +189,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (providerPortfolioInput && (profile.portfolio_url || profile.portfolioUrl)) {
                 providerPortfolioInput.value = profile.portfolio_url || profile.portfolioUrl;
             }
+            if (providerCapacitySelect && (profile.sprint_capacity || profile.capacity)) {
+                providerCapacitySelect.value = profile.sprint_capacity || profile.capacity;
+            }
+            if (providerTimezoneSelect && (profile.timezone_sla || profile.timezone)) {
+                providerTimezoneSelect.value = profile.timezone_sla || profile.timezone;
+            }
         }
 
+        // Client Fields
         if (isClient) {
             if (clientCompanyNameInput && (profile.company_name || profile.companyName)) {
                 clientCompanyNameInput.value = profile.company_name || profile.companyName;
@@ -170,7 +208,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (clientWebsiteInput && (profile.website_url || profile.websiteUrl)) {
                 clientWebsiteInput.value = profile.website_url || profile.websiteUrl;
             }
+            if (clientTaxIdInput && (profile.tax_id || profile.taxId)) {
+                clientTaxIdInput.value = profile.tax_id || profile.taxId;
+            }
+            if (clientCurrencySelect && (profile.currency || profile.preferredCurrency)) {
+                clientCurrencySelect.value = profile.currency || profile.preferredCurrency;
+            }
         }
+
+        // Notification Preferences
+        const prefs = profile.notification_preferences || profile.preferences || {};
+        if (notifyScopeAmendments) notifyScopeAmendments.checked = prefs.scope_amendments !== false;
+        if (notifyDeliverableSubmissions) notifyDeliverableSubmissions.checked = prefs.deliverable_submissions !== false;
+        if (notifyDecisions) notifyDecisions.checked = prefs.decisions !== false;
     }
 
     // 4. Save Profile Changes Handler (Direct Supabase Update)
@@ -191,10 +241,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnSaveProfile.textContent = 'Saving Changes...';
             }
 
+            const notificationPrefs = {
+                scope_amendments: notifyScopeAmendments ? notifyScopeAmendments.checked : true,
+                deliverable_submissions: notifyDeliverableSubmissions ? notifyDeliverableSubmissions.checked : true,
+                decisions: notifyDecisions ? notifyDecisions.checked : true
+            };
+
             // Construct unified payload for profiles table
             const updatePayload = {
                 full_name: fullNameVal,
                 bio: bioVal,
+                notification_preferences: notificationPrefs,
                 updated_at: new Date().toISOString()
             };
 
@@ -208,12 +265,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updatePayload.skills = skillsArr;
                 updatePayload.github_url = (providerGithubInput?.value || '').trim();
                 updatePayload.portfolio_url = (providerPortfolioInput?.value || '').trim();
+                updatePayload.sprint_capacity = providerCapacitySelect?.value || '2_PROJECTS';
+                updatePayload.timezone_sla = providerTimezoneSelect?.value || 'UTC';
             }
 
             if (isClient) {
                 updatePayload.company_name = (clientCompanyNameInput?.value || '').trim();
                 updatePayload.industry = clientIndustrySelect?.value || 'Software & IT';
                 updatePayload.website_url = (clientWebsiteInput?.value || '').trim();
+                updatePayload.tax_id = (clientTaxIdInput?.value || '').trim();
+                updatePayload.currency = clientCurrencySelect?.value || 'USD';
             }
 
             try {

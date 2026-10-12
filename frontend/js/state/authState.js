@@ -2,7 +2,8 @@
  * WORKBRIDGE - AUTH & SESSION STATE MANAGER
  * File: js/state/authState.js
  * 
- * Manages JWT tokens, user identities, client-side token expiration validation,
+ * Manages tokens, user identities, client-side expiration validation,
+ * dual-tier storage persistence (localStorage vs sessionStorage),
  * profile state hydration, and role-based route protection guards.
  */
 
@@ -20,33 +21,51 @@ const AuthState = (function () {
     };
 
     /**
-     * Persist JWT and user profile metadata after successful login/registration.
-     * @param {string} token - JWT bearer token
-     * @param {object} user - { id, email, fullName, role, domain, ... }
+     * Helper to select active storage mechanism
      */
-    function setSession(token, user) {
-        if (!token || !user) return;
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+    function getStorage(isPersistent = true) {
+        return isPersistent ? localStorage : sessionStorage;
     }
 
     /**
-     * Update user profile in local session (used by profile-settings page).
+     * Persist token and user profile metadata after successful login/registration.
+     * @param {string} token - Session token or JWT
+     * @param {object} user - { id, email, fullName, role, domain, ... }
+     * @param {boolean} [isPersistent=true] - Persist across browser restarts
+     */
+    function setSession(token, user, isPersistent = true) {
+        if (!token || !user) return;
+        
+        // Clean any existing residual session in both storages
+        clearSession();
+
+        const store = getStorage(isPersistent);
+        store.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        store.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+    }
+
+    /**
+     * Update user profile in active session (used by profile-settings page).
      * @param {object} updatedFields
      */
     function setUser(updatedFields) {
         const currentUser = getUser() || {};
         const merged = { ...currentUser, ...updatedFields };
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(merged));
+
+        if (localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)) {
+            localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(merged));
+        } else {
+            sessionStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(merged));
+        }
         return merged;
     }
 
     /**
-     * Retrieve the stored JWT token.
+     * Retrieve the stored session token from either storage tier.
      * @returns {string|null}
      */
     function getToken() {
-        return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     }
 
     /**
@@ -54,7 +73,7 @@ const AuthState = (function () {
      * @returns {object|null}
      */
     function getUser() {
-        const rawUser = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        const rawUser = localStorage.getItem(STORAGE_KEYS.USER_DATA) || sessionStorage.getItem(STORAGE_KEYS.USER_DATA);
         if (!rawUser) return null;
         try {
             return JSON.parse(rawUser);
@@ -74,7 +93,7 @@ const AuthState = (function () {
         if (!token) return true;
         try {
             const parts = token.split('.');
-            if (parts.length !== 3) return false; // Non-JWT string fallback
+            if (parts.length !== 3) return false; // Non-JWT string fallback (Supabase local token)
             const payload = JSON.parse(atob(parts[1]));
             if (!payload.exp) return false;
             // Buffer of 10 seconds against clock skew
@@ -118,19 +137,22 @@ const AuthState = (function () {
     function setActiveProjectId(projectId) {
         if (!projectId) return;
         localStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT_ID, String(projectId));
+        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT_ID, String(projectId));
     }
 
     function getActiveProjectId() {
-        return localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT_ID);
+        return localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT_ID) || sessionStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT_ID);
     }
 
     /**
-     * Clear all session data from browser storage.
+     * Clear all session data from both browser storage layers.
      */
     function clearSession() {
-        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT_ID);
+        [localStorage, sessionStorage].forEach(store => {
+            store.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            store.removeItem(STORAGE_KEYS.USER_DATA);
+            store.removeItem(STORAGE_KEYS.ACTIVE_PROJECT_ID);
+        });
     }
 
     /**
@@ -176,7 +198,7 @@ const AuthState = (function () {
         getToken,
         getUser,
         isLoggedIn,
-        isAuthenticated: isLoggedIn, // Safe alias for navbar & landing page calls
+        isAuthenticated: isLoggedIn,
         hasRole,
         setActiveProjectId,
         getActiveProjectId,

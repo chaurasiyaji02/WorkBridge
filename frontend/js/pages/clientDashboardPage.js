@@ -2,9 +2,9 @@
  * WORKBRIDGE - CLIENT DASHBOARD PAGE CONTROLLER (SUPABASE CLOUD MASTER)
  * File: js/pages/clientDashboardPage.js
  * 
- * Powered by direct Supabase PostgreSQL queries (`projects`, `agreements`, `profiles`).
- * Supports real-time project creation with direct provider assignment, 
- * stage lifecycle filtering, and instant sign-off modal reviews.
+ * Powered by direct Supabase PostgreSQL queries (`projects`, `agreements`, `milestones`, `profiles`).
+ * Supports real-time project creation with SLA/Milestone metadata, 
+ * live title/description search, stage filtering, and deliverable review modal approvals.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -44,16 +44,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const metricLockedCount = document.getElementById('metricLockedCount');
     const metricPendingSignoffs = document.getElementById('metricPendingSignoffs');
     const metricCompletedCount = document.getElementById('metricCompletedCount');
+    const metricTotalBudget = document.getElementById('metricTotalBudget');
     const projectsCountBadge = document.getElementById('projectsCountBadge');
     const pendingApprovalsCountBadge = document.getElementById('pendingApprovalsCountBadge');
+
+    // DOM Elements - Search & Filters
+    const dashboardProjectSearchInput = document.getElementById('dashboardProjectSearchInput');
+    const filterPills = document.querySelectorAll('.filter-pill');
+    const refreshClientDashboardBtn = document.getElementById('refreshClientDashboardBtn');
 
     // DOM Elements - Sections & Lists
     const pendingApprovalsSection = document.getElementById('pendingApprovalsSection');
     const pendingActionsList = document.getElementById('pendingActionsList');
     const projectsList = document.getElementById('projectsList');
     const noProjectsState = document.getElementById('noProjectsState');
-    const filterPills = document.querySelectorAll('.filter-pill');
-    const refreshClientDashboardBtn = document.getElementById('refreshClientDashboardBtn');
 
     // DOM Elements - Create Project Modal
     const openCreateProjectModalBtn = document.getElementById('openCreateProjectModalBtn');
@@ -67,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cancelCreateProjectBtn = document.getElementById('cancelCreateProjectBtn');
     const submitCreateProjectBtn = document.getElementById('submitCreateProjectBtn');
 
-    // DOM Elements - Scope Review Modal
+    // DOM Elements - Scope Review Modal (Agreements)
     const scopeReviewModal = document.getElementById('scopeReviewModal');
     const scopeReviewModalBody = document.getElementById('scopeReviewModalBody');
     const scopeReviewVersionBadge = document.getElementById('scopeReviewVersionBadge');
@@ -75,9 +79,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const requestScopeAmendmentBtn = document.getElementById('requestScopeAmendmentBtn');
     const signScopeAgreementBtn = document.getElementById('signScopeAgreementBtn');
 
-    // In-memory projects cache & active review tracker
+    // DOM Elements - Deliverable Inspection Modal (Milestone PR Proofs)
+    const dashboardDeliverableModal = document.getElementById('dashboardDeliverableModal');
+    const dashboardDeliverableModalBody = document.getElementById('dashboardDeliverableModalBody');
+    const closeDeliverableModalBtn = document.getElementById('closeDeliverableModalBtn');
+    const cancelDeliverableModalBtn = document.getElementById('cancelDeliverableModalBtn');
+    const btnDashboardApproveDeliverable = document.getElementById('btnDashboardApproveDeliverable');
+    const btnDashboardRequestRevision = document.getElementById('btnDashboardRequestRevision');
+
+    // In-memory runtime state
     let clientProjects = [];
+    let activeFilterStage = 'ALL';
+    let searchQuery = '';
     let activeReviewProject = null;
+    let activeDeliverableContext = null; // { project, milestone }
 
     // Populate Sidebar Profile Information
     const displayName = currentUser.fullName || currentUser.username || currentUser.email || 'Client Partner';
@@ -106,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .select(`
                     *,
                     agreements ( id, version, status, client_signed, provider_signed, agreed_amount, terms_and_conditions, scope_hash ),
-                    milestones ( id, status, weight_percentage )
+                    milestones ( id, title, description, status, weight_percentage, deliverable_url, deliverable_notes, submitted_at )
                 `)
                 .or(`client_id.eq.${currentUser.id},client_email.eq.${currentUser.email}`)
                 .order('created_at', { ascending: false });
@@ -132,23 +147,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 const needsSignature = agreement && !agreement.client_signed && agreement.status !== 'SUPERSEDED';
-                const hasPendingDeliverable = milestones.some(m => m.status === 'SUBMITTED_FOR_REVIEW');
+                const pendingDeliverableMilestone = milestones.find(m => m.status === 'SUBMITTED_FOR_REVIEW');
+                const hasPendingDeliverable = Boolean(pendingDeliverableMilestone);
                 const isPendingInvitation = p.stage === PROJECT_STAGES.INVITED;
-                const hasPendingApproval = needsSignature || hasPendingDeliverable || isPendingInvitation || p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION;
+                const hasPendingApproval = needsSignature || hasPendingDeliverable || isPendingInvitation || p.stage === PROJECT_STAGES.REQUIREMENT_DISCUSSION || p.stage === PROJECT_STAGES.REVIEW;
 
                 return {
                     id: p.id,
                     title: p.title,
                     category: p.category,
-                    budget: p.budget,
+                    budget: Number(p.budget) || 0,
                     description: p.description,
                     summary: p.summary,
                     stage: p.stage,
                     assignedProviderId: p.assigned_provider_id,
                     assignedProviderName: p.assigned_provider_name || 'Pending Assignment',
                     completionPercentage: progress,
+                    targetSlaDate: p.target_sla_date,
+                    milestoneCount: p.milestone_count,
+                    repositoryUrl: p.repository_url,
                     agreement: agreement,
                     milestones: milestones,
+                    pendingMilestone: pendingDeliverableMilestone,
                     hasPendingApproval: hasPendingApproval,
                     needsSignature: needsSignature,
                     hasPendingDeliverable: hasPendingDeliverable,
@@ -159,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             updateMetrics(clientProjects);
             renderPendingAlerts(clientProjects);
-            renderProjectsList(clientProjects);
+            applyProjectFiltering();
 
         } catch (err) {
             console.error('Failed to load client projects from Supabase:', err);
@@ -212,7 +232,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 4. Compute Metrics
+    // 4. Compute Metrics (Including Escrow Financial Totals)
     // -------------------------------------------------------------------------
     function updateMetrics(projects) {
         if (statTotalProjectsEl) statTotalProjectsEl.textContent = projects.length;
@@ -223,10 +243,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const lockedCount = projects.filter(p => 
             p.stage === PROJECT_STAGES.AGREEMENT_LOCKED ||
-            p.stage === PROJECT_STAGES.IN_PROGRESS
+            p.stage === PROJECT_STAGES.IN_PROGRESS ||
+            p.stage === PROJECT_STAGES.REVIEW
         ).length;
 
         const pendingCount = projects.filter(p => p.hasPendingApproval).length;
+
+        // Compute cumulative project escrow budget
+        const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
+        if (metricTotalBudget) {
+            metricTotalBudget.textContent = `$${totalBudget.toLocaleString()}`;
+        }
 
         if (statActiveProjectsEl) statActiveProjectsEl.textContent = activeCount;
         if (metricActiveCount) metricActiveCount.textContent = activeCount;
@@ -237,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Render Action Required Alerts
+    // 5. Render Action Required Alerts (Cleaned Template Literals)
     // -------------------------------------------------------------------------
     function renderPendingAlerts(projects) {
         if (!pendingApprovalsSection || !pendingActionsList) return;
@@ -264,17 +291,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             alertCard.style.gap = '0.75rem';
 
             let actionText = 'Action pending: Review scope & specifications in workspace.';
-            let actionBtnText = 'Open Workspace &rarr;';
             let isQuickReview = false;
+            let isDeliverableReview = false;
 
             if (p.isPendingInvitation) {
                 actionText = `📩 Invitation dispatched to ${escapeHtml(p.assignedProviderName)}. Scoping unlocks once provider accepts.`;
+            } else if (p.hasPendingDeliverable) {
+                actionText = `🚀 Milestone Deliverable submitted for "${escapeHtml(p.pendingMilestone?.title || 'Deliverable')}"! Review proof artifacts.`;
+                isDeliverableReview = true;
             } else if (p.needsSignature) {
                 actionText = `✍️ Agreement v${p.agreement?.version || '1.0'} drafted. Review terms and apply your signature.`;
-                actionBtnText = 'Quick Review &amp; Sign';
                 isQuickReview = true;
-            } else if (p.hasPendingDeliverable) {
-                actionText = '🚀 Deliverable submitted by provider! Review proof artifacts to release milestone progress.';
             }
 
             alertCard.innerHTML = `
@@ -282,10 +309,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <strong style="color: var(--text-main); font-size: 1rem;">${escapeHtml(p.title)}</strong>
                     <p class="text-muted text-sm mb-0 mt-1">${actionText}</p>
                 </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     ${isQuickReview ? `
                         <button type="button" class="btn btn-warning btn-sm btn-quick-review" data-id="\${p.id}">
-                            \${actionBtnText}
+                            ✍️ Quick Sign
+                        </button>
+                    ` : ''}
+                    ${isDeliverableReview ? `
+                        <button type="button" class="btn btn-primary btn-sm btn-verify-deliverable" data-id="\${p.id}">
+                            🔍 Inspect Proof
                         </button>
                     ` : ''}
                     <a href="project-view.html?id=${p.id}" class="btn btn-outline btn-sm">
@@ -296,6 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             pendingActionsList.appendChild(alertCard);
         });
 
+        // Wire Agreement Quick Review listeners
         pendingActionsList.querySelectorAll('.btn-quick-review').forEach(btn => {
             btn.addEventListener('click', () => {
                 const prjId = btn.getAttribute('data-id');
@@ -303,10 +336,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (project) openScopeReviewModal(project);
             });
         });
+
+        // Wire Deliverable Inspection listeners
+        pendingActionsList.querySelectorAll('.btn-verify-deliverable').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const prjId = btn.getAttribute('data-id');
+                const project = clientProjects.find(p => String(p.id) === String(prjId));
+                if (project && project.pendingMilestone) {
+                    openDeliverableModal(project, project.pendingMilestone);
+                }
+            });
+        });
     }
 
     // -------------------------------------------------------------------------
-    // 6. Scope Review Modal Action (WebCrypto Deterministic Hashing)
+    // 6. Scope Review Modal Action (WebCrypto SHA-256 Baseline Hashing)
     // -------------------------------------------------------------------------
     function openScopeReviewModal(project) {
         if (!scopeReviewModal) return;
@@ -321,7 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             scopeReviewModalBody.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div>
-                        <span class="text-xs text-muted">Project</span>
+                        <span class="text-xs text-muted">Project Reference</span>
                         <h4 style="margin: 0.2rem 0;">${escapeHtml(project.title)}</h4>
                     </div>
                     <div style="background: var(--bg-muted, #f8fafc); padding: 0.75rem; border-radius: 6px;">
@@ -358,7 +402,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Sign from Modal
     if (signScopeAgreementBtn) {
         signScopeAgreementBtn.addEventListener('click', async () => {
             if (!activeReviewProject || !activeReviewProject.agreement || !sb) return;
@@ -400,12 +443,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (window.Toast) window.Toast.error('Could not apply signature.');
             } finally {
                 signScopeAgreementBtn.disabled = false;
-                signScopeAgreementBtn.textContent = '✍️ Sign & Lock Scope (v1.0)';
+                signScopeAgreementBtn.textContent = '✍️ Sign & Lock Scope';
             }
         });
     }
 
-    // Request Revision from Modal
     if (requestScopeAmendmentBtn) {
         requestScopeAmendmentBtn.addEventListener('click', () => {
             if (!activeReviewProject) return;
@@ -416,8 +458,137 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 7. Render Projects Grid
+    // 7. Deliverable Inspection Modal Action
     // -------------------------------------------------------------------------
+    function openDeliverableModal(project, milestone) {
+        if (!dashboardDeliverableModal) return;
+        activeDeliverableContext = { project, milestone };
+
+        if (dashboardDeliverableModalBody) {
+            dashboardDeliverableModalBody.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div>
+                        <span class="text-xs text-muted">Project: <strong>${escapeHtml(project.title)}</strong></span>
+                        <h4 style="margin: 0.2rem 0;">${escapeHtml(milestone.title)}</h4>
+                    </div>
+                    <div class="p-2 border rounded" style="background: #f8fafc; font-size: 0.85rem;">
+                        <span class="text-xs text-muted" style="display: block;">Deliverable Proof Artifact:</span>
+                        <a href="${escapeHtml(milestone.deliverable_url || '#')}" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 600; word-break: break-all;">
+                            ${escapeHtml(milestone.deliverable_url || 'https://github.com/pull/preview')} &nearr;
+                        </a>
+                        <div class="mt-2 text-xs text-muted">Notes / Verification Instructions:</div>
+                        <p class="text-sm mt-1 mb-0">${escapeHtml(milestone.deliverable_notes || 'All acceptance criteria and automated tests passing.')}</p>
+                    </div>
+                    <div class="text-xs text-muted">Weight Contribution: <strong>${milestone.weight_percentage || 33}% of project completion</strong></div>
+                </div>
+            `;
+        }
+
+        dashboardDeliverableModal.classList.remove('hidden');
+    }
+
+    function closeDeliverableModal() {
+        if (dashboardDeliverableModal) dashboardDeliverableModal.classList.add('hidden');
+        activeDeliverableContext = null;
+    }
+
+    if (closeDeliverableModalBtn) closeDeliverableModalBtn.addEventListener('click', closeDeliverableModal);
+    if (cancelDeliverableModalBtn) cancelDeliverableModalBtn.addEventListener('click', closeDeliverableModal);
+
+    // Deliverable Approval Action
+    if (btnDashboardApproveDeliverable) {
+        btnDashboardApproveDeliverable.addEventListener('click', async () => {
+            if (!activeDeliverableContext || !sb) return;
+
+            btnDashboardApproveDeliverable.disabled = true;
+            btnDashboardApproveDeliverable.textContent = 'Approving...';
+
+            const { project, milestone } = activeDeliverableContext;
+
+            try {
+                // 1. Mark Milestone APPROVED
+                const { error: mErr } = await sb.from('milestones').update({
+                    status: 'APPROVED',
+                    approved_at: new Date().toISOString()
+                }).eq('id', milestone.id);
+
+                if (mErr) throw mErr;
+
+                // 2. Refresh milestones to check if project is completed
+                const { data: allMilestones } = await sb.from('milestones').select('id, status').eq('project_id', project.id);
+                const allComplete = Array.isArray(allMilestones) && allMilestones.every(m => m.status === 'APPROVED');
+
+                if (allComplete) {
+                    await sb.from('projects').update({
+                        stage: PROJECT_STAGES.COMPLETED,
+                        completion_percentage: 100
+                    }).eq('id', project.id);
+                }
+
+                if (window.Toast) window.Toast.success('Milestone deliverable approved! Progress recorded.');
+                closeDeliverableModal();
+                await loadClientDashboard();
+
+            } catch (err) {
+                console.error('Failed to approve deliverable:', err);
+                if (window.Toast) window.Toast.error('Could not approve deliverable proof.');
+            } finally {
+                btnDashboardApproveDeliverable.disabled = false;
+                btnDashboardApproveDeliverable.textContent = 'Approve & Release Progress';
+            }
+        });
+    }
+
+    // Deliverable Request Revision Action
+    if (btnDashboardRequestRevision) {
+        btnDashboardRequestRevision.addEventListener('click', async () => {
+            if (!activeDeliverableContext || !sb) return;
+
+            const reason = prompt('Please specify why this deliverable requires revisions:');
+            if (!reason) return;
+
+            btnDashboardRequestRevision.disabled = true;
+            const { project, milestone } = activeDeliverableContext;
+
+            try {
+                await sb.from('milestones').update({
+                    status: 'REVISION_REQUESTED',
+                    deliverable_notes: `Revision requested: ${reason}`
+                }).eq('id', milestone.id);
+
+                if (window.Toast) window.Toast.info('Revision request communicated to provider.');
+                closeDeliverableModal();
+                await loadClientDashboard();
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Could not submit revision request.');
+            } finally {
+                btnDashboardRequestRevision.disabled = false;
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. Render Projects Grid & Combined Search / Stage Filtering
+    // -------------------------------------------------------------------------
+    function applyProjectFiltering() {
+        const query = searchQuery.toLowerCase().trim();
+
+        const filtered = clientProjects.filter(project => {
+            // Stage match
+            const matchesStage = activeFilterStage === 'ALL' || project.stage === activeFilterStage;
+
+            // Search query match (title, description, or assigned provider)
+            const matchesQuery = !query ||
+                project.title.toLowerCase().includes(query) ||
+                (project.description || '').toLowerCase().includes(query) ||
+                (project.assignedProviderName || '').toLowerCase().includes(query);
+
+            return matchesStage && matchesQuery;
+        });
+
+        renderProjectsList(filtered);
+    }
+
     function renderProjectsList(projects) {
         if (!projectsList) return;
         projectsList.innerHTML = '';
@@ -478,7 +649,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Modal Functions
+    // 9. Modal Handlers & Project Creation with Extended Fields
     // -------------------------------------------------------------------------
     function openCreateModal() {
         if (!createProjectModal) return;
@@ -491,22 +662,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (createProjectForm) createProjectForm.reset();
     }
 
-    // -------------------------------------------------------------------------
-    // 9. Event Listeners Setup
-    // -------------------------------------------------------------------------
     function setupEventListeners() {
+        // Search Input Listener
+        if (dashboardProjectSearchInput) {
+            dashboardProjectSearchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                applyProjectFiltering();
+            });
+        }
+
+        // Filter Pills Listeners
         filterPills.forEach(pill => {
             pill.addEventListener('click', () => {
                 filterPills.forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
 
-                const filter = pill.getAttribute('data-filter');
-                if (filter === 'ALL') {
-                    renderProjectsList(clientProjects);
-                } else {
-                    const filtered = clientProjects.filter(p => p.stage === filter);
-                    renderProjectsList(filtered);
-                }
+                activeFilterStage = pill.getAttribute('data-filter') || 'ALL';
+                applyProjectFiltering();
             });
         });
 
@@ -535,6 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
+        // Submit Project Form (Persisting SLA, Milestones, and Repo Link)
         if (createProjectForm) {
             createProjectForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -543,6 +716,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const category = document.getElementById('projectCategoryInput')?.value || 'WEB_DEVELOPMENT';
                 const budget = parseFloat(document.getElementById('projectBudgetInput')?.value) || 1000;
                 const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
+                const targetSla = document.getElementById('projectSlaInput')?.value || null;
+                const milestoneCount = parseInt(document.getElementById('projectMilestoneCountSelect')?.value, 10) || 3;
+                const repoUrl = (document.getElementById('projectRepoUrlInput')?.value || '').trim();
 
                 const assignedProviderId = projectAssignProviderSelect?.value || null;
                 const assignedProviderOption = projectAssignProviderSelect?.selectedOptions?.[0];
@@ -575,7 +751,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     description: summary,
                     summary: summary,
                     stage: assignedProviderId ? PROJECT_STAGES.INVITED : PROJECT_STAGES.REQUIREMENT_DISCUSSION,
-                    completion_percentage: 0
+                    completion_percentage: 0,
+                    target_sla_date: targetSla,
+                    milestone_count: milestoneCount,
+                    repository_url: repoUrl || null
                 };
 
                 try {
@@ -587,6 +766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (prjErr) throw prjErr;
 
+                    // Create Initial Agreement Baseline Stub
                     await sb
                         .from('agreements')
                         .insert([{
@@ -594,7 +774,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             version: '1.0',
                             status: 'DRAFT',
                             agreed_amount: budget,
-                            terms_and_conditions: 'Standard WorkBridge milestone & scope baseline agreement.'
+                            terms_and_conditions: `Standard WorkBridge milestone & scope baseline agreement. Planned checkpoints: ${milestoneCount}. Target SLA: ${targetSla || 'Standard delivery'}.`
                         }])
                         .select()
                         .maybeSingle();
@@ -637,7 +817,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             case PROJECT_STAGES.IN_PROGRESS:
                 return `<span class="badge badge-primary">Building</span>`;
             case PROJECT_STAGES.REVIEW:
-                return `<span class="badge badge-warning">Review</span>`;
+                return `<span class="badge badge-warning">Under Review</span>`;
             case PROJECT_STAGES.COMPLETED:
                 return `<span class="badge badge-success">Completed</span>`;
             default:

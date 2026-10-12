@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Explore and invite verified technology leads and packaged engineering offerings on WorkBridge">
+    <meta name="description" content="Explore and invite verified technology leads and packaged engineering offerings on WorkBridge. Discover vetted full-stack architects, cloud engineers, and technical service providers.">
     <title>Explore Technical Leads &amp; Services | WorkBridge</title>
     
     <!-- CSS Foundations -->
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <!-- Search & Filter Controls -->
+            <!-- Enhanced Search & Filter Controls -->
             <section class="filter-panel card mt-3">
                 <form id="providerFilterForm" class="filter-grid">
                     
@@ -87,6 +87,16 @@
                         </select>
                     </div>
 
+                    <div class="form-group mb-0">
+                        <label for="rateBracketFilter" class="form-label-sm">Hourly Consideration ($/hr)</label>
+                        <select id="rateBracketFilter" class="form-control">
+                            <option value="ALL">Any Rate Bracket</option>
+                            <option value="UNDER_50">&lt; $50 / hr</option>
+                            <option value="50_100">$50 - $100 / hr</option>
+                            <option value="ABOVE_100">&gt; $100 / hr</option>
+                        </select>
+                    </div>
+
                     <div class="filter-actions">
                         <button type="submit" class="btn btn-primary btn-block">Search Catalog</button>
                         <button type="button" id="resetFilterBtn" class="btn btn-outline btn-block">Reset Filters</button>
@@ -97,17 +107,25 @@
 
             <!-- Results Section -->
             <section class="results-section mt-4">
-                <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                    <div class="title-with-badge">
+                <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
                         <h3 class="section-heading" style="margin: 0;">Verified Offerings &amp; Technical Leads</h3>
                         <span id="resultsCount" class="badge badge-subtle">Loading catalog...</span>
                     </div>
 
-                    <!-- Marketplace Type Filter Pills -->
-                    <div class="filter-pill-group">
-                        <button type="button" class="filter-pill active" data-type="ALL">All Offerings</button>
-                        <button type="button" class="filter-pill" data-type="GIGS">Packaged Services</button>
-                        <button type="button" class="filter-pill" data-type="TALENT">Verified Engineers</button>
+                    <!-- Marketplace Type Filter Pills & Catalog Sort Selector -->
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <div class="filter-pill-group">
+                            <button type="button" class="filter-pill active" data-type="ALL">All Offerings</button>
+                            <button type="button" class="filter-pill" data-type="GIGS">Packaged Services</button>
+                            <button type="button" class="filter-pill" data-type="TALENT">Verified Engineers</button>
+                        </div>
+                        <select id="catalogSortSelect" class="form-control form-control-sm" style="width: auto;">
+                            <option value="RATING_DESC">Top Rated (Reputation)</option>
+                            <option value="RATE_ASC">Rate: Low to High</option>
+                            <option value="RATE_DESC">Rate: High to Low</option>
+                            <option value="SLA_ASC">Fastest Delivery SLA</option>
+                        </select>
                     </div>
                 </div>
 
@@ -145,7 +163,7 @@
         </div>
     </main>
 
-    <!-- Modal 1: Provider Profile & Capability Preview Modal -->
+    <!-- Modal 1: Provider Profile & Capability Preview Modal (Enriched Credentials) -->
     <div id="providerDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
         <div class="modal-card">
             <div class="modal-header">
@@ -159,8 +177,11 @@
                 <div class="profile-header-summary mb-3" style="display: flex; align-items: center; gap: 1rem;">
                     <div class="profile-avatar avatar-provider" id="detailAvatar" style="width: 56px; height: 56px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">P</div>
                     <div>
-                        <h4 style="margin: 0;" id="detailProviderName">Provider Name</h4>
-                        <div class="text-xs text-muted" id="detailProviderDomain">Software Engineering</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h4 style="margin: 0;" id="detailProviderName">Provider Name</h4>
+                            <span class="badge badge-success" id="detailVerifiedBadge">Verified Engineer</span>
+                        </div>
+                        <div class="text-xs text-muted mt-1" id="detailProviderDomain">Software Engineering</div>
                     </div>
                 </div>
                 
@@ -172,6 +193,16 @@
                 <div class="form-group mt-2">
                     <label class="form-label">Verified Tech Stack &amp; Architectural Focus</label>
                     <div id="detailSkillsContainer" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+                </div>
+
+                <!-- Governance Compliance Standing Badges -->
+                <div class="mt-3 p-2 border rounded" style="background: #f8fafc;">
+                    <span class="text-xs text-muted font-bold" style="display: block; letter-spacing: 0.5px;">GOVERNANCE COMPLIANCE STANDING</span>
+                    <div class="mt-1" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <span class="badge badge-subtle">✓ Git PR Proof Workflow Enforced</span>
+                        <span class="badge badge-subtle">✓ SHA-256 Baseline Locking Ready</span>
+                        <span class="badge badge-success">✓ 100% Milestone Dispute-Free Record</span>
+                    </div>
                 </div>
 
                 <div class="meta-kv-group mt-3 p-2 border rounded" style="background: var(--bg-muted, #f8fafc);">
@@ -187,7 +218,7 @@
         </div>
     </div>
 
-    <!-- Modal 2: Invite / Start Project Modal (Pillar 1 Lifecycle Bound) -->
+    <!-- Modal 2: Invite / Start Project Modal (Enriched Structured Parameters) -->
     <div id="inviteModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalProviderTitle">
         <div class="modal-card">
             <div class="modal-header">
@@ -214,32 +245,50 @@
                         >
                     </div>
 
-                    <div class="form-group mt-2">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
-                            <div>
-                                <label for="projectCategorySelect" class="form-label">Technical Domain *</label>
-                                <select id="projectCategorySelect" class="form-control" required>
-                                    <option value="WEB_DEVELOPMENT">Full-Stack Web Engineering</option>
-                                    <option value="BACKEND">Backend &amp; Microservices Architecture</option>
-                                    <option value="FRONTEND">Frontend &amp; UI Systems</option>
-                                    <option value="MOBILE">Mobile Systems (iOS &amp; Android)</option>
-                                    <option value="DEVOPS">DevOps &amp; Infrastructure Engineering</option>
-                                    <option value="AI">AI &amp; Machine Learning Pipelines</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="projectBudgetInput" class="form-label">Target Budget ($ USD) *</label>
-                                <input 
-                                    type="number" 
-                                    id="projectBudgetInput" 
-                                    class="form-control" 
-                                    placeholder="2000" 
-                                    min="50" 
-                                    value="1500" 
-                                    required
-                                >
-                            </div>
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="projectCategorySelect" class="form-label">Technical Domain *</label>
+                            <select id="projectCategorySelect" class="form-control" required>
+                                <option value="WEB_DEVELOPMENT">Full-Stack Web Engineering</option>
+                                <option value="BACKEND">Backend &amp; Microservices Architecture</option>
+                                <option value="FRONTEND">Frontend &amp; UI Systems</option>
+                                <option value="MOBILE">Mobile Systems (iOS &amp; Android)</option>
+                                <option value="DEVOPS">DevOps &amp; Infrastructure Engineering</option>
+                                <option value="AI">AI &amp; Machine Learning Pipelines</option>
+                            </select>
                         </div>
+                        <div class="form-group">
+                            <label for="projectBudgetInput" class="form-label">Target Budget ($ USD) *</label>
+                            <input 
+                                type="number" 
+                                id="projectBudgetInput" 
+                                class="form-control" 
+                                placeholder="2000" 
+                                min="50" 
+                                value="1500" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="projectTargetSlaInput" class="form-label">Estimated Delivery SLA Date</label>
+                            <input type="date" id="projectTargetSlaInput" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectEstimatedMilestonesSelect" class="form-label">Planned Milestone Checkpoints</label>
+                            <select id="projectEstimatedMilestonesSelect" class="form-control">
+                                <option value="2">2 Milestones (Foundations &rarr; Delivery)</option>
+                                <option value="3" selected>3 Milestones (Arch &rarr; Core &rarr; Hand-off)</option>
+                                <option value="4">4 Milestones (Iterative Sprints)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectRepoRefInput" class="form-label">Reference Git Repository / Specification URL (Optional)</label>
+                        <input type="url" id="projectRepoRefInput" class="form-control" placeholder="https://github.com/org/repo or Figma link">
                     </div>
 
                     <div class="form-group mt-2">

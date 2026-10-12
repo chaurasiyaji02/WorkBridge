@@ -57,13 +57,21 @@
                 <form id="profileSettingsForm">
 
                     <!-- Avatar & Identity Summary Row -->
-                    <div class="profile-header-summary mb-3" style="display: flex; align-items: center; gap: 1.25rem;">
-                        <div class="profile-avatar avatar-provider" id="settingsAvatarPreview" style="width: 64px; height: 64px; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">
-                            U
+                    <div class="profile-header-summary mb-3" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
+                        <div style="display: flex; align-items: center; gap: 1.25rem;">
+                            <div class="profile-avatar avatar-provider" id="settingsAvatarPreview" style="width: 64px; height: 64px; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">
+                                U
+                            </div>
+                            <div>
+                                <h3 style="margin: 0;" id="settingsHeaderName">Account Name</h3>
+                                <span class="text-xs text-muted" id="settingsRoleSubtext">WorkBridge Verified Identity</span>
+                            </div>
                         </div>
-                        <div>
-                            <h3 style="margin: 0;" id="settingsHeaderName">Account Name</h3>
-                            <span class="text-xs text-muted" id="settingsRoleSubtext">WorkBridge Verified Identity</span>
+
+                        <!-- Cryptographic Attestation Ribbon -->
+                        <div class="p-2 border rounded" style="background: #f8fafc; font-size: 0.75rem;">
+                            <span class="text-muted" style="display: block;">CRYPTOGRAPHIC SIGNING AUTHORITY</span>
+                            <code id="userFingerprintPreview" style="color: #0284c7; font-size: 0.75rem;">SHA-256 Verified</code>
                         </div>
                     </div>
                     
@@ -106,6 +114,22 @@
                             </div>
                         </div>
 
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
+                            <div class="form-group">
+                                <label for="clientTaxIdInput" class="form-label">Tax ID / Business Registration (Optional)</label>
+                                <input type="text" id="clientTaxIdInput" class="form-control" placeholder="e.g. US-EIN-987654321">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="clientCurrencyPreference" class="form-label">Default Settlement Currency</label>
+                                <select id="clientCurrencyPreference" class="form-control">
+                                    <option value="USD" selected>USD ($ - US Dollar)</option>
+                                    <option value="EUR">EUR (€ - Euro)</option>
+                                    <option value="GBP">GBP (£ - British Pound)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="form-group mt-2">
                             <label for="clientWebsiteInput" class="form-label">Corporate Website / Repository Link</label>
                             <input type="url" id="clientWebsiteInput" class="form-control" placeholder="https://example.com">
@@ -139,6 +163,29 @@
                             </div>
                         </div>
 
+                        <!-- Capacity Pacing & Operating Window -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
+                            <div class="form-group">
+                                <label for="providerCapacitySelect" class="form-label">Active Delivery Capacity</label>
+                                <select id="providerCapacitySelect" class="form-control">
+                                    <option value="AVAILABLE" selected>Available for New Engagements</option>
+                                    <option value="LIMITED">Limited Capacity (Part-time Sprint)</option>
+                                    <option value="BUSY">At Maximum Bandwidth</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="providerTimezoneSelect" class="form-label">Primary Operating SLA Timezone</label>
+                                <select id="providerTimezoneSelect" class="form-control">
+                                    <option value="UTC" selected>UTC (Universal Coordinated)</option>
+                                    <option value="EST">EST (US Eastern Time)</option>
+                                    <option value="PST">PST (US Pacific Time)</option>
+                                    <option value="IST">IST (India Standard Time)</option>
+                                    <option value="CET">CET (Central European Time)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="form-group mt-2">
                             <label for="providerSkillsInput" class="form-label">Verified Tech Stack &amp; Frameworks (Comma-separated) *</label>
                             <input type="text" id="providerSkillsInput" class="form-control" placeholder="Java 21, Spring Boot 3, Supabase PostgreSQL, Vanilla JS, Docker, Kubernetes">
@@ -164,6 +211,25 @@
                     <div class="form-group mt-3">
                         <label for="profileBioInput" class="form-label" id="bioLabel">About / Professional Overview *</label>
                         <textarea id="profileBioInput" class="form-control" rows="4" placeholder="Detail your engineering background, testing rigor, deliverable guarantees, and collaboration standards..." required></textarea>
+                    </div>
+
+                    <!-- Governance & Delivery Notification Preferences -->
+                    <div class="mt-3 p-3 border rounded" style="background: #f8fafc;">
+                        <h4 class="menu-heading mb-1" style="font-size: 0.85rem;">🔔 Governance Notifications &amp; Alerts</h4>
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;" class="mt-2">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="notifyScopeAmendments" checked>
+                                <span>Notify on bilateral scope amendments &amp; clause redlines</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="notifyDeliverableProofs" checked>
+                                <span>Notify when milestone PR deliverables are submitted for review</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="notifyStandupMentions" checked>
+                            <span>Notify on standup updates and architectural decisions</span>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Action Buttons -->

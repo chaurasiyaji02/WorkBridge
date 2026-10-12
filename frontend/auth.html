@@ -57,27 +57,41 @@
                 </div>
 
                 <div class="form-group mt-2">
-                    <div class="form-label-row">
+                    <div class="form-label-row" style="display: flex; justify-content: space-between; align-items: center;">
                         <label for="loginPassword" class="form-label">Account Password *</label>
+                        <button type="button" class="btn-text-link text-xs text-muted" id="toggleLoginPasswordVisibility" style="background: none; border: none; cursor: pointer; padding: 0;">
+                            👁️ Show
+                        </button>
                     </div>
-                    <input 
-                        type="password" 
-                        id="loginPassword" 
-                        name="password" 
-                        class="form-control" 
-                        placeholder="••••••••••••" 
-                        autocomplete="current-password"
-                        required
-                    >
+                    <div style="position: relative;">
+                        <input 
+                            type="password" 
+                            id="loginPassword" 
+                            name="password" 
+                            class="form-control" 
+                            placeholder="••••••••••••" 
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
                     <span class="form-error" id="loginPasswordError"></span>
+                </div>
+
+                <!-- Session Persistence Option -->
+                <div class="form-group mt-2">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #64748b; cursor: pointer;">
+                        <input type="checkbox" id="rememberMeCheckbox" checked>
+                        <span>Keep me authenticated on this workstation</span>
+                    </label>
                 </div>
 
                 <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block mt-3">
                     <span class="btn-text">Authenticate &amp; Enter Workspace</span>
                 </button>
 
+                <!-- Security & Encryption Assurance Badges -->
                 <div class="p-2 border rounded mt-3 text-center" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.4;">
-                    🔒 Authenticated sessions are secured with Row Level Security (RLS) on PostgreSQL.
+                    🔒 <strong>Enterprise Security:</strong> Authenticated sessions protected with Row Level Security (RLS) on PostgreSQL.
                 </div>
             </form>
 
@@ -147,16 +161,23 @@
                 </div>
 
                 <div class="form-group mt-2">
-                    <label for="regPassword" class="form-label">Password *</label>
-                    <input 
-                        type="password" 
-                        id="regPassword" 
-                        name="password" 
-                        class="form-control" 
-                        placeholder="Minimum 6 characters" 
-                        autocomplete="new-password"
-                        required
-                    >
+                    <div class="form-label-row" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="regPassword" class="form-label">Password *</label>
+                        <button type="button" class="btn-text-link text-xs text-muted" id="toggleRegPasswordVisibility" style="background: none; border: none; cursor: pointer; padding: 0;">
+                            👁️ Show
+                        </button>
+                    </div>
+                    <div style="position: relative;">
+                        <input 
+                            type="password" 
+                            id="regPassword" 
+                            name="password" 
+                            class="form-control" 
+                            placeholder="Minimum 6 characters" 
+                            autocomplete="new-password"
+                            required
+                        >
+                    </div>
                     <span class="form-error" id="regPasswordError"></span>
                 </div>
 
@@ -182,6 +203,31 @@
                     <span class="btn-text">Register Verified Account</span>
                 </button>
             </form>
+
+            <!-- Password Peek Script Helper -->
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const toggleLogin = document.getElementById('toggleLoginPasswordVisibility');
+                    const loginPass = document.getElementById('loginPassword');
+                    if (toggleLogin && loginPass) {
+                        toggleLogin.addEventListener('click', () => {
+                            const isPassword = loginPass.type === 'password';
+                            loginPass.type = isPassword ? 'text' : 'password';
+                            toggleLogin.textContent = isPassword ? '🔒 Hide' : '👁️ Show';
+                        });
+                    }
+
+                    const toggleReg = document.getElementById('toggleRegPasswordVisibility');
+                    const regPass = document.getElementById('regPassword');
+                    if (toggleReg && regPass) {
+                        toggleReg.addEventListener('click', () => {
+                            const isPassword = regPass.type === 'password';
+                            regPass.type = isPassword ? 'text' : 'password';
+                            toggleReg.textContent = isPassword ? '🔒 Hide' : '👁️ Show';
+                        });
+                    }
+                });
+            </script>
 
         </div>
     </main>

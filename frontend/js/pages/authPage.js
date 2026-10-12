@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const roleRadios = document.querySelectorAll('input[name="role"]');
     const regDomainSelect = document.getElementById('regDomain');
 
+    // Workstation Session Persistence Toggle
+    const rememberMeCheckbox = document.getElementById('rememberMeCheckbox');
+
     // Submit Buttons
     const loginSubmitBtn = document.getElementById('loginSubmitBtn');
     const registerSubmitBtn = document.getElementById('registerSubmitBtn');
@@ -108,12 +111,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // 3. Relaxed Email Validation Helper
+    // 3. Relaxed Email Validation & Cryptographic Hash Helpers
     // -------------------------------------------------------------------------
     function validateEmail(email) {
         if (!email) return false;
         const clean = email.trim();
         return clean.length >= 3 && clean.includes('@');
+    }
+
+    async function computeSha256(str) {
+        try {
+            const buffer = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+            return str;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -163,7 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('No account found with this email. Please register first.');
                 }
 
-                if (data.password !== password) {
+                // Verify credential against plain text and SHA-256 hash
+                const passwordDigest = await computeSha256(password);
+                const isPasswordValid = (data.password === password) || (data.password === passwordDigest);
+
+                if (!isPasswordValid) {
                     throw new Error('Incorrect password. Please verify credentials.');
                 }
 
@@ -182,13 +200,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     hourlyRate: data.hourly_rate || null,
                     skills: data.skills || [],
                     githubUrl: data.github_url || null,
-                    portfolioUrl: data.portfolio_url || null
+                    portfolioUrl: data.portfolio_url || null,
+                    sprintCapacity: data.sprint_capacity || '2_PROJECTS',
+                    timezoneSla: data.timezone_sla || 'UTC'
                 };
 
                 const sessionToken = 'wb_sb_token_' + data.id;
+                const isPersistent = rememberMeCheckbox ? rememberMeCheckbox.checked : true;
 
                 if (window.AuthState && typeof window.AuthState.setSession === 'function') {
-                    window.AuthState.setSession(sessionToken, sessionUser);
+                    window.AuthState.setSession(sessionToken, sessionUser, isPersistent);
                 }
 
                 showAlert('Sign in verified! Opening workspace...', 'success');
@@ -270,11 +291,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('An account with this email already exists. Please sign in instead.');
                 }
 
+                // Compute SHA-256 password hash for storage
+                const passwordDigest = await computeSha256(password);
+
                 // 2. Insert new profile record (NO automatic service package created here)
                 const newProfile = {
                     email: email,
                     full_name: fullName,
-                    password: password,
+                    password: passwordDigest,
                     role: role,
                     domain: role === ROLES.SERVICE_PROVIDER ? domain : null,
                     bio: role === ROLES.SERVICE_PROVIDER 
@@ -282,7 +306,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         : 'Enterprise client commissioning milestone-governed projects.',
                     rating: 5.0,
                     hourly_rate: role === ROLES.SERVICE_PROVIDER ? 50 : null,
-                    skills: role === ROLES.SERVICE_PROVIDER ? ['Java', 'Spring Boot', 'PostgreSQL', 'JavaScript'] : []
+                    skills: role === ROLES.SERVICE_PROVIDER ? ['Java', 'Spring Boot', 'PostgreSQL', 'JavaScript'] : [],
+                    sprint_capacity: role === ROLES.SERVICE_PROVIDER ? '2_PROJECTS' : null,
+                    timezone_sla: role === ROLES.SERVICE_PROVIDER ? 'UTC' : null,
+                    created_at: new Date().toISOString()
                 };
 
                 const { data: createdData, error: insertError } = await sb
@@ -304,13 +331,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     bio: createdData.bio,
                     rating: createdData.rating,
                     hourlyRate: createdData.hourly_rate,
-                    skills: createdData.skills
+                    skills: createdData.skills,
+                    sprintCapacity: createdData.sprint_capacity,
+                    timezoneSla: createdData.timezone_sla
                 };
 
                 const sessionToken = 'wb_sb_token_' + createdData.id;
 
                 if (window.AuthState && typeof window.AuthState.setSession === 'function') {
-                    window.AuthState.setSession(sessionToken, sessionUser);
+                    window.AuthState.setSession(sessionToken, sessionUser, true);
                 }
 
                 showAlert('Account registered in cloud! Redirecting...', 'success');
