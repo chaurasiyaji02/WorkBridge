@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/workspace.css">
 </head>
 <body class="dashboard-body">
 
@@ -160,7 +161,7 @@
             </section>
 
             <!-- Incoming Invitations Section (Pillar 1 Gate) -->
-            <section id="invitationsSection" class="mt-4">
+            <section id="invitationsSection" class="mt-4" style="scroll-margin-top: 2rem;">
                 <div class="section-title-row">
                     <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
                         <h3 class="section-heading text-primary" style="margin: 0;">Direct Project Invitations</h3>
@@ -186,14 +187,14 @@
             </section>
 
             <!-- Active Engagements Section with Complete Lifecycle Filters -->
-            <section id="providerProjectsSection" class="mt-4">
-                <div class="section-title-row">
+            <section id="providerProjectsSection" class="mt-4" style="scroll-margin-top: 2rem;">
+                <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                     <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
                         <h3 class="section-heading" style="margin: 0;">Active Engagements</h3>
                         <span class="badge badge-subtle" id="activeProjectsCountBadge">0 Total</span>
                     </div>
                     
-                    <div class="filter-pill-group">
+                    <div class="filter-pill-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                         <button type="button" class="filter-pill active" data-filter="ALL">All</button>
                         <button type="button" class="filter-pill" data-filter="INVITED">Invited</button>
                         <button type="button" class="filter-pill" data-filter="REQUIREMENT_DISCUSSION">Under Scoping</button>
@@ -210,20 +211,22 @@
                 </div>
 
                 <!-- Empty State for Active Projects -->
-                <div id="noProviderProjectsState" class="card empty-state text-center hidden">
-                    <div class="empty-icon">📂</div>
-                    <h3>No Active Engagements</h3>
-                    <p class="text-muted">You do not have any active project contracts currently in progress.</p>
-                    <div class="empty-actions mt-3">
+                <div id="noProviderProjectsState" class="card empty-state text-center hidden" style="padding: 2.5rem 1.5rem;">
+                    <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 0.75rem;">📂</div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">No Active Engagements</h3>
+                    <p class="text-muted" style="max-width: 500px; margin: 0 auto 1.5rem auto; font-size: 0.9rem;">
+                        You do not have any active project contracts currently running. Publish a specialized service package to get discovered on the marketplace.
+                    </p>
+                    <div class="empty-actions" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                         <button type="button" class="btn btn-primary" id="emptyStatePostServiceBtn">➕ Post a Specialized Service</button>
-                        <a href="provider-explore.html" class="btn btn-outline" style="margin-left: 0.5rem;">Browse Talent Market</a>
+                        <a href="provider-explore.html" class="btn btn-outline">Browse Talent Market</a>
                     </div>
                 </div>
             </section>
 
             <!-- My Published Services / Gigs Section -->
-            <section id="myServicesSection" class="mt-4">
-                <div class="section-title-row">
+            <section id="myServicesSection" class="mt-4" style="scroll-margin-top: 2rem;">
+                <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                     <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
                         <h3 class="section-heading" style="margin: 0;">Published Service Offerings</h3>
                         <span class="badge badge-success" id="myServicesCountBadge">0 Active Gigs</span>
@@ -236,19 +239,21 @@
                     <!-- Populated dynamically via providerDashboardPage.js -->
                 </div>
 
-                <div id="noServicesState" class="card empty-state text-center hidden">
-                    <div class="empty-icon">⚡</div>
-                    <h4>No Services Published Yet</h4>
-                    <p class="text-muted">Publish your technical packages so clients browsing the marketplace can discover your architectural capabilities.</p>
+                <div id="noServicesState" class="card empty-state text-center hidden" style="padding: 2.5rem 1.5rem;">
+                    <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 0.75rem;">⚡</div>
+                    <h4 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">No Services Published Yet</h4>
+                    <p class="text-muted" style="max-width: 500px; margin: 0 auto; font-size: 0.9rem;">
+                        Publish your technical packages so clients browsing the marketplace can discover your architectural capabilities and invite you to projects.
+                    </p>
                 </div>
             </section>
 
         </main>
     </div>
 
-    <!-- Review Invitation & Scope Modal (Enriched Operational Parameters) -->
+    <!-- Review Invitation & Scope Modal (Universal Flex Scroll) -->
     <div class="modal-backdrop hidden" id="invitationModal" role="dialog" aria-modal="true" aria-labelledby="invitationModalTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header">
                 <div class="modal-heading-group">
                     <span class="badge badge-primary" id="modalProjectCategory">Software Architecture</span>
@@ -256,19 +261,19 @@
                 </div>
                 <button type="button" class="modal-close-btn" id="closeInvitationModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <div class="modal-body" id="invitationModalContent">
+            <div class="modal-body" id="invitationModalContent" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
                 <!-- Dynamically populated by providerDashboardPage.js -->
             </div>
-            <div class="modal-footer" id="invitationModalActions">
+            <div class="modal-footer" id="invitationModalActions" style="flex-shrink: 0;">
                 <button type="button" class="btn btn-secondary" id="declineInviteBtn">Decline</button>
                 <button type="button" class="btn btn-success" id="acceptInviteBtn">Accept &amp; Open Workspace</button>
             </div>
         </div>
     </div>
 
-    <!-- Post New Service / Gig Modal (Enhanced Validation & Verification Formats) -->
+    <!-- Post New Service / Gig Modal (Fixed Viewport Overflow with Guaranteed Footer Visibility) -->
     <div class="modal-backdrop hidden" id="postServiceModal" role="dialog" aria-modal="true" aria-labelledby="postServiceModalTitle">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header">
                 <div class="modal-heading-group">
                     <span class="badge badge-primary">Marketplace Service Offering</span>
@@ -276,8 +281,8 @@
                 </div>
                 <button type="button" class="modal-close-btn" id="closePostServiceModalBtn" aria-label="Close modal">&times;</button>
             </div>
-            <form id="postServiceForm">
-                <div class="modal-body">
+            <form id="postServiceForm" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
                     <div class="form-group">
                         <label for="serviceTitleInput" class="form-label">Service Offering Title *</label>
                         <input type="text" id="serviceTitleInput" class="form-control" placeholder="e.g. Production Spring Boot 3 &amp; PostgreSQL Microservices Architecture" required>
@@ -339,7 +344,7 @@
                         ⚡ <strong>Public Visibility Note:</strong> This offering is published immediately to the Explore directory. You retain complete authority to accept or decline inbound project invitations.
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="flex-shrink: 0;">
                     <button type="button" class="btn btn-secondary" id="cancelPostServiceBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btnSubmitService">Publish Offering</button>
                 </div>

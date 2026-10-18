@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnSubmitService = document.getElementById('btnSubmitService');
 
     // Sidebar Profile Hydration
-    const displayName = currentUser.fullName || currentUser.username || 'Provider Partner';
+    const displayName = currentUser.fullName || currentUser.name || currentUser.username || currentUser.email || 'Technical Lead';
     if (providerNameEl) providerNameEl.textContent = displayName;
     if (providerEmailEl) providerEmailEl.textContent = currentUser.email || '';
     if (providerAvatarEl) {
@@ -118,27 +118,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error('Supabase client connection missing.');
             }
 
-            // 1. Fetch pending invitations for this provider
-            const { data: rawInvites, error: invitesErr } = await sb
+            const providerId = currentUser.id || '';
+            const providerName = displayName.trim();
+            const providerEmail = (currentUser.email || '').trim().toLowerCase();
+
+            // 1. Fetch pending invitations for this provider (Robust matching)
+            let invitesQuery = sb
                 .from('projects')
                 .select('*')
-                .eq('stage', 'INVITED')
-                .or(`assigned_provider_id.eq.${currentUser.id},assigned_provider_name.eq.${currentUser.fullName}`)
-                .order('created_at', { ascending: false });
+                .eq('stage', PROJECT_STAGES.INVITED);
+
+            if (providerId && providerName) {
+                invitesQuery = invitesQuery.or(`assigned_provider_id.eq.${providerId},assigned_provider_name.ilike.%${providerName}%,assigned_provider_email.ilike.${providerEmail}`);
+            } else if (providerId) {
+                invitesQuery = invitesQuery.or(`assigned_provider_id.eq.${providerId},assigned_provider_email.ilike.${providerEmail}`);
+            }
+
+            const { data: rawInvites, error: invitesErr } = await invitesQuery.order('created_at', { ascending: false });
 
             if (invitesErr) console.warn('Supabase invitations query warning:', invitesErr.message);
 
-            // 2. Fetch active and completed projects for this provider
-            const { data: rawProjects, error: prjErr } = await sb
+            // 2. Fetch active and completed engagements for this provider
+            let projectsQuery = sb
                 .from('projects')
                 .select(`
                     *,
                     agreements ( version, status ),
                     milestones ( id, weight_percentage, status )
                 `)
-                .neq('stage', 'INVITED')
-                .or(`assigned_provider_id.eq.${currentUser.id},assigned_provider_name.eq.${currentUser.fullName}`)
-                .order('created_at', { ascending: false });
+                .neq('stage', PROJECT_STAGES.INVITED);
+
+            if (providerId && providerName) {
+                projectsQuery = projectsQuery.or(`assigned_provider_id.eq.${providerId},assigned_provider_name.ilike.%${providerName}%,assigned_provider_email.ilike.${providerEmail}`);
+            } else if (providerId) {
+                projectsQuery = projectsQuery.or(`assigned_provider_id.eq.${providerId},assigned_provider_email.ilike.${providerEmail}`);
+            }
+
+            const { data: rawProjects, error: prjErr } = await projectsQuery.order('created_at', { ascending: false });
 
             if (prjErr) console.warn('Supabase projects query warning:', prjErr.message);
 
@@ -153,32 +169,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             pendingInvitations = (rawInvites || []).map(p => ({
                 id: p.id,
-                title: p.title,
-                category: p.category,
+                title: p.title || 'Untitled Project',
+                category: p.category || 'Engineering',
                 budget: Number(p.budget) || 0,
-                description: p.description,
-                summary: p.summary,
+                description: p.description || '',
+                summary: p.summary || p.description || '',
                 clientName: p.client_name,
                 clientEmail: p.client_email,
-                targetSlaDate: p.target_sla_date,
-                milestoneCount: p.milestone_count,
+                targetSlaDate: p.target_sla_date || p.deadline || null,
+                milestoneCount: p.milestone_count || 3,
                 repositoryUrl: p.repository_url,
-                stage: p.stage,
+                stage: p.stage || PROJECT_STAGES.INVITED,
                 createdAt: p.created_at
             }));
 
             providerProjects = (rawProjects || []).map(p => ({
                 id: p.id,
-                title: p.title,
-                category: p.category,
+                title: p.title || 'Untitled Collaboration',
+                category: p.category || 'Engineering',
                 budget: Number(p.budget) || 0,
-                description: p.description,
-                summary: p.summary,
-                clientName: p.client_name,
-                stage: p.stage,
+                description: p.description || '',
+                summary: p.summary || p.description || '',
+                clientName: p.client_name || 'Client Partner',
+                stage: p.stage || PROJECT_STAGES.REQUIREMENT_DISCUSSION,
                 completionPercentage: p.completion_percentage || 0,
                 agreement: Array.isArray(p.agreements) ? p.agreements[0] : p.agreements,
-                milestones: p.milestones || []
+                milestones: Array.isArray(p.milestones) ? p.milestones : []
             }));
 
             publishedServices = Array.isArray(rawServices) ? rawServices : [];
@@ -241,7 +257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             (p.agreement && (p.agreement.status === 'LOCKED' || p.agreement.status === 'ACTIVE'))
         ).length;
 
-        // Compute cumulative realized escrow revenue from completed projects
+        // Cumulative realized escrow revenue from completed deliveries
         const realizedEscrow = providerProjects
             .filter(p => p.stage === PROJECT_STAGES.COMPLETED)
             .reduce((sum, p) => sum + (p.budget || 0), 0);
@@ -289,7 +305,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap;">
                             <span class="badge badge-info">Project Invitation</span>
                             <span class="badge badge-subtle">Budget: ${budgetDisplay}</span>
-                            ${invite.milestoneCount ? `<span class="badge badge-subtle">\${invite.milestoneCount} Milestones</span>` : ''}
+                            ${invite.milestoneCount ? `<span class="badge badge-subtle">${invite.milestoneCount} Milestones</span>` : ''}
                         </div>
                         <h3 class="card-title" style="font-size: 1.15rem; margin-top: 0.25rem;">${escapeHtml(invite.title || 'Untitled Project')}</h3>
                         <p class="card-text text-sm mt-1">${escapeHtml(invite.summary || invite.description || 'Client has requested your technical collaboration.')}</p>
@@ -383,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </div>
                     <h3 class="card-title" style="font-size: 1.15rem; margin-top: 0.25rem;">
-                        <a href="project-view.html?id=${project.id}" style="color: inherit; text-decoration: none;">
+                        <a href="project-view.html?id=${project.id}" class="card-title-link" data-id="${project.id}" style="color: inherit; text-decoration: none;">
                             ${escapeHtml(project.title || 'Untitled Collaboration')}
                         </a>
                     </h3>
@@ -397,13 +413,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span>Milestone Progress</span>
                         <strong>${progress}%</strong>
                     </div>
-                    <div style="width: 100%; height: 6px; background-color: var(--bg-muted, #f1f5f9); border-radius: 9999px; overflow: hidden;">
-                        <div style="width: ${progress}%; height: 100%; background-color: ${progress === 100 ? 'var(--success, #10b981)' : 'var(--primary, #3b82f6)'}; transition: width 0.3s ease;"></div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: ${progress}%; background-color: ${progress === 100 ? 'var(--success, #10b981)' : 'var(--primary, #3b82f6)'};"></div>
                     </div>
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
                         <span class="text-xs text-muted">Client: <strong>${escapeHtml(clientDisplay)}</strong></span>
-                        <a href="project-view.html?id=${project.id}" class="btn btn-outline btn-sm">
+                        <a href="project-view.html?id=${project.id}" class="btn btn-outline btn-sm btn-enter-workspace" data-id="${project.id}">
                             Enter Workspace &rarr;
                         </a>
                     </div>
@@ -411,6 +427,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
 
             providerProjectsList.appendChild(card);
+        });
+
+        // Bind Active Workspace Context on Card Links
+        providerProjectsList.querySelectorAll('.card-title-link, .btn-enter-workspace').forEach(link => {
+            link.addEventListener('click', () => {
+                const prjId = link.getAttribute('data-id');
+                if (window.AuthState?.setActiveProjectId && prjId) {
+                    window.AuthState.setActiveProjectId(prjId);
+                }
+            });
         });
     }
 
@@ -508,7 +534,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .update({
                         stage: PROJECT_STAGES.REQUIREMENT_DISCUSSION,
                         assigned_provider_id: currentUser.id,
-                        assigned_provider_name: displayName
+                        assigned_provider_name: displayName,
+                        assigned_provider_email: currentUser.email || null
                     })
                     .eq('id', invProjectId);
 
@@ -526,17 +553,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .select()
                     .maybeSingle();
 
+                await sb.from('workspace_messages').insert([{
+                    project_id: invProjectId,
+                    sender_id: currentUser.id,
+                    sender_name: displayName,
+                    sender_role: 'SERVICE_PROVIDER',
+                    message: 'Technical Lead accepted the invitation. Project transitioned to Scoping phase.'
+                }]);
+
+                if (window.AuthState?.setActiveProjectId) {
+                    window.AuthState.setActiveProjectId(invProjectId);
+                }
+
                 if (window.Toast) window.Toast.success('Invitation accepted! Launching workspace...');
                 closeInvitationModal();
                 setTimeout(() => {
                     window.location.href = `project-view.html?id=${invProjectId}`;
-                }, 500);
+                }, 400);
 
             } else {
                 const { error } = await sb
                     .from('projects')
                     .update({
-                        stage: 'COMPLETED',
+                        stage: 'DECLINED',
                         summary: 'Invitation declined by provider.'
                     })
                     .eq('id', invProjectId);
@@ -608,8 +647,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${invite.repositoryUrl ? `
                         <div class="p-2 border rounded" style="background: #f8fafc; font-size: 0.8rem;">
                             <span class="text-muted">Reference Specification / Repo:</span>
-                            <a href="\${escapeHtml(invite.repositoryUrl)}" target="_blank" rel="noopener" style="display: block; color: var(--primary); font-weight: 600; word-break: break-all;">
-                                \${escapeHtml(invite.repositoryUrl)} &nearr;
+                            <a href="${escapeHtml(invite.repositoryUrl)}" target="_blank" rel="noopener" style="display: block; color: var(--primary, #3b82f6); font-weight: 600; word-break: break-all;">
+                                ${escapeHtml(invite.repositoryUrl)} &nearr;
                             </a>
                         </div>
                     ` : ''}
@@ -644,7 +683,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 9. Event Listeners & Publishing Extended Service Fields
+    // 9. Event Listeners & Publishing Service Package
     // -------------------------------------------------------------------------
     function setupEventListeners() {
         // Stage Filter Pills
@@ -701,18 +740,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Post Service Form Submit
+        // Post Service Form Submit (ID Synchronized with HTML)
         if (postServiceForm) {
             postServiceForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const title = (document.getElementById('serviceTitleInput')?.value || '').trim();
                 const category = document.getElementById('serviceCategorySelect')?.value || 'WEB_DEVELOPMENT';
-                const domainText = document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || 'Full-Stack Web Development';
+                const domainText = document.getElementById('serviceCategorySelect')?.selectedOptions[0]?.text || 'Full-Stack Web Engineering';
                 const hourlyRate = parseFloat(document.getElementById('serviceRateInput')?.value) || 50.0;
                 const deliveryDays = parseInt(document.getElementById('serviceDeliveryDaysInput')?.value, 10) || 14;
-                const verificationType = document.getElementById('serviceVerificationTypeSelect')?.value || 'GIT_PR';
-                const revisionLimit = document.getElementById('serviceRevisionLimitSelect')?.value || '3 Rounds';
+                
+                // Fixed ID matching provider-dashboard.html
+                const verificationType = document.getElementById('serviceDeliverableTypeSelect')?.value || 'GIT_PR';
+                const revisionLimit = document.getElementById('serviceRevisionLimitSelect')?.value || '2';
                 const skillsText = (document.getElementById('serviceSkillsInput')?.value || '').trim();
                 const description = (document.getElementById('serviceDescriptionInput')?.value || '').trim();
 
@@ -733,7 +774,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const parsedSkills = skillsText 
                     ? skillsText.split(',').map(s => s.trim()).filter(Boolean)
-                    : ['Java', 'Spring Boot', 'JavaScript'];
+                    : ['Java 21', 'Spring Boot', 'Supabase PostgreSQL', 'Vanilla JS'];
 
                 const newServiceRow = {
                     provider_id: currentUser.id,
@@ -772,7 +813,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } finally {
                     if (btnSubmitService) {
                         btnSubmitService.disabled = false;
-                        btnSubmitService.textContent = 'Publish to Explore Market';
+                        btnSubmitService.textContent = 'Publish Offering';
                     }
                 }
             });
