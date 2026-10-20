@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/workspace.css">
 </head>
 <body class="dashboard-body">
 
@@ -37,11 +38,11 @@
         <div class="container" style="max-width: 860px; margin: 0 auto; padding: 2rem 1rem;">
             
             <!-- Breadcrumbs -->
-            <div class="project-meta-breadcrumbs mb-2">
-                <a href="javascript:history.back()" class="text-link" id="backToDashboardLink">&larr; Back to Dashboard</a>
+            <div class="project-meta-breadcrumbs mb-2" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="index.html" class="text-link" id="backToDashboardLink">&larr; Back to Dashboard</a>
                 <span class="breadcrumb-separator">/</span>
                 <span class="badge badge-subtle">Settings</span>
-                <span class="badge badge-primary ml-1" id="roleIndicatorBadge">Loading Role...</span>
+                <span class="badge badge-primary" id="roleIndicatorBadge">Loading Role...</span>
             </div>
 
             <!-- Page Title -->
@@ -57,34 +58,34 @@
                 <form id="profileSettingsForm">
 
                     <!-- Avatar & Identity Summary Row -->
-                    <div class="profile-header-summary mb-3" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
-                        <div style="display: flex; align-items: center; gap: 1.25rem;">
-                            <div class="profile-avatar avatar-provider" id="settingsAvatarPreview" style="width: 64px; height: 64px; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px;">
+                    <div class="profile-header-summary mb-3" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color, #e2e8f0);">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div class="profile-avatar avatar-provider" id="settingsAvatarPreview" style="width: 64px; height: 64px; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; margin: 0; flex-shrink: 0;">
                                 U
                             </div>
                             <div>
-                                <h3 style="margin: 0;" id="settingsHeaderName">Account Name</h3>
-                                <span class="text-xs text-muted" id="settingsRoleSubtext">WorkBridge Verified Identity</span>
+                                <h3 style="margin: 0; font-size: 1.2rem;" id="settingsHeaderName">Account Name</h3>
+                                <span class="text-xs text-muted" id="settingsRoleSubtext" style="display: block; margin-top: 0.2rem;">WorkBridge Verified Identity</span>
                             </div>
                         </div>
 
                         <!-- Cryptographic Attestation Ribbon -->
                         <div class="p-2 border rounded" style="background: #f8fafc; font-size: 0.75rem;">
-                            <span class="text-muted" style="display: block;">CRYPTOGRAPHIC SIGNING AUTHORITY</span>
-                            <code id="userFingerprintPreview" style="color: #0284c7; font-size: 0.75rem;">SHA-256 Verified</code>
+                            <span class="text-muted" style="display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;">CRYPTOGRAPHIC SIGNING AUTHORITY</span>
+                            <code id="userFingerprintPreview" style="color: #0284c7; font-size: 0.75rem; font-weight: 600;">SHA-256 Verified</code>
                         </div>
                     </div>
                     
                     <!-- Basic Identity Section -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
                         <div class="form-group">
                             <label for="profileFullName" class="form-label">Full Name / Organization Display *</label>
-                            <input type="text" id="profileFullName" class="form-control" placeholder="e.g. Alex Johnson or Apex Engineering Labs" required>
+                            <input type="text" id="profileFullName" class="form-control" placeholder="e.g. Kavya or Apex Engineering Labs" required>
                         </div>
 
                         <div class="form-group">
                             <label for="profileEmail" class="form-label">Account Email Address (Immutable)</label>
-                            <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.7; cursor: not-allowed;">
+                            <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.75; cursor: not-allowed;">
                         </div>
                     </div>
 
@@ -92,10 +93,10 @@
                     <!-- CLIENT-SPECIFIC FIELDS                     -->
                     <!-- ========================================== -->
                     <div id="clientSpecializedFields" class="hidden mt-3">
-                        <div class="profile-divider my-3"></div>
-                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🏢 Client Enterprise Profile &amp; Preferences</h4>
+                        <div class="profile-divider my-3" style="border-top: 1px solid var(--border-color, #e2e8f0); margin: 1.25rem 0;"></div>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6); font-size: 1rem;">🏢 Client Enterprise Profile &amp; Preferences</h4>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
                             <div class="form-group">
                                 <label for="clientCompanyNameInput" class="form-label">Enterprise / Company Name</label>
                                 <input type="text" id="clientCompanyNameInput" class="form-control" placeholder="e.g. Acme Health Technologies Inc.">
@@ -114,16 +115,17 @@
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;" class="mt-2">
                             <div class="form-group">
                                 <label for="clientTaxIdInput" class="form-label">Tax ID / Business Registration (Optional)</label>
-                                <input type="text" id="clientTaxIdInput" class="form-control" placeholder="e.g. US-EIN-987654321">
+                                <input type="text" id="clientTaxIdInput" class="form-control" placeholder="e.g. GSTIN / EIN-987654321">
                             </div>
 
                             <div class="form-group">
                                 <label for="clientCurrencyPreference" class="form-label">Default Settlement Currency</label>
                                 <select id="clientCurrencyPreference" class="form-control">
                                     <option value="USD" selected>USD ($ - US Dollar)</option>
+                                    <option value="INR">INR (₹ - Indian Rupee)</option>
                                     <option value="EUR">EUR (€ - Euro)</option>
                                     <option value="GBP">GBP (£ - British Pound)</option>
                                 </select>
@@ -140,10 +142,10 @@
                     <!-- PROVIDER-SPECIFIC FIELDS                   -->
                     <!-- ========================================== -->
                     <div id="providerSpecializedFields" class="hidden mt-3">
-                        <div class="profile-divider my-3"></div>
-                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6);">🛠️ Technical Lead Specialization &amp; Architecture Credentials</h4>
+                        <div class="profile-divider my-3" style="border-top: 1px solid var(--border-color, #e2e8f0); margin: 1.25rem 0;"></div>
+                        <h4 class="menu-heading mb-2" style="color: var(--primary, #3b82f6); font-size: 1rem;">🛠️ Technical Lead Specialization &amp; Architecture Credentials</h4>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
                             <div class="form-group">
                                 <label for="providerDomainSelect" class="form-label">Primary Technical Domain *</label>
                                 <select id="providerDomainSelect" class="form-control">
@@ -164,7 +166,7 @@
                         </div>
 
                         <!-- Capacity Pacing & Operating Window -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;" class="mt-2">
                             <div class="form-group">
                                 <label for="providerCapacitySelect" class="form-label">Active Delivery Capacity</label>
                                 <select id="providerCapacitySelect" class="form-control">
@@ -177,10 +179,10 @@
                             <div class="form-group">
                                 <label for="providerTimezoneSelect" class="form-label">Primary Operating SLA Timezone</label>
                                 <select id="providerTimezoneSelect" class="form-control">
-                                    <option value="UTC" selected>UTC (Universal Coordinated)</option>
+                                    <option value="IST" selected>IST (India Standard Time - UTC+5:30)</option>
+                                    <option value="UTC">UTC (Universal Coordinated)</option>
                                     <option value="EST">EST (US Eastern Time)</option>
                                     <option value="PST">PST (US Pacific Time)</option>
-                                    <option value="IST">IST (India Standard Time)</option>
                                     <option value="CET">CET (Central European Time)</option>
                                 </select>
                             </div>
@@ -188,10 +190,11 @@
 
                         <div class="form-group mt-2">
                             <label for="providerSkillsInput" class="form-label">Verified Tech Stack &amp; Frameworks (Comma-separated) *</label>
-                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="Java 21, Spring Boot 3, Supabase PostgreSQL, Vanilla JS, Docker, Kubernetes">
+                            <input type="text" id="providerSkillsInput" class="form-control" placeholder="Java 21, Spring Boot 3, Supabase PostgreSQL, Vanilla JS, Docker, AWS">
+                            <div id="skillsLivePreviewContainer" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;" class="mt-2">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;" class="mt-2">
                             <div class="form-group">
                                 <label for="providerGithubInput" class="form-label">GitHub / Public Codebase Profile</label>
                                 <input type="url" id="providerGithubInput" class="form-control" placeholder="https://github.com/username">
@@ -203,7 +206,7 @@
                         </div>
 
                         <div class="p-2 border rounded mt-3" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.5;">
-                            🛡️ <strong>Catalog Safeguard:</strong> Updating capability settings will update your profile card in talent searches. It will <em>not</em> automatically post or publish unconfigured service packages to the Explore directory.
+                            🛡️ <strong>Catalog Safeguard:</strong> Updating capability settings will update your profile card in talent searches and active projects. It will <em>not</em> automatically publish unconfigured service packages.
                         </div>
                     </div>
 
@@ -216,7 +219,7 @@
                     <!-- Governance & Delivery Notification Preferences -->
                     <div class="mt-3 p-3 border rounded" style="background: #f8fafc;">
                         <h4 class="menu-heading mb-1" style="font-size: 0.85rem;">🔔 Governance Notifications &amp; Alerts</h4>
-                        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;" class="mt-2">
+                        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.82rem;" class="mt-2">
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <input type="checkbox" id="notifyScopeAmendments" checked>
                                 <span>Notify on bilateral scope amendments &amp; clause redlines</span>
@@ -227,15 +230,15 @@
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <input type="checkbox" id="notifyStandupMentions" checked>
-                            <span>Notify on standup updates and architectural decisions</span>
+                                <span>Notify on standup updates and architectural decisions</span>
                             </label>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="modal-footer mt-4" style="padding-top: 1rem; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <div class="form-actions-bar mt-4" style="padding-top: 1.25rem; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                         <button type="button" class="btn btn-secondary" id="btnCancelProfile">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="btnSaveProfile">Save Profile Changes</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveProfile">💾 Save Profile Changes</button>
                     </div>
 
                 </form>

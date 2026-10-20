@@ -3,12 +3,12 @@
  * File: js/pages/profileSettingsPage.js
  * 
  * Manages full profile customization for Clients & Providers:
- * - Direct real-time fetch and single-query update to Supabase `profiles` table.
+ * - Direct real-time fetch and upsert to Supabase `profiles` table.
  * - Dynamic field handling for Client (Company, Industry, Website, Tax ID, Currency)
  *   and Provider (Domain, Skills, Rate, Portfolio, GitHub, Sprint Capacity, Timezone SLA).
  * - Cryptographic WebCrypto SHA-256 signing fingerprint generation.
  * - Governance notification preferences persistence.
- * - Instant AuthState session refresh to ensure all dashboards reflect updates without re-login.
+ * - Live skill badge preview generator and instant session synchronization.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -47,13 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clientIndustrySelect = document.getElementById('clientIndustrySelect');
     const clientWebsiteInput = document.getElementById('clientWebsiteInput');
     const clientTaxIdInput = document.getElementById('clientTaxIdInput');
-    const clientCurrencySelect = document.getElementById('clientCurrencySelect');
+    const clientCurrencyPreference = document.getElementById('clientCurrencyPreference');
 
     // DOM Elements - Provider-Specific
     const providerSpecializedFields = document.getElementById('providerSpecializedFields');
     const providerDomainSelect = document.getElementById('providerDomainSelect');
     const providerHourlyRateInput = document.getElementById('providerHourlyRateInput');
     const providerSkillsInput = document.getElementById('providerSkillsInput');
+    const skillsLivePreviewContainer = document.getElementById('skillsLivePreviewContainer');
     const providerGithubInput = document.getElementById('providerGithubInput');
     const providerPortfolioInput = document.getElementById('providerPortfolioInput');
     const providerCapacitySelect = document.getElementById('providerCapacitySelect');
@@ -61,8 +62,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // DOM Elements - Governance Notification Preferences
     const notifyScopeAmendments = document.getElementById('notifyScopeAmendments');
-    const notifyDeliverableSubmissions = document.getElementById('notifyDeliverableSubmissions');
-    const notifyDecisions = document.getElementById('notifyDecisions');
+    const notifyDeliverableProofs = document.getElementById('notifyDeliverableProofs');
+    const notifyStandupMentions = document.getElementById('notifyStandupMentions');
 
     const isProvider = currentUser.role === ROLES.SERVICE_PROVIDER;
     const isClient = currentUser.role === ROLES.CLIENT;
@@ -97,6 +98,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientSpecializedFields) clientSpecializedFields.classList.remove('hidden');
         if (providerSpecializedFields) providerSpecializedFields.classList.add('hidden');
         if (bioLabel) bioLabel.textContent = 'Company / Project Overview *';
+    }
+
+    // Live Skill Badge Preview Generator
+    if (providerSkillsInput && skillsLivePreviewContainer) {
+        providerSkillsInput.addEventListener('input', () => {
+            const val = providerSkillsInput.value.trim();
+            const tags = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+            skillsLivePreviewContainer.innerHTML = tags.length > 0
+                ? tags.map(t => `<span class="badge badge-subtle">${escapeHtml(t)}</span>`).join('')
+                : '<span class="text-xs text-muted">No skills specified yet.</span>';
+        });
     }
 
     // Compute & Display WebCrypto Signing Identity Fingerprint
@@ -160,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function populateFormFromData(profile) {
         if (!profile) return;
 
-        const name = profile.full_name || profile.fullName || '';
+        const name = profile.full_name || profile.fullName || currentUser.fullName || '';
         if (profileFullName) profileFullName.value = name;
         if (settingsHeaderName) settingsHeaderName.textContent = name || 'User Profile';
         if (settingsAvatarPreview) {
@@ -179,9 +191,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 providerHourlyRateInput.value = profile.hourly_rate || profile.hourlyRate;
             }
             if (providerSkillsInput && profile.skills) {
-                providerSkillsInput.value = Array.isArray(profile.skills) 
+                const skillStr = Array.isArray(profile.skills) 
                     ? profile.skills.join(', ') 
                     : profile.skills;
+                providerSkillsInput.value = skillStr;
+                if (skillsLivePreviewContainer) {
+                    const tags = skillStr.split(',').map(s => s.trim()).filter(Boolean);
+                    skillsLivePreviewContainer.innerHTML = tags.map(t => `<span class="badge badge-subtle">${escapeHtml(t)}</span>`).join('');
+                }
             }
             if (providerGithubInput && (profile.github_url || profile.githubUrl)) {
                 providerGithubInput.value = profile.github_url || profile.githubUrl;
@@ -211,19 +228,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (clientTaxIdInput && (profile.tax_id || profile.taxId)) {
                 clientTaxIdInput.value = profile.tax_id || profile.taxId;
             }
-            if (clientCurrencySelect && (profile.currency || profile.preferredCurrency)) {
-                clientCurrencySelect.value = profile.currency || profile.preferredCurrency;
+            if (clientCurrencyPreference && (profile.currency || profile.preferredCurrency)) {
+                clientCurrencyPreference.value = profile.currency || profile.preferredCurrency;
             }
         }
 
         // Notification Preferences
         const prefs = profile.notification_preferences || profile.preferences || {};
         if (notifyScopeAmendments) notifyScopeAmendments.checked = prefs.scope_amendments !== false;
-        if (notifyDeliverableSubmissions) notifyDeliverableSubmissions.checked = prefs.deliverable_submissions !== false;
-        if (notifyDecisions) notifyDecisions.checked = prefs.decisions !== false;
+        if (notifyDeliverableProofs) notifyDeliverableProofs.checked = prefs.deliverable_submissions !== false;
+        if (notifyStandupMentions) notifyStandupMentions.checked = prefs.decisions !== false;
     }
 
-    // 4. Save Profile Changes Handler (Direct Supabase Update)
+    // 4. Save Profile Changes Handler (Direct Supabase Upsert)
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -243,12 +260,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const notificationPrefs = {
                 scope_amendments: notifyScopeAmendments ? notifyScopeAmendments.checked : true,
-                deliverable_submissions: notifyDeliverableSubmissions ? notifyDeliverableSubmissions.checked : true,
-                decisions: notifyDecisions ? notifyDecisions.checked : true
+                deliverable_submissions: notifyDeliverableProofs ? notifyDeliverableProofs.checked : true,
+                decisions: notifyStandupMentions ? notifyStandupMentions.checked : true
             };
 
-            // Construct unified payload for profiles table
             const updatePayload = {
+                id: currentUser.id,
+                email: currentUser.email,
+                role: currentUser.role,
                 full_name: fullNameVal,
                 bio: bioVal,
                 notification_preferences: notificationPrefs,
@@ -258,15 +277,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (isProvider) {
                 const skillsArr = providerSkillsInput?.value
                     ? providerSkillsInput.value.split(',').map(s => s.trim()).filter(Boolean)
-                    : ['Engineering'];
+                    : ['Java 21', 'Spring Boot', 'Supabase PostgreSQL'];
 
                 updatePayload.domain = providerDomainSelect?.value || 'Full-Stack Web Development';
                 updatePayload.hourly_rate = parseFloat(providerHourlyRateInput?.value) || 50;
                 updatePayload.skills = skillsArr;
                 updatePayload.github_url = (providerGithubInput?.value || '').trim();
                 updatePayload.portfolio_url = (providerPortfolioInput?.value || '').trim();
-                updatePayload.sprint_capacity = providerCapacitySelect?.value || '2_PROJECTS';
-                updatePayload.timezone_sla = providerTimezoneSelect?.value || 'UTC';
+                updatePayload.sprint_capacity = providerCapacitySelect?.value || 'AVAILABLE';
+                updatePayload.timezone_sla = providerTimezoneSelect?.value || 'IST';
             }
 
             if (isClient) {
@@ -274,24 +293,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updatePayload.industry = clientIndustrySelect?.value || 'Software & IT';
                 updatePayload.website_url = (clientWebsiteInput?.value || '').trim();
                 updatePayload.tax_id = (clientTaxIdInput?.value || '').trim();
-                updatePayload.currency = clientCurrencySelect?.value || 'USD';
+                updatePayload.currency = clientCurrencyPreference?.value || 'USD';
             }
 
             try {
                 if (!sb) throw new Error('Database client connection missing.');
 
-                // Direct Supabase Update to `profiles` table
-                let updateQuery = sb.from('profiles').update(updatePayload);
-                if (currentUser.id) {
-                    updateQuery = updateQuery.eq('id', currentUser.id);
-                } else {
-                    updateQuery = updateQuery.eq('email', currentUser.email);
-                }
+                // Upsert to Supabase `profiles` table
+                const { error: dbError } = await sb
+                    .from('profiles')
+                    .upsert([updatePayload], { onConflict: 'id' });
 
-                const { error: dbError } = await updateQuery;
                 if (dbError) throw dbError;
 
-                // Immediately sync user session object in AuthState / LocalStorage
                 const updatedSessionUser = {
                     ...currentUser,
                     fullName: fullNameVal,
@@ -301,6 +315,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (window.AuthState && typeof window.AuthState.setUser === 'function') {
                     window.AuthState.setUser(updatedSessionUser);
+                } else {
+                    localStorage.setItem('wb_current_user', JSON.stringify(updatedSessionUser));
                 }
 
                 if (window.Toast) {
@@ -318,9 +334,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 if (btnSaveProfile) {
                     btnSaveProfile.disabled = false;
-                    btnSaveProfile.textContent = 'Save Profile Changes';
+                    btnSaveProfile.textContent = '💾 Save Profile Changes';
                 }
             }
         });
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 });

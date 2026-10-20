@@ -330,4 +330,340 @@
     <script src="js/components/toast.js"></script>
     <script src="js/pages/explorePage.js"></script>
 </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore and invite verified technology leads and packaged engineering offerings on WorkBridge. Discover vetted full-stack architects, cloud engineers, and technical service providers.">
+    <title>Explore Technical Leads &amp; Services | WorkBridge</title>
+    
+    <!-- CSS Foundations -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/workspace.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Global Top Navigation Header -->
+    <header class="site-header">
+        <div class="container nav-container">
+            <a href="index.html" class="brand-logo" aria-label="WorkBridge Home">
+                <span class="logo-accent">Work</span>Bridge
+            </a>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+            
+            <nav id="mainNav" class="nav-links">
+                <!-- Dynamically populated via js/components/navbar.js -->
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-main">
+        <div class="container">
+            
+            <!-- Page Header -->
+            <div class="dashboard-header-row">
+                <div>
+                    <h1 class="page-title">Explore Verified Technical Leads</h1>
+                    <p class="text-muted">Discover specialized engineers, backend architects, and vetted development teams ready for milestone-governed execution.</p>
+                </div>
+                <div class="header-action-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnRefreshCatalog" title="Sync live services">
+                        <span class="btn-icon">🔄</span> Sync Market
+                    </button>
+                    <span class="badge badge-success" id="providerVerificationNotice">🛡️ Verified Engineering Talent</span>
+                </div>
+            </div>
+
+            <!-- Enhanced Search & Filter Controls -->
+            <section class="filter-panel card mt-3">
+                <form id="providerFilterForm" class="filter-grid">
+                    
+                    <div class="form-group mb-0">
+                        <label for="searchInput" class="form-label-sm">Search by Name, Skill, or Framework</label>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="form-control" 
+                            placeholder="e.g., Spring Boot, React, PostgreSQL, Docker, AWS"
+                        >
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="categoryFilter" class="form-label-sm">Technical Specialization</label>
+                        <select id="categoryFilter" class="form-control">
+                            <option value="">All Technical Domains</option>
+                            <option value="WEB_DEVELOPMENT">Full-Stack Web Engineering</option>
+                            <option value="BACKEND">Backend &amp; Microservices Architecture</option>
+                            <option value="FRONTEND">Frontend &amp; UI Systems</option>
+                            <option value="MOBILE">Mobile Systems (iOS &amp; Android)</option>
+                            <option value="DEVOPS">DevOps &amp; Cloud Infrastructure</option>
+                            <option value="AI">AI &amp; Machine Learning Pipelines</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="minRatingFilter" class="form-label-sm">Minimum Delivery Reputation</label>
+                        <select id="minRatingFilter" class="form-control">
+                            <option value="0">Any Track Record</option>
+                            <option value="4.8">★ 4.8 &amp; Above</option>
+                            <option value="4.5">★ 4.5 &amp; Above</option>
+                            <option value="4.0">★ 4.0 &amp; Above</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="rateBracketFilter" class="form-label-sm">Hourly Consideration ($/hr)</label>
+                        <select id="rateBracketFilter" class="form-control">
+                            <option value="ALL">Any Rate Bracket</option>
+                            <option value="UNDER_50">&lt; $50 / hr</option>
+                            <option value="50_100">$50 - $100 / hr</option>
+                            <option value="ABOVE_100">&gt; $100 / hr</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions" style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                        <button type="submit" class="btn btn-primary btn-block">Search Catalog</button>
+                        <button type="button" id="resetFilterBtn" class="btn btn-outline btn-block">Reset Filters</button>
+                    </div>
+
+                </form>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section mt-4">
+                <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <div class="title-with-badge" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h3 class="section-heading" style="margin: 0;">Verified Offerings &amp; Technical Leads</h3>
+                        <span id="resultsCount" class="badge badge-subtle">Loading catalog...</span>
+                    </div>
+
+                    <!-- Marketplace Type Filter Pills & Catalog Sort Selector -->
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <div class="filter-pill-group">
+                            <button type="button" class="filter-pill active" data-type="ALL">All Offerings</button>
+                            <button type="button" class="filter-pill" data-type="GIGS">Packaged Services</button>
+                            <button type="button" class="filter-pill" data-type="TALENT">Verified Engineers</button>
+                        </div>
+                        <select id="catalogSortSelect" class="form-control form-control-sm" style="width: auto;">
+                            <option value="RATING_DESC">Top Rated (Reputation)</option>
+                            <option value="RATE_ASC">Rate: Low to High</option>
+                            <option value="RATE_DESC">Rate: High to Low</option>
+                            <option value="SLA_ASC">Fastest Delivery SLA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Provider Card Grid (Populated dynamically via explorePage.js) -->
+                <div id="providerGrid" class="projects-list-grid mt-3">
+                    <!-- Skeleton / Placeholder loading cards -->
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50 mt-2"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50 mt-2"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                    <div class="card card-skeleton">
+                        <div class="skeleton-line w-75"></div>
+                        <div class="skeleton-line w-50 mt-2"></div>
+                        <div class="skeleton-box mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="card empty-state text-center hidden" style="padding: 2.5rem 1.5rem;">
+                    <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 0.75rem;">🔍</div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">No Verified Offerings Found</h3>
+                    <p class="text-muted" style="max-width: 480px; margin: 0 auto 1.25rem auto; font-size: 0.9rem;">
+                        No offerings matched your current filter criteria. Clear your active filters or publish a new service package from a Provider account.
+                    </p>
+                    <div class="empty-actions" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline" id="clearSearchStateBtn">Clear Filters</button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Modal 1: Provider Profile & Capability Preview Modal (Universal Flex Scroll) -->
+    <div id="providerDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary" id="detailModalCategoryBadge">Technical Lead Profile</span>
+                    <h3 class="modal-title mt-1" id="detailModalTitle">Verified Capabilities &amp; Credentials</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeDetailModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="detailModalBody" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
+                <div class="profile-header-summary mb-3" style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="profile-avatar avatar-provider" id="detailAvatar" style="width: 56px; height: 56px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; flex-shrink: 0;">P</div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <h4 style="margin: 0;" id="detailProviderName">Provider Name</h4>
+                            <span class="badge badge-success" id="detailVerifiedBadge">Verified Engineer</span>
+                        </div>
+                        <div class="text-xs text-muted mt-1" id="detailProviderDomain">Software Engineering</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Professional Background &amp; Delivery Commitments</label>
+                    <p class="text-sm text-muted" id="detailBio" style="line-height: 1.5; white-space: pre-wrap;">Loading details...</p>
+                </div>
+
+                <div class="form-group mt-2">
+                    <label class="form-label">Verified Tech Stack &amp; Architectural Focus</label>
+                    <div id="detailSkillsContainer" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+                </div>
+
+                <!-- Governance Compliance Standing Badges -->
+                <div class="mt-3 p-2 border rounded" style="background: #f8fafc;">
+                    <span class="text-xs text-muted font-bold" style="display: block; letter-spacing: 0.5px;">GOVERNANCE COMPLIANCE STANDING</span>
+                    <div class="mt-1" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <span class="badge badge-subtle">✓ Git PR Proof Workflow Enforced</span>
+                        <span class="badge badge-subtle">✓ SHA-256 Baseline Locking Ready</span>
+                        <span class="badge badge-success">✓ 100% Milestone Dispute-Free Record</span>
+                    </div>
+                </div>
+
+                <div class="meta-kv-group mt-3 p-2 border rounded" style="background: var(--bg-muted, #f8fafc);">
+                    <div class="kv-item"><span class="text-muted text-xs">Standard Hourly Consideration:</span> <strong id="detailRate">$50/hr</strong></div>
+                    <div class="kv-item mt-1"><span class="text-muted text-xs">Standard SLA Turnaround:</span> <strong id="detailDeliveryDays">14 Days</strong></div>
+                    <div class="kv-item mt-1"><span class="text-muted text-xs">Verified Portfolio / Repository:</span> <a href="#" target="_blank" rel="noopener" id="detailPortfolioLink" style="font-size: 0.85rem; color: var(--primary, #3b82f6);">View Public Artifacts &nearr;</a></div>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-shrink: 0;">
+                <button type="button" class="btn btn-secondary" id="cancelDetailModalBtn">Close</button>
+                <button type="button" class="btn btn-primary" id="btnInviteFromDetail">➕ Invite to Scope Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Invite / Start Project Modal (Guaranteed Footer Visibility & Scroll) -->
+    <div id="inviteModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalProviderTitle">
+        <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-header">
+                <div class="modal-heading-group">
+                    <span class="badge badge-primary" id="modalProviderCategoryBadge">Provider Engagement</span>
+                    <h3 class="modal-title mt-1" id="modalProviderTitle">Dispatch Project Invitation</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <form id="inviteProjectForm" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
+                    <input type="hidden" id="selectedProviderId" name="providerId">
+                    <input type="hidden" id="selectedProviderName" name="providerName">
+                    <input type="hidden" id="selectedProviderEmail" name="providerEmail">
+                    <input type="hidden" id="selectedProviderDomain" name="providerDomain">
+                    
+                    <div class="form-group">
+                        <label for="projectTitleInput" class="form-label">Project Title *</label>
+                        <input 
+                            type="text" 
+                            id="projectTitleInput" 
+                            class="form-control" 
+                            placeholder="e.g. Distributed Auth &amp; Cloud Microservices Architecture" 
+                            required
+                        >
+                    </div>
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="projectCategorySelect" class="form-label">Technical Domain *</label>
+                            <select id="projectCategorySelect" class="form-control" required>
+                                <option value="WEB_DEVELOPMENT">Full-Stack Web Engineering</option>
+                                <option value="BACKEND">Backend &amp; Microservices Architecture</option>
+                                <option value="FRONTEND">Frontend &amp; UI Systems</option>
+                                <option value="MOBILE">Mobile Systems (iOS &amp; Android)</option>
+                                <option value="DEVOPS">DevOps &amp; Infrastructure Engineering</option>
+                                <option value="AI">AI &amp; Machine Learning Pipelines</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectBudgetInput" class="form-label">Target Budget ($ USD) *</label>
+                            <input 
+                                type="number" 
+                                id="projectBudgetInput" 
+                                class="form-control" 
+                                placeholder="2000" 
+                                min="50" 
+                                value="1500" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2 mt-2" style="gap: 0.75rem;">
+                        <div class="form-group">
+                            <label for="projectTargetSlaInput" class="form-label">Estimated Delivery SLA Date</label>
+                            <input type="date" id="projectTargetSlaInput" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectEstimatedMilestonesSelect" class="form-label">Planned Milestone Checkpoints</label>
+                            <select id="projectEstimatedMilestonesSelect" class="form-control">
+                                <option value="2">2 Milestones (Foundations &rarr; Delivery)</option>
+                                <option value="3" selected>3 Milestones (Arch &rarr; Core &rarr; Hand-off)</option>
+                                <option value="4">4 Milestones (Iterative Sprints)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectRepoRefInput" class="form-label">Reference Git Repository / Specification URL (Optional)</label>
+                        <input type="url" id="projectRepoRefInput" class="form-control" placeholder="https://github.com/org/repo or Figma link">
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label for="projectSummaryInput" class="form-label">Executive Scope &amp; Deliverables Objective *</label>
+                        <textarea 
+                            id="projectSummaryInput" 
+                            class="form-control" 
+                            rows="4" 
+                            placeholder="Detail functional requirements, core APIs, target delivery schedule, and expected deliverables..." 
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="p-2 border rounded mt-3" style="background: #f8fafc; font-size: 0.75rem; color: #64748b; line-height: 1.5;">
+                        🔒 <strong>Lifecycle Protocol:</strong> Dispatching an invitation initializes a protected workspace in <code>INVITED</code> state. Active scoping and agreement ratification unlock immediately once the technical lead accepts.
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="flex-shrink: 0;">
+                    <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Dispatch Invitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts Pipeline (Supabase First) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/api/supabaseClient.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/state/authState.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/api/projectApi.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/modal.js"></script>
+    <script src="js/components/toast.js"></script>
+    <script src="js/pages/explorePage.js"></script>
+</body>
 </html>

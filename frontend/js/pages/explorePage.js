@@ -3,13 +3,13 @@
  * File: js/pages/explorePage.js
  * 
  * Powered by direct Supabase PostgreSQL queries (`services` & `profiles` tables).
- * Supports real-time gig discovery, multi-criteria filtering & sorting,
- * provider credentials preview, and structured project invitation dispatching.
+ * Supports real-time gig discovery, strict SERVICE_PROVIDER role filtering,
+ * multi-criteria sorting, provider credentials preview, and project invitation dispatching.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
     const config = window.APP_CONFIG || {};
-    const ROLES = config.ROLES || { CLIENT: 'CLIENT', SERVICE_PROVIDER: 'SERVICE_PROVIDER' };
+    const ROLES = config.ROLES || { CLIENT: 'CLIENT', SERVICE_PROVIDER: 'SERVICE_PROVIDER', ADMIN: 'ADMIN' };
 
     // Supabase Client Reference
     const sb = window.sbClient;
@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const inviteProjectForm = document.getElementById('inviteProjectForm');
     const selectedProviderIdInput = document.getElementById('selectedProviderId');
     const selectedProviderNameInput = document.getElementById('selectedProviderName');
+    const selectedProviderEmailInput = document.getElementById('selectedProviderEmail');
     const selectedProviderDomainInput = document.getElementById('selectedProviderDomain');
     const modalProviderTitle = document.getElementById('modalProviderTitle');
     const modalSubmitBtn = document.getElementById('modalSubmitBtn');
@@ -85,10 +86,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn('Supabase services query error:', servicesErr.message);
             }
 
-            // 2. Query verified profiles with role = SERVICE_PROVIDER
+            // 2. Query verified profiles strictly with role = SERVICE_PROVIDER
             const { data: profilesData, error: profilesErr } = await sb
                 .from('profiles')
                 .select('*')
+                .eq('role', ROLES.SERVICE_PROVIDER)
                 .order('created_at', { ascending: false });
 
             if (profilesErr) {
@@ -98,45 +100,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rawServices = Array.isArray(servicesData) ? servicesData : [];
             const rawProfiles = Array.isArray(profilesData) ? profilesData : [];
 
+            // Build lookup map of provider profiles by ID for email/portfolio enrichment
+            const profileMap = {};
+            rawProfiles.forEach(p => {
+                if (p.id) profileMap[p.id] = p;
+            });
+
             // Format specialized services/gigs posted by providers
-            const formattedServices = rawServices.map(svc => ({
-                id: svc.id,
-                providerId: svc.provider_id,
-                providerName: svc.provider_name || 'Verified Provider',
-                title: svc.title,
-                domain: svc.domain || svc.title,
-                category: svc.category || 'WEB_DEVELOPMENT',
-                hourlyRate: Number(svc.hourly_rate) || 50,
-                deliveryDays: Number(svc.delivery_days) || 14,
-                skills: parseSkills(svc.skills),
-                description: svc.description || 'Full technical service package with milestone-locked commitments.',
-                rating: Number(svc.average_rating || 5.0).toFixed(1),
-                createdAt: svc.created_at,
-                isLiveService: true,
-                type: 'GIGS'
-            }));
+            const formattedServices = rawServices.map(svc => {
+                const linkedProfile = profileMap[svc.provider_id] || {};
+                return {
+                    id: 'svc_' + svc.id,
+                    rawServiceId: svc.id,
+                    providerId: svc.provider_id,
+                    providerName: svc.provider_name || linkedProfile.full_name || 'Verified Provider',
+                    providerEmail: linkedProfile.email || '',
+                    title: svc.title || 'Specialized Engineering Package',
+                    domain: svc.domain || linkedProfile.domain || svc.title,
+                    category: svc.category || inferCategoryFromDomain(svc.domain || linkedProfile.domain),
+                    hourlyRate: Number(svc.hourly_rate) || Number(linkedProfile.hourly_rate) || 50,
+                    deliveryDays: Number(svc.delivery_days) || 14,
+                    skills: parseSkills(svc.skills || linkedProfile.skills),
+                    description: svc.description || 'Full technical service package with milestone-locked commitments.',
+                    rating: Number(svc.average_rating || linkedProfile.rating || 5.0).toFixed(1),
+                    githubUrl: linkedProfile.github_url || null,
+                    portfolioUrl: linkedProfile.portfolio_url || null,
+                    createdAt: svc.created_at,
+                    isLiveService: true,
+                    type: 'GIGS'
+                };
+            });
 
             // Format standalone provider talent profiles
-            const formattedProfiles = rawProfiles
-                .filter(prof => !formattedServices.some(s => s.providerId === prof.id))
-                .map(prof => ({
-                    id: prof.id,
-                    providerId: prof.id,
-                    providerName: prof.full_name || 'Verified Engineer',
-                    title: prof.domain || 'Technical Service Provider',
-                    domain: prof.domain || 'Software Engineering',
-                    category: 'WEB_DEVELOPMENT',
-                    hourlyRate: Number(prof.hourly_rate) || 50,
-                    deliveryDays: 14,
-                    skills: parseSkills(prof.skills),
-                    description: prof.bio || 'Verified provider on WorkBridge ready for milestone-locked technical delivery.',
-                    rating: Number(prof.rating || 5.0).toFixed(1),
-                    githubUrl: prof.github_url || null,
-                    portfolioUrl: prof.portfolio_url || null,
-                    createdAt: prof.created_at,
-                    isLiveService: false,
-                    type: 'TALENT'
-                }));
+            const formattedProfiles = rawProfiles.map(prof => ({
+                id: 'prof_' + prof.id,
+                providerId: prof.id,
+                providerName: prof.full_name || 'Verified Technical Lead',
+                providerEmail: prof.email || '',
+                title: prof.domain || 'Full-Stack Technical Lead',
+                domain: prof.domain || 'Software Engineering',
+                category: inferCategoryFromDomain(prof.domain),
+                hourlyRate: Number(prof.hourly_rate) || 50,
+                deliveryDays: 14,
+                skills: parseSkills(prof.skills),
+                description: prof.bio || 'Verified Technical Lead on WorkBridge ready for milestone-governed architecture and delivery.',
+                rating: Number(prof.rating || 5.0).toFixed(1),
+                githubUrl: prof.github_url || null,
+                portfolioUrl: prof.portfolio_url || null,
+                createdAt: prof.created_at,
+                isLiveService: false,
+                type: 'TALENT'
+            }));
 
             allCatalogItems = [...formattedServices, ...formattedProfiles];
             applyFilters();
@@ -148,6 +162,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             renderCatalog([]);
         }
+    }
+
+    function inferCategoryFromDomain(domainStr) {
+        const d = (domainStr || '').toUpperCase();
+        if (d.includes('AI') || d.includes('DATA') || d.includes('MACHINE LEARNING')) return 'AI';
+        if (d.includes('BACKEND') || d.includes('MICROSERVICE') || d.includes('API')) return 'BACKEND';
+        if (d.includes('FRONTEND') || d.includes('UI') || d.includes('UX')) return 'FRONTEND';
+        if (d.includes('MOBILE') || d.includes('IOS') || d.includes('ANDROID')) return 'MOBILE';
+        if (d.includes('DEVOPS') || d.includes('CLOUD') || d.includes('AWS')) return 'DEVOPS';
+        return 'WEB_DEVELOPMENT';
     }
 
     function showLoadingSkeleton() {
@@ -174,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 2. Render Cards to Grid (Cleaned String Interpolation)
+    // 2. Render Cards to Grid
     // -------------------------------------------------------------------------
     function renderCatalog(items) {
         if (!providerGrid) return;
@@ -206,7 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const serviceBadge = item.isLiveService 
                 ? `<span class="badge badge-success">⚡ Packaged Gig</span>`
-                : `<span class="badge badge-primary">Verified Engineer</span>`;
+                : `<span class="badge badge-primary">🛡️ Verified Engineer</span>`;
 
             const slaDisplay = item.deliveryDays 
                 ? `<span class="text-muted text-xs ml-2">&bull; SLA: <strong>${item.deliveryDays}d</strong></span>` 
@@ -217,14 +241,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="provider-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
-                                <h3 class="card-title btn-preview-profile" data-id="${item.providerId}" style="font-size: 1.15rem; margin: 0; cursor: pointer; color: var(--text-main);">
+                                <h3 class="card-title btn-preview-profile" data-item-id="${escapeHtml(item.id)}" style="font-size: 1.15rem; margin: 0; cursor: pointer; color: var(--text-main);">
                                     ${escapeHtml(item.providerName)} &nearr;
                                 </h3>
                                 ${serviceBadge}
                             </div>
                             <span class="badge badge-subtle">${escapeHtml(item.title)}</span>
                         </div>
-                        <div class="rating-badge" style="font-weight: 700; color: var(--primary, #3b82f6); font-size: 0.95rem;">
+                        <div class="rating-badge" style="font-weight: 700; color: var(--primary, #3b82f6); font-size: 0.95rem; flex-shrink: 0;">
                             ★ ${item.rating}
                         </div>
                     </div>
@@ -244,12 +268,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ${slaDisplay}
                     </div>
                     <div style="display: flex; gap: 0.4rem; align-items: center;">
-                        <button type="button" class="btn btn-outline btn-sm btn-preview-profile" data-id="${item.providerId}">
+                        <button type="button" class="btn btn-outline btn-sm btn-preview-profile" data-item-id="${escapeHtml(item.id)}">
                             Details
                         </button>
                         <button type="button" class="btn btn-primary btn-sm btn-invite" 
-                            data-id="${item.providerId}" 
+                            data-id="${escapeHtml(item.providerId)}" 
                             data-name="${escapeHtml(item.providerName)}"
+                            data-email="${escapeHtml(item.providerEmail || '')}"
                             data-domain="${escapeHtml(item.domain || item.title)}">
                             + Invite to Scope
                         </button>
@@ -265,16 +290,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', () => {
                 const providerId = btn.getAttribute('data-id');
                 const providerName = btn.getAttribute('data-name');
+                const providerEmail = btn.getAttribute('data-email');
                 const providerDomain = btn.getAttribute('data-domain');
-                handleInviteClick(providerId, providerName, providerDomain);
+                handleInviteClick(providerId, providerName, providerDomain, providerEmail);
             });
         });
 
-        // Wire click listeners for "Details" / Name click
+        // Wire click listeners for "Details" / Name click using unique item ID
         providerGrid.querySelectorAll('.btn-preview-profile').forEach(btn => {
             btn.addEventListener('click', () => {
-                const pid = btn.getAttribute('data-id');
-                const item = allCatalogItems.find(i => String(i.providerId) === String(pid));
+                const itemId = btn.getAttribute('data-item-id');
+                const item = allCatalogItems.find(i => String(i.id) === String(itemId));
                 if (item) openDetailModal(item);
             });
         });
@@ -337,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!activePreviewItem) return;
             const item = activePreviewItem;
             closeDetailModal();
-            handleInviteClick(item.providerId, item.providerName, item.domain);
+            handleInviteClick(item.providerId, item.providerName, item.domain, item.providerEmail);
         });
     }
 
@@ -352,32 +378,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sortOrder = catalogSortSelect?.value || 'RATING_DESC';
 
         let filtered = allCatalogItems.filter(item => {
-            // 1. Pill filter match
             if (currentFilterType !== 'ALL' && item.type !== currentFilterType) {
                 return false;
             }
 
-            // 2. Search query match
             const providerName = (item.providerName || '').toLowerCase();
             const description = (item.description || '').toLowerCase();
             const title = (item.title || '').toLowerCase();
+            const domain = (item.domain || '').toLowerCase();
             const skills = item.skills.map(s => s.toLowerCase());
 
             const matchesQuery = !query || 
                 providerName.includes(query) || 
                 description.includes(query) || 
                 title.includes(query) || 
+                domain.includes(query) ||
                 skills.some(s => s.includes(query));
 
-            // 3. Domain category match
             const itemCategory = (item.category || '').toUpperCase();
             const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || itemCategory.includes(selectedCategory);
 
-            // 4. Rating match
             const rating = parseFloat(item.rating || 5.0);
             const matchesRating = rating >= minRating;
 
-            // 5. Rate bracket filter match
             const rate = Number(item.hourlyRate) || 0;
             let matchesBracket = true;
             if (selectedRateBracket === 'UNDER_50') matchesBracket = rate < 50;
@@ -387,19 +410,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             return matchesQuery && matchesCategory && matchesRating && matchesBracket;
         });
 
-        // 6. Sort results
         filtered.sort((a, b) => {
             if (sortOrder === 'RATE_ASC') return (a.hourlyRate || 0) - (b.hourlyRate || 0);
             if (sortOrder === 'RATE_DESC') return (b.hourlyRate || 0) - (a.hourlyRate || 0);
             if (sortOrder === 'SLA_ASC') return (a.deliveryDays || 14) - (b.deliveryDays || 14);
-            return parseFloat(b.rating || 5.0) - parseFloat(a.rating || 5.0); // RATING_DESC
+            return parseFloat(b.rating || 5.0) - parseFloat(a.rating || 5.0);
         });
 
         renderCatalog(filtered);
     }
 
     function setupEventListeners() {
-        // Pill Buttons
         filterPills.forEach(pill => {
             pill.addEventListener('click', () => {
                 filterPills.forEach(p => p.classList.remove('active'));
@@ -451,10 +472,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     // 5. Project Invitation Modal Setup
     // -------------------------------------------------------------------------
-    function handleInviteClick(providerId, providerName, providerDomain) {
-        const isLoggedIn = window.AuthState ? window.AuthState.isLoggedIn() : false;
+    function handleInviteClick(providerId, providerName, providerDomain, providerEmail = '') {
+        const user = window.AuthState && typeof window.AuthState.getUser === 'function'
+            ? window.AuthState.getUser()
+            : null;
+        const isLoggedIn = window.AuthState && typeof window.AuthState.isLoggedIn === 'function'
+            ? window.AuthState.isLoggedIn()
+            : Boolean(user);
 
-        if (!isLoggedIn) {
+        if (!isLoggedIn || !user) {
             if (window.Toast) window.Toast.info('Please sign in as a Client to start a project.');
             setTimeout(() => {
                 window.location.href = `auth.html?redirect=${encodeURIComponent('provider-explore.html')}`;
@@ -462,26 +488,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const user = window.AuthState.getUser();
-        if (user && user.role !== ROLES.CLIENT) {
+        if (user.role !== ROLES.CLIENT) {
             if (window.Toast) window.Toast.warning('Only Client accounts can dispatch project invitations.');
             return;
         }
 
         if (selectedProviderIdInput) selectedProviderIdInput.value = providerId;
         if (selectedProviderNameInput) selectedProviderNameInput.value = providerName;
+        if (selectedProviderEmailInput) selectedProviderEmailInput.value = providerEmail || '';
         if (selectedProviderDomainInput) selectedProviderDomainInput.value = providerDomain || '';
         if (modalProviderTitle) modalProviderTitle.textContent = `Invite ${providerName} to Scope Project`;
 
         const categorySelect = document.getElementById('projectCategorySelect');
         if (categorySelect && providerDomain) {
-            const domainUpper = providerDomain.toUpperCase();
-            if (domainUpper.includes('BACKEND')) categorySelect.value = 'BACKEND';
-            else if (domainUpper.includes('FRONTEND')) categorySelect.value = 'FRONTEND';
-            else if (domainUpper.includes('MOBILE')) categorySelect.value = 'MOBILE';
-            else if (domainUpper.includes('DEVOPS')) categorySelect.value = 'DEVOPS';
-            else if (domainUpper.includes('AI')) categorySelect.value = 'AI';
-            else categorySelect.value = 'WEB_DEVELOPMENT';
+            categorySelect.value = inferCategoryFromDomain(providerDomain);
         }
 
         if (inviteModal) {
@@ -505,7 +525,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Submit Invitation -> Direct Insert into Supabase `projects` & `agreements`
+    // 6. Submit Invitation -> Direct Insert into Supabase `projects`, `agreements`, `requirements`
     // -------------------------------------------------------------------------
     if (inviteProjectForm) {
         inviteProjectForm.addEventListener('submit', async (e) => {
@@ -513,6 +533,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const providerId = selectedProviderIdInput ? selectedProviderIdInput.value : null;
             const providerName = selectedProviderNameInput ? selectedProviderNameInput.value : 'Assigned Provider';
+            const providerEmail = selectedProviderEmailInput ? selectedProviderEmailInput.value : null;
             const title = (document.getElementById('projectTitleInput')?.value || '').trim();
             const category = document.getElementById('projectCategorySelect')?.value || 'WEB_DEVELOPMENT';
             const summary = (document.getElementById('projectSummaryInput')?.value || '').trim();
@@ -537,13 +558,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const currentUser = window.AuthState ? window.AuthState.getUser() : null;
+            const clientDisplayName = currentUser?.fullName || currentUser?.name || currentUser?.username || 'Verified Client';
 
             const newProjectRow = {
                 client_id: currentUser?.id,
-                client_name: currentUser?.fullName || 'Verified Client',
+                client_name: clientDisplayName,
                 client_email: currentUser?.email || 'client@workbridge.io',
                 assigned_provider_id: providerId,
                 assigned_provider_name: providerName,
+                assigned_provider_email: providerEmail || null,
                 title: title,
                 category: category,
                 budget: budget,
@@ -557,7 +580,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             try {
-                // Direct insert into Supabase `projects` table
+                // 1. Direct insert into Supabase `projects` table
                 const { data, error } = await sb
                     .from('projects')
                     .insert([newProjectRow])
@@ -566,7 +589,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (error) throw error;
 
-                // Create initial agreement stub in draft state
+                // 2. Create initial agreement stub in draft state
                 await sb
                     .from('agreements')
                     .insert([{
@@ -574,10 +597,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                         version: '1.0',
                         status: 'DRAFT',
                         agreed_amount: budget,
+                        target_delivery_date: targetSla,
                         terms_and_conditions: `Mutual scope baseline governed by WorkBridge milestone protocol. Estimated Milestones: ${milestoneCount}. Target SLA: ${targetSla || 'Standard'}.`
-                    }])
-                    .select()
-                    .maybeSingle();
+                    }]);
+
+                // 3. Seed initial requirement draft from invitation summary
+                await sb
+                    .from('requirements')
+                    .upsert([{
+                        project_id: data.id,
+                        version: '1.0',
+                        status: 'DRAFT',
+                        objectives: title,
+                        features: summary
+                    }], { onConflict: 'project_id' });
+
+                // 4. Record system log in workspace messages
+                await sb
+                    .from('workspace_messages')
+                    .insert([{
+                        project_id: data.id,
+                        sender_id: currentUser?.id,
+                        sender_name: clientDisplayName,
+                        sender_role: 'CLIENT',
+                        message: `Project invitation dispatched to ${providerName} ($${budget.toLocaleString()} target budget). Awaiting provider acceptance to unlock scoping.`
+                    }]);
+
+                if (window.AuthState && typeof window.AuthState.setActiveProjectId === 'function') {
+                    window.AuthState.setActiveProjectId(data.id);
+                }
 
                 if (window.Toast) {
                     window.Toast.success(`Invitation dispatched! ${providerName} can now review your proposal.`);
@@ -607,11 +655,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Utilities
     // -------------------------------------------------------------------------
     function parseSkills(skills) {
-        if (Array.isArray(skills)) return skills;
+        if (Array.isArray(skills) && skills.length > 0) return skills;
         if (typeof skills === 'string' && skills.trim()) {
             return skills.split(',').map(s => s.trim()).filter(Boolean);
         }
-        return ['Java', 'Spring Boot', 'PostgreSQL', 'JavaScript'];
+        return ['Java 21', 'Spring Boot', 'PostgreSQL', 'Vanilla JS'];
     }
 
     function escapeHtml(str) {
