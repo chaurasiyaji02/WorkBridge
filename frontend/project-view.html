@@ -38,7 +38,7 @@
     <main class="workspace-container container">
 
         <!-- ============================================================= -->
-        <!-- PILLAR 1 GUARD: INVITATION PENDING RESTRICTION BANNER         -->
+        <!-- PILLAR 1A GUARD: INVITATION PENDING RESTRICTION BANNER        -->
         <!-- ============================================================= -->
         <section id="invitationGuardBanner" class="card guard-banner-card hidden" style="border-left: 4px solid #f59e0b; background: #fffbeb; margin-bottom: 1rem; padding: 1.25rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -55,6 +55,34 @@
                 <div id="invitationProviderActions" class="hidden" style="display: flex; gap: 0.5rem; align-items: center;">
                     <button type="button" id="btnDeclineInvitation" class="btn btn-outline btn-sm" style="color: #b91c1c; border-color: #fca5a5;">Decline Project</button>
                     <button type="button" id="btnAcceptInvitation" class="btn btn-success btn-sm">Accept Project &amp; Unlock Workspace</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- PILLAR 1B GUARD: BILATERAL FINAL HANDOVER & SIGN-OFF BANNER   -->
+        <!-- ============================================================= -->
+        <section id="finalReviewGuardBanner" class="card hidden" style="border-left: 4px solid #3b82f6; background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%); margin-bottom: 1rem; padding: 1.25rem; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+                    <span style="font-size: 1.65rem;" id="finalReviewBannerIcon" aria-hidden="true">🛡️</span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="font-weight: 800; color: #1e3a8a; font-size: 1rem;" id="finalReviewBannerTitle">Bilateral Project Handover &amp; Final Acceptance Protocol</span>
+                            <span class="badge badge-primary" id="finalReviewStatusBadge">Awaiting Mutual Sign-Off</span>
+                        </div>
+                        <p id="finalReviewBannerDesc" style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #334155; max-width: 720px; line-height: 1.45;">
+                            Unilateral project completion is prohibited by WorkBridge governance. The Technical Lead must submit a final handover package, and the Client Principal must verify all deliverables to release final escrow and mark the project Completed.
+                        </p>
+                    </div>
+                </div>
+                <div id="finalReviewBannerActions" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+                    <button type="button" id="btnOpenFinalHandoverModal" class="btn btn-primary btn-sm">
+                        🏆 Open Final Sign-Off Console
+                    </button>
+                    <button type="button" id="btnOpenCertificateDeedTop" class="btn btn-outline btn-sm hidden">
+                        🏅 View Governance Certificate
+                    </button>
                 </div>
             </div>
         </section>
@@ -80,7 +108,10 @@
                     <button type="button" id="btnViewAuditHistory" class="btn btn-outline btn-sm" title="View timestamped governance contract log">
                         📜 Scope Audit Trail
                     </button>
-                    <button type="button" id="btnProposeStageAdvance" class="btn btn-primary btn-sm" title="Advance project to the next lifecycle stage">
+                    <button type="button" id="btnOpenDeedCertificate" class="btn btn-outline btn-sm" style="border-color: #3b82f6; color: #1d4ed8;" title="Generate official cryptographic governance deed">
+                        🏅 Governance Deed
+                    </button>
+                    <button type="button" id="btnProposeStageAdvance" class="btn btn-primary btn-sm" title="Advance project lifecycle or initiate final handover">
                         🚀 Advance Stage
                     </button>
                 </div>
@@ -137,12 +168,12 @@
                         <span class="step-label">Building</span>
                     </div>
                     <div class="step-connector" id="connector-4"></div>
-                    <div class="stage-step" data-stage="REVIEW" data-step="5" title="Step 5: Final deliverable acceptance review">
+                    <div class="stage-step" data-stage="REVIEW" data-step="5" title="Step 5: Bilateral final deliverable acceptance review">
                         <div class="step-circle">5</div>
                         <span class="step-label">Review</span>
                     </div>
                     <div class="step-connector" id="connector-5"></div>
-                    <div class="stage-step" data-stage="COMPLETED" data-step="6" title="Step 6: Project accepted, finalized, and closed">
+                    <div class="stage-step" data-stage="COMPLETED" data-step="6" title="Step 6: Mutually verified, escrow settled, and closed">
                         <div class="step-circle">6</div>
                         <span class="step-label">Completed</span>
                     </div>
@@ -168,7 +199,7 @@
 
         <!-- Workspace Navigation Tabs -->
         <nav class="workspace-tabs mt-3" role="tablist">
-            <button type="button" class="tab-btn active" data-tab="tabOverview" role="tab">📊 Overview &amp; Updates</button>
+            <button type="button" class="tab-btn active" data-tab="tabOverview" role="tab">📊 Overview &amp; Analytics</button>
             <button type="button" class="tab-btn" data-tab="tabRequirements" role="tab">📑 Requirements &amp; Scope</button>
             <button type="button" class="tab-btn" data-tab="tabMilestones" role="tab">🎯 Milestones &amp; Sprints</button>
             <button type="button" class="tab-btn" data-tab="tabAgreement" role="tab">📜 Mutual Agreement</button>
@@ -177,9 +208,102 @@
         </nav>
 
         <!-- ============================================================= -->
-        <!-- TAB 1: OVERVIEW, HEALTH & SPRINT UPDATES                      -->
+        <!-- TAB 1: OVERVIEW, VISUAL CHARTS, HEALTH & SPRINT UPDATES       -->
         <!-- ============================================================= -->
         <section id="tabOverview" class="tab-content active mt-3">
+
+            <!-- NEW: EXECUTIVE VISUAL ANALYTICS & TELEMETRY SUITE (3 CHARTS) -->
+            <div class="grid grid-3 mb-3" id="executiveVisualChartsRow" style="gap: 1rem;">
+                
+                <!-- Chart Card 1: Escrow Capital Distribution Donut -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="text-xs font-bold text-muted" style="letter-spacing: 0.05em;">ESCROW CAPITAL VAULT</span>
+                        <span class="badge badge-success" id="chartEscrowBadge">Protected</span>
+                    </div>
+                    <div id="escrowDonutChartContainer" style="display: flex; align-items: center; gap: 1rem; margin: 0.85rem 0;">
+                        <!-- Dynamic SVG Donut rendered via JS -->
+                        <div style="width: 96px; height: 96px; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center;" id="escrowSvgMount"></div>
+                        <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.76rem; flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>Released:</span>
+                                <strong id="legendReleasedAmount" style="color: #0f172a;">$0</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>In Vault:</span>
+                                <strong id="legendLockedAmount" style="color: #0f172a;">$0</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>In Review:</span>
+                                <strong id="legendReviewAmount" style="color: #0f172a;">$0</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-muted" style="border-top: 1px solid #f1f5f9; padding-top: 0.5rem; display: flex; justify-content: space-between;">
+                        <span>Contract Value:</span>
+                        <strong id="chartTotalContractVal" class="text-primary">$0.00 USD</strong>
+                    </div>
+                </div>
+
+                <!-- Chart Card 2: Dispute Risk & Governance Stability Speedometer -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="text-xs font-bold text-muted" style="letter-spacing: 0.05em;">GOVERNANCE RISK INDEX</span>
+                        <span class="badge badge-success" id="chartRiskStatusPill">0% Low Risk</span>
+                    </div>
+                    <div id="riskGaugeChartContainer" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0.5rem 0;">
+                        <!-- Dynamic SVG Semi-Circle Gauge rendered via JS -->
+                        <div id="riskGaugeSvgMount" style="width: 150px; height: 82px; display: flex; align-items: center; justify-content: center;"></div>
+                        <div id="riskFactorsSummaryText" class="text-xs text-muted mt-1" style="text-align: center;">Zero scope drift &bull; No blockers</div>
+                    </div>
+                    <div class="text-xs text-muted" style="border-top: 1px solid #f1f5f9; padding-top: 0.5rem; display: flex; justify-content: space-between;">
+                        <span>Cryptographic Guard:</span>
+                        <strong id="chartCryptoGuardStatus" class="text-success">Active</strong>
+                    </div>
+                </div>
+
+                <!-- Chart Card 3: Milestone & Task Execution Velocity -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="text-xs font-bold text-muted" style="letter-spacing: 0.05em;">DELIVERY VELOCITY MATRIX</span>
+                        <span class="badge badge-primary" id="chartVelocityRatioBadge">0 / 0 Milestones</span>
+                    </div>
+                    <div id="velocityBarsContainer" style="display: flex; flex-direction: column; gap: 0.55rem; margin: 0.75rem 0;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 0.2rem;">
+                                <span class="text-muted">Milestones Verified</span>
+                                <strong id="velMilestonesPct" style="color: #10b981;">0%</strong>
+                            </div>
+                            <div style="height: 7px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
+                                <div id="velMilestonesBar" style="width: 0%; height: 100%; background: #10b981; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 0.2rem;">
+                                <span class="text-muted">Sprint Tasks Completed</span>
+                                <strong id="velTasksPct" style="color: #3b82f6;">0%</strong>
+                            </div>
+                            <div style="height: 7px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
+                                <div id="velTasksBar" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 0.2rem;">
+                                <span class="text-muted">Scope Weight Allocated</span>
+                                <strong id="velWeightPct" style="color: #8b5cf6;">0%</strong>
+                            </div>
+                            <div style="height: 7px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
+                                <div id="velWeightBar" style="width: 0%; height: 100%; background: #8b5cf6; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-muted" style="border-top: 1px solid #f1f5f9; padding-top: 0.5rem; display: flex; justify-content: space-between;">
+                        <span>Sprint Pacing:</span>
+                        <strong id="chartSprintPacingText" class="text-primary">On Schedule</strong>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-3">
                 <!-- Main Overview Column -->
                 <div class="grid-col-span-2">
@@ -206,7 +330,7 @@
                         <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <h3 class="card-title" style="margin: 0;">Milestone &amp; Sprint Horizon</h3>
-                                <p class="text-muted text-xs mt-1 mb-0">Visual delivery timeline. Click any milestone bar to inspect criteria.</p>
+                                <p class="text-muted text-xs mt-1 mb-0">Visual delivery timeline. Click any milestone bar to inspect criteria &amp; escrow receipts.</p>
                             </div>
                             <span class="badge badge-success" id="timelineHealthBadge">Schedule: On Track</span>
                         </div>
@@ -265,6 +389,11 @@
                             <div class="kv-item mt-1" style="display: flex; justify-content: space-between;"><span class="text-muted">Contract Baseline:</span> <strong id="metaVersion">v1.0</strong></div>
                             <div class="kv-item mt-1" style="display: flex; justify-content: space-between;"><span class="text-muted">Dispute Risk Score:</span> <strong class="text-success font-medium" id="metaRiskScore">0% Low Risk</strong></div>
                         </div>
+                        <div class="mt-3 pt-2 border-top">
+                            <button type="button" id="btnSidebarRequestSignoff" class="btn btn-outline btn-sm btn-block" style="width: 100%;">
+                                🛡️ Bilateral Completion Console
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -318,7 +447,7 @@
                 <form id="requirementForm">
                     <div class="form-group">
                         <label for="reqObjective" class="form-label">Project Objectives &amp; Core Goal *</label>
-                        <textarea id="reqObjective" class="form-control" rows="3" placeholder="What core business problem does this project solve? (Minimum 25 characters)" required></textarea>
+                        <textarea id="reqObjective" class="form-control" rows="3" placeholder="What core business problem does this project solve? (Minimum 20 characters)" required></textarea>
                     </div>
 
                     <div class="form-group mt-2">
@@ -441,7 +570,7 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 4: MUTUAL AGREEMENT & BILATERAL NEGOTIATION                -->
+        <!-- TAB 4: MUTUAL AGREEMENT & BILATERAL NEGOTIATION               -->
         <!-- ============================================================= -->
         <section id="tabAgreement" class="tab-content mt-3 hidden">
             
@@ -473,7 +602,7 @@
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <button type="button" id="btnEditProposalClauses" class="btn btn-outline btn-sm">✏️ Edit Proposal Terms</button>
-                        <button type="button" id="btnPrintAgreement" class="btn btn-outline btn-sm" onclick="window.print()">🖨️ Export / Print Contract</button>
+                        <button type="button" id="btnOpenCertificateFromTab" class="btn btn-primary btn-sm">🏅 View Official Deed &amp; Seal</button>
                     </div>
                 </div>
 
@@ -551,11 +680,11 @@
                     <!-- Clause 5 -->
                     <div class="agreement-section mt-3">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.35rem;">
-                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">5. Multi-Round Scope Amendment &amp; Revision Protocol</h4>
+                            <h4 style="font-size: 1rem; color: #1e293b; margin: 0;">5. Multi-Round Scope Amendment &amp; Bilateral Completion Protocol</h4>
                             <span class="badge badge-subtle">Clause 5.0</span>
                         </div>
                         <p class="text-muted mt-2 text-xs" style="line-height: 1.5;">
-                            Neither party may verbally or asynchronously request alterations to the codebase without submitting a formal bilateral Scope Amendment (v2.0) with explicit budget and deadline delta calculations. Scope expansion without amendment approval holds no obligation on either party.
+                            Neither party may verbally or asynchronously alter the codebase without submitting a formal bilateral Scope Amendment (v2.0) with explicit budget and deadline delta calculations. Furthermore, final project closure requires explicit Bilateral Handover Sign-Off by both Technical Lead and Client Principal.
                         </p>
                     </div>
 
@@ -594,7 +723,7 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 5: DISCUSSIONS & ARCHITECTURAL DECISIONS                 -->
+        <!-- TAB 5: DISCUSSIONS & ARCHITECTURAL DECISIONS                  -->
         <!-- ============================================================= -->
         <section id="tabDiscussions" class="tab-content mt-3 hidden">
             <div class="workspace-split-layout">
@@ -683,7 +812,7 @@
     </main>
 
     <!-- ============================================================= -->
-    <!-- WORKSPACE MODALS (100x ENTERPRISE DETAIL SUITE)                -->
+    <!-- WORKSPACE MODALS (100x ENTERPRISE DETAIL SUITE)               -->
     <!-- All modals equipped with unified responsive scroll containers -->
     <!-- ============================================================= -->
 
@@ -997,7 +1126,7 @@
         </div>
     </div>
 
-    <!-- Modal 9: Reopen Scope Discussion (Multi-Option Counter-Proposal Drawer) -->
+    <!-- Modal 9: Reopen Scope Discussion -->
     <div id="modalRevisionRequest" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="revisionModalTitle">
         <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header">
@@ -1123,7 +1252,7 @@
         </div>
     </div>
 
-    <!-- Modal 13: Add Milestone Definition (Enterprise Depth Extension) -->
+    <!-- Modal 13: Add Milestone Definition -->
     <div id="addMilestoneModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="addMilestoneModalTitle">
         <div class="modal-card" style="max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header">
@@ -1181,7 +1310,7 @@
         </div>
     </div>
 
-    <!-- Modal 14: Advance Stage -->
+    <!-- Modal 14: Advance Stage (Restricted: Cannot Unilaterally Complete) -->
     <div id="stageAdvanceModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="stageModalTitle">
         <div class="modal-card" style="max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header">
@@ -1197,9 +1326,10 @@
                         <label for="targetStageSelect" class="form-label">Next Target Stage *</label>
                         <select id="targetStageSelect" class="form-control" required></select>
                     </div>
-                    <div class="p-2 border rounded mt-3" style="background: #f8fafc;">
-                        <p class="text-xs text-muted mb-0" id="stageAdvanceGuidanceText">
-                            Stage transitions are strictly unidirectional unless renegotiated through formal scope amendment.
+                    <div class="p-3 border rounded mt-3" style="background: #eff6ff; border-color: #bfdbfe;">
+                        <div style="font-size: 0.78rem; font-weight: 700; color: #1e40af; margin-bottom: 0.25rem;">🛡️ Bilateral Completion Protection Active</div>
+                        <p class="text-xs mb-0" id="stageAdvanceGuidanceText" style="color: #1e3a8a; line-height: 1.45;">
+                            Direct manual transition to COMPLETED is disabled to protect both parties. To close the project, move to REVIEW (Handover) so both Provider and Client can complete the Bilateral Sign-Off checklist.
                         </p>
                     </div>
                 </div>
@@ -1237,6 +1367,132 @@
                     <button type="submit" class="btn btn-primary" id="saveResourceBtn">Save to Vault</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal 16: NEW Bilateral Final Handover & Client Acceptance Sign-Off Console -->
+    <div id="finalSignoffModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="finalSignoffModalTitle">
+        <div class="modal-card" style="max-width: 660px; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-header">
+                <div>
+                    <span class="badge badge-primary" id="finalSignoffRoleBadge">Bilateral Closure Protocol</span>
+                    <h3 class="modal-title mt-1" id="finalSignoffModalTitle">Final Deliverable Handover &amp; Mutual Sign-Off</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeFinalSignoffModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding: 1.25rem; flex: 1;">
+                
+                <!-- Dual Sign-Off Status Indicators -->
+                <div class="grid grid-2 mb-3" style="gap: 0.75rem;">
+                    <div class="p-3 border rounded" style="background: #f8fafc;">
+                        <span class="text-xs font-bold text-muted" style="display: block;">STEP 1: PROVIDER HANDOVER</span>
+                        <div style="margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span class="badge badge-warning" id="handoverProviderStatusBadge">Pending Submission</span>
+                        </div>
+                        <div class="text-xs text-muted mt-1" id="handoverProviderSubtext">Technical Lead attests all code &amp; docs are delivered.</div>
+                    </div>
+                    <div class="p-3 border rounded" style="background: #f8fafc;">
+                        <span class="text-xs font-bold text-muted" style="display: block;">STEP 2: CLIENT FINAL ACCEPTANCE</span>
+                        <div style="margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span class="badge badge-subtle" id="handoverClientStatusBadge">Awaiting Handover</span>
+                        </div>
+                        <div class="text-xs text-muted mt-1" id="handoverClientSubtext">Client Principal verifies and releases 100% escrow.</div>
+                    </div>
+                </div>
+
+                <!-- Provider Handover Submission Section -->
+                <form id="providerHandoverForm" class="hidden">
+                    <div class="p-3 border rounded mb-3" style="background: #eff6ff; border-color: #bfdbfe;">
+                        <strong style="font-size: 0.85rem; color: #1e40af;">📦 Technical Lead Handover Package</strong>
+                        <p class="text-xs mb-0 mt-1" style="color: #1e3a8a;">
+                            Submit your final production repository link, deployment credentials/notes, and confirm that all scope modules are complete. Once submitted, the Client Principal will be prompted to approve and release final settlement.
+                        </p>
+                    </div>
+                    <div class="form-group">
+                        <label for="handoverRepoUrlInput" class="form-label">Final Production Repository / Release URL *</label>
+                        <input type="url" id="handoverRepoUrlInput" class="form-control" placeholder="https://github.com/org/repo/releases/tag/v1.0.0" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="handoverSummaryInput" class="form-label">Final Handover Notes &amp; Deployment Instructions *</label>
+                        <textarea id="handoverSummaryInput" class="form-control" rows="3" placeholder="Summarize all completed modules, environment variables, and verification steps for the client..." required></textarea>
+                    </div>
+                    <div class="mt-2">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer;">
+                            <input type="checkbox" id="providerHandoverAttestCheck" required>
+                            <span>I attest that all ratified scope requirements (v1.0) and milestones have been fulfilled.</span>
+                        </label>
+                    </div>
+                    <div class="mt-3 text-right" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                        <button type="submit" class="btn btn-primary" id="btnSubmitProviderHandover">🚀 Dispatch Final Handover for Client Review</button>
+                    </div>
+                </form>
+
+                <!-- Client Final Verification & Completion Section -->
+                <form id="clientFinalSignoffForm" class="hidden">
+                    <div class="p-3 border rounded mb-3" style="background: #f0fdf4; border-color: #86efac;">
+                        <strong style="font-size: 0.85rem; color: #166534;">🏆 Client Principal Final Acceptance &amp; Escrow Release</strong>
+                        <p class="text-xs mb-0 mt-1" style="color: #14532d;">
+                            Review the Technical Lead's final handover artifacts below. Approving this handover will mark all remaining milestones as Verified, release 100% of the contract escrow, and permanently close the project as <strong>COMPLETED</strong>.
+                        </p>
+                    </div>
+
+                    <div id="clientInspectHandoverBox" class="p-3 border rounded mb-3" style="background: #ffffff; font-size: 0.85rem;">
+                        <div class="text-xs font-bold text-muted mb-1">SUBMITTED HANDOVER ARTIFACTS:</div>
+                        <div id="clientInspectHandoverContent" class="text-sm text-muted">Loading handover summary...</div>
+                    </div>
+
+                    <div class="p-3 border rounded mb-3" style="background: #f8fafc;">
+                        <div class="text-xs font-bold text-muted mb-2">MANDATORY CLIENT ACCEPTANCE CHECKLIST:</div>
+                        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.82rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" required>
+                                <span>All modular scope items and functional user stories have been verified.</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" required>
+                                <span>Source code repository / production artifacts have been received and tested.</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" required>
+                                <span>I authorize WorkBridge Escrow Vault to release 100% of the agreed contract consideration to the Provider.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-3" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <button type="button" class="btn btn-outline btn-sm" id="btnRejectFinalHandover" style="color: #dc2626; border-color: #fca5a5;">
+                            ↩️ Request Handover Revisions
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnApproveFinalCompletion">
+                            ✅ Confirm Mutual Sign-Off &amp; Complete Project
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+            <div class="modal-footer" style="flex-shrink: 0;">
+                <button type="button" class="btn btn-secondary" id="closeFinalSignoffFooterBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 17: NEW Official Cryptographic Governance Deed & Escrow Certificate -->
+    <div id="certificateDeedModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="certificateModalTitle">
+        <div class="modal-card" style="max-width: 780px; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-header">
+                <div>
+                    <span class="badge badge-success">Cryptographic Governance Attestation</span>
+                    <h3 class="modal-title mt-1" id="certificateModalTitle">Official Contract Deed &amp; Escrow Ledger Certificate</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeCertificateModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="certificatePrintableBody" style="overflow-y: auto; padding: 1.5rem; flex: 1; background: #ffffff;">
+                <!-- Populated dynamically via JS with Formal Legal Certificate, SHA-256 Stamp, Signatures & Escrow Ledger -->
+            </div>
+            <div class="modal-footer" style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn btn-secondary" id="closeCertificateFooterBtn">Close</button>
+                <button type="button" class="btn btn-primary" id="btnPrintOfficialDeed">🖨️ Print / Save Official PDF Deed</button>
+            </div>
         </div>
     </div>
 

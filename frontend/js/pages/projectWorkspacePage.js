@@ -1,12 +1,14 @@
 /**
- * WORKBRIDGE - PROJECT WORKSPACE MASTER CONTROLLER (SUPABASE CLOUD EDITION)
+ * WORKBRIDGE - PROJECT WORKSPACE MASTER CONTROLLER (ENTERPRISE EDITION)
  * File: js/pages/projectWorkspacePage.js
  * 
  * Orchestrating:
  * - Automated Lifecycle & Stepper Synchronization (INVITED -> SCOPING -> AGREEMENT -> BUILDING -> REVIEW -> COMPLETED).
  * - Engine A: Scope Version Locking with Pre-Validation, WebCrypto Native SHA-256 Attestation & Live Hash Verifier, Bilateral Stepper, Modular Matrix.
  * - Engine B: Milestone Proof Verification (PR, Commit SHA, Branch, Staging), Weighted Horizon Gantt, Auto-Seeded Sprint Tasks Kanban.
- * - Dynamic AI Requirement Specification Scorer, Real-Time Dispute Risk Index, Live WebSocket Sync, ADR Journal, and Resource Vault.
+ * - Executive Visual Analytics Suite (SVG Escrow Donut, Speedometer Gauge, Velocity Progress Bars).
+ * - Bilateral Final Handover & Mutual Sign-Off Closure Protocol (Blocking unilateral provider completion).
+ * - Official Cryptographic Governance Deed & Stamp-Paper Certificate Generator.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -47,12 +49,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     // 2. DOM Elements Cache
     // -------------------------------------------------------------------------
-    // Pillar 1 Guard Elements
     const invitationGuardBanner = document.getElementById('invitationGuardBanner');
     const invitationGuardMessage = document.getElementById('invitationGuardMessage');
     const invitationProviderActions = document.getElementById('invitationProviderActions');
     const btnAcceptInvitation = document.getElementById('btnAcceptInvitation');
     const btnDeclineInvitation = document.getElementById('btnDeclineInvitation');
+
+    // Bilateral Handover Top Banner Elements
+    const finalReviewGuardBanner = document.getElementById('finalReviewGuardBanner');
+    const finalReviewBannerTitle = document.getElementById('finalReviewBannerTitle');
+    const finalReviewStatusBadge = document.getElementById('finalReviewStatusBadge');
+    const finalReviewBannerDesc = document.getElementById('finalReviewBannerDesc');
+    const btnOpenFinalHandoverModal = document.getElementById('btnOpenFinalHandoverModal');
+    const btnOpenCertificateDeedTop = document.getElementById('btnOpenCertificateDeedTop');
+    const btnSidebarRequestSignoff = document.getElementById('btnSidebarRequestSignoff');
 
     // Header, Telemetry Ribbon & Pipeline
     const projectTitleEl = document.getElementById('projectTitle');
@@ -61,6 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userRoleIndicatorBadge = document.getElementById('userRoleIndicatorBadge');
     const btnSyncWorkspace = document.getElementById('btnSyncWorkspace');
     const btnViewAuditHistory = document.getElementById('btnViewAuditHistory');
+    const btnOpenDeedCertificate = document.getElementById('btnOpenDeedCertificate');
+    const btnOpenCertificateFromTab = document.getElementById('btnOpenCertificateFromTab');
     const btnProposeStageAdvance = document.getElementById('btnProposeStageAdvance');
     const stageSteps = document.querySelectorAll('.stage-step');
     const projectProgressPercent = document.getElementById('projectProgressPercent');
@@ -83,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-content');
 
-    // Tab 1: Overview, Updates, Gantt Horizon & Health Matrix
+    // Tab 1: Overview, Charts & Updates
     const projectDescription = document.getElementById('projectDescription');
     const overviewDomainBadge = document.getElementById('overviewDomainBadge');
     const overviewStackBadges = document.getElementById('overviewStackBadges');
@@ -102,13 +114,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const healthDeliveryPacing = document.getElementById('healthDeliveryPacing');
     const healthScopeStability = document.getElementById('healthScopeStability');
     const healthActiveBlockers = document.getElementById('healthActiveBlockers');
-    const modalUpdateDetail = document.getElementById('modalUpdateDetail');
-    const updateDetailTitle = document.getElementById('updateDetailTitle');
-    const updateDetailBody = document.getElementById('updateDetailBody');
-    const closeUpdateDetailModalBtn = document.getElementById('closeUpdateDetailModalBtn');
-    const closeUpdateDetailFooterBtn = document.getElementById('closeUpdateDetailFooterBtn');
 
-    // Tab 2: Requirements & Modular Scope Matrix (Engine A)
+    // Executive Chart DOM Mounts
+    const escrowSvgMount = document.getElementById('escrowSvgMount');
+    const legendReleasedAmount = document.getElementById('legendReleasedAmount');
+    const legendLockedAmount = document.getElementById('legendLockedAmount');
+    const legendReviewAmount = document.getElementById('legendReviewAmount');
+    const chartTotalContractVal = document.getElementById('chartTotalContractVal');
+    const riskGaugeSvgMount = document.getElementById('riskGaugeSvgMount');
+    const chartRiskStatusPill = document.getElementById('chartRiskStatusPill');
+    const riskFactorsSummaryText = document.getElementById('riskFactorsSummaryText');
+    const chartCryptoGuardStatus = document.getElementById('chartCryptoGuardStatus');
+    const chartVelocityRatioBadge = document.getElementById('chartVelocityRatioBadge');
+    const velMilestonesPct = document.getElementById('velMilestonesPct');
+    const velMilestonesBar = document.getElementById('velMilestonesBar');
+    const velTasksPct = document.getElementById('velTasksPct');
+    const velTasksBar = document.getElementById('velTasksBar');
+    const velWeightPct = document.getElementById('velWeightPct');
+    const velWeightBar = document.getElementById('velWeightBar');
+    const chartSprintPacingText = document.getElementById('chartSprintPacingText');
+
+    // Tab 2: Requirements & Modular Scope Matrix
     const currentReqVersionBadge = document.getElementById('currentReqVersionBadge');
     const currentReqLockStatus = document.getElementById('currentReqLockStatus');
     const reqLockNotice = document.getElementById('reqLockNotice');
@@ -138,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeSavedDraftModalBtn = document.getElementById('closeSavedDraftModalBtn');
     const closeSavedDraftFooterBtn = document.getElementById('closeSavedDraftFooterBtn');
 
-    // Tab 3: Milestones, Sprint Board & Tasks (Engine B)
+    // Tab 3: Milestones & Sprint Tasks
     const milestonesContainer = document.getElementById('milestonesContainer');
     const btnAddMilestoneBtn = document.getElementById('btnAddMilestoneBtn');
     const btnViewRoadmapMode = document.getElementById('btnViewRoadmapMode');
@@ -165,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeMilestoneDetailModalBtn = document.getElementById('closeMilestoneDetailModalBtn');
     const closeMilestoneDetailFooterBtn = document.getElementById('closeMilestoneDetailFooterBtn');
 
-    // Tab 4: Mutual Agreement & Bilateral Negotiation (Engine A)
+    // Tab 4: Mutual Agreement & Bilateral Negotiation
     const agreementVersionPill = document.getElementById('agreementVersionPill');
     const agreementStatusBadge = document.getElementById('agreementStatusBadge');
     const scopeHashContainer = document.getElementById('scopeHashContainer');
@@ -200,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nodeAgCleared = document.getElementById('nodeAgCleared');
     const nodeAgLocked = document.getElementById('nodeAgLocked');
 
-    // Tab 5: Discussions & ADR Journal
+    // Tab 5 & 6: Discussions & Resource Vault
     const chatMessagesFeed = document.getElementById('chatMessagesFeed');
     const chatInputForm = document.getElementById('chatInputForm');
     const chatMessageInput = document.getElementById('chatMessageInput');
@@ -210,12 +236,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnCloseSummary = document.getElementById('btnCloseSummary');
     const decisionsList = document.getElementById('decisionsList');
     const btnLogDecision = document.getElementById('btnLogDecision');
-
-    // Tab 6: Resource Vault
     const resourceTableBody = document.getElementById('resourceTableBody');
     const btnUploadResource = document.getElementById('btnUploadResource');
 
-    // Modals
+    // Modals & Consoles
     const modalPostUpdate = document.getElementById('modalPostUpdate');
     const postUpdateForm = document.getElementById('postUpdateForm');
     const closePostUpdateModalBtn = document.getElementById('closePostUpdateModalBtn');
@@ -283,6 +307,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const amendmentForm = document.getElementById('amendmentForm');
     const closeAmendmentModalBtn = document.getElementById('closeAmendmentModalBtn');
     const cancelAmendmentBtn = document.getElementById('cancelAmendmentBtn');
+
+    // NEW Consoles: Modal 16 & Modal 17
+    const finalSignoffModal = document.getElementById('finalSignoffModal');
+    const closeFinalSignoffModalBtn = document.getElementById('closeFinalSignoffModalBtn');
+    const closeFinalSignoffFooterBtn = document.getElementById('closeFinalSignoffFooterBtn');
+    const handoverProviderStatusBadge = document.getElementById('handoverProviderStatusBadge');
+    const handoverClientStatusBadge = document.getElementById('handoverClientStatusBadge');
+    const handoverProviderSubtext = document.getElementById('handoverProviderSubtext');
+    const handoverClientSubtext = document.getElementById('handoverClientSubtext');
+    const providerHandoverForm = document.getElementById('providerHandoverForm');
+    const clientFinalSignoffForm = document.getElementById('clientFinalSignoffForm');
+    const handoverRepoUrlInput = document.getElementById('handoverRepoUrlInput');
+    const handoverSummaryInput = document.getElementById('handoverSummaryInput');
+    const providerHandoverAttestCheck = document.getElementById('providerHandoverAttestCheck');
+    const clientInspectHandoverContent = document.getElementById('clientInspectHandoverContent');
+    const btnRejectFinalHandover = document.getElementById('btnRejectFinalHandover');
+
+    const certificateDeedModal = document.getElementById('certificateDeedModal');
+    const closeCertificateModalBtn = document.getElementById('closeCertificateModalBtn');
+    const closeCertificateFooterBtn = document.getElementById('closeCertificateFooterBtn');
+    const btnPrintOfficialDeed = document.getElementById('btnPrintOfficialDeed');
+    const certificatePrintableBody = document.getElementById('certificatePrintableBody');
 
     // Runtime Cached State
     let projectRecord = null;
@@ -355,6 +401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loadScopeAmendments()
             ]);
             updateDisputeRiskTelemetry();
+            renderExecutiveCharts(milestonesList, sprintTasksList);
         } catch (err) {
             console.error('Error hydrating workspace:', err);
         }
@@ -416,6 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (ribbonTotalBudget) ribbonTotalBudget.textContent = '$' + Number(data.budget || 1000).toLocaleString();
 
         renderPipelineAndGuard(data.stage);
+        renderBilateralHandoverBanner(data.stage);
     }
 
     function renderPipelineAndGuard(stage) {
@@ -453,7 +501,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Contextual Action Button Label based on Current Stage
         if (btnProposeStageAdvance) {
             if (stage === PROJECT_STAGES.COMPLETED) {
-                btnProposeStageAdvance.textContent = '✅ Project Completed';
+                btnProposeStageAdvance.textContent = '✅ Project Completed & Settled';
                 btnProposeStageAdvance.disabled = true;
             } else if (stage === PROJECT_STAGES.AGREEMENT_LOCKED) {
                 btnProposeStageAdvance.textContent = '⚡ Start Building Phase';
@@ -462,7 +510,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnProposeStageAdvance.textContent = '🔍 Move to Final Review';
                 btnProposeStageAdvance.disabled = false;
             } else if (stage === PROJECT_STAGES.REVIEW) {
-                btnProposeStageAdvance.textContent = '🏆 Complete & Close Project';
+                btnProposeStageAdvance.textContent = '🏆 Open Final Handover Console';
                 btnProposeStageAdvance.disabled = false;
             } else {
                 btnProposeStageAdvance.textContent = '🚀 Advance Stage';
@@ -470,16 +518,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        // EXCLUDE 'COMPLETED' FROM MANUAL DROPDOWN (Enforcing Bilateral Protocol)
         if (targetStageSelect) {
             targetStageSelect.innerHTML = stagesOrder
-                .filter((_, idx) => idx > currentIdx)
+                .filter((_, idx) => idx > currentIdx && idx < stagesOrder.length - 1)
                 .map(s => '<option value="' + s + '">Advance to: ' + s.replace(/_/g, ' ') + '</option>')
                 .join('');
         }
 
         if (stageAdvanceGuidanceText) {
             stageAdvanceGuidanceText.textContent = currentIdx >= 2 
-                ? 'Project terms and scope are ratified. Advancing reflects delivery milestones directly to the payout ledger.'
+                ? 'Project terms and scope are ratified. Unilateral completion is prohibited; final closure requires bilateral review in the Handover console.'
                 : 'Project is in preliminary setup. Advancing to Agreement requires finalized scope specifications.';
         }
 
@@ -502,6 +551,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (invitationProviderActions) invitationProviderActions.classList.add('hidden');
                 disableWorkspaceInteractions(false);
             }
+        }
+    }
+
+    function renderBilateralHandoverBanner(stage) {
+        if (!finalReviewGuardBanner) return;
+        const isReviewOrLater = stage === PROJECT_STAGES.REVIEW || stage === PROJECT_STAGES.COMPLETED;
+        const isCompleted = stage === PROJECT_STAGES.COMPLETED;
+
+        if (isReviewOrLater) {
+            finalReviewGuardBanner.classList.remove('hidden');
+            if (finalReviewBannerTitle) {
+                finalReviewBannerTitle.textContent = isCompleted 
+                    ? '🏆 Project Completed & Escrow Settled' 
+                    : '🛡️ Final Handover & Mutual Sign-Off Protocol Active';
+            }
+            if (finalReviewStatusBadge) {
+                finalReviewStatusBadge.textContent = isCompleted ? '100% Settled & Closed' : 'Awaiting Final Acceptance';
+                finalReviewStatusBadge.className = 'badge ' + (isCompleted ? 'badge-success' : 'badge-warning');
+            }
+            if (btnOpenCertificateDeedTop) {
+                btnOpenCertificateDeedTop.classList.remove('hidden');
+            }
+            if (finalReviewBannerDesc) {
+                finalReviewBannerDesc.textContent = isCompleted
+                    ? 'All milestones have been verified and 100% of the contract escrow has been released. You can export the official cryptographic governance deed below.'
+                    : 'All milestones have been addressed. The Technical Lead has submitted or can now submit final handover artifacts for Client Principal verification and final escrow release.';
+            }
+        } else {
+            finalReviewGuardBanner.classList.add('hidden');
+            if (btnOpenCertificateDeedTop) btnOpenCertificateDeedTop.classList.add('hidden');
         }
     }
 
@@ -592,7 +671,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             populateModularScopeCards(data.modular_scope);
 
-            // Sync Overview Tech Stack Badges if custom stack provided
             if (overviewStackBadges && data.tech_preferences) {
                 const chips = data.tech_preferences.split(',').map(s => s.trim()).filter(Boolean);
                 if (chips.length > 0) {
@@ -768,9 +846,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // -------------------------------------------------------------------------
-    // Rigorous Pre-Validation on Scope Lock
-    // -------------------------------------------------------------------------
     function validateScopeBeforeLock() {
         const errors = [];
         const obj = reqObjective ? reqObjective.value.trim() : '';
@@ -856,14 +931,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Request Scope Amendment from Tab 2
     if (btnProposeReqChange) {
         btnProposeReqChange.addEventListener('click', () => {
             if (amendmentModal) amendmentModal.classList.remove('hidden');
         });
     }
 
-    // Dynamic Multi-Factor AI Specification Auditor
     if (btnAiAnalyzeReq) {
         btnAiAnalyzeReq.addEventListener('click', () => {
             if (aiAuditResultPanel) aiAuditResultPanel.classList.remove('hidden');
@@ -1023,7 +1096,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const hash = data.scope_hash || await computeSha256Fingerprint(projectId, data.version, data.agreed_amount);
             if (scopeHashContainer) {
                 scopeHashContainer.classList.remove('hidden');
-                // Inject live Verify Hash button if not already injected
                 if (!document.getElementById('btnVerifyLiveHash')) {
                     const verifyBtn = document.createElement('button');
                     verifyBtn.type = 'button';
@@ -1140,7 +1212,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await sb.from('agreements').update(updatePayload).eq('id', agreementRecord.id);
 
                 if (willBeLocked) {
-                    // If milestones already exist, jump directly to IN_PROGRESS (Building), else AGREEMENT_LOCKED
                     const nextStage = milestonesList.length > 0
                         ? PROJECT_STAGES.IN_PROGRESS
                         : PROJECT_STAGES.AGREEMENT_LOCKED;
@@ -1327,7 +1398,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     status: 'PROPOSED'
                 }]);
 
-                // Apply amendment budget & version bump to agreement if non-zero
                 if (agreementRecord) {
                     const updatedAmount = Number(agreementRecord.agreed_amount || projectRecord?.budget || 1000) + budgetDelta;
                     await sb.from('agreements').update({
@@ -1363,7 +1433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 8. Milestones, Gantt Horizon & Automated Lifecycle Triggers
+    // 8. Milestones, Gantt Horizon & Executive Visual Analytics Suite
     // -------------------------------------------------------------------------
     async function loadMilestonesList() {
         const { data } = await sb
@@ -1378,6 +1448,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderGanttTimelineHorizon(milestonesList);
         populateTaskMilestoneDropdown(milestonesList);
         updateMilestoneWeightMeter(milestonesList);
+        renderExecutiveCharts(milestonesList, sprintTasksList);
     }
 
     function updateMilestoneWeightMeter(milestones) {
@@ -1433,7 +1504,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // Calculate against 100% contract baseline (or totalWeight if >= 100)
         const denominator = Math.max(100, totalWeight);
         const calculated = Math.min(100, Math.round((approvedWeight / denominator) * 100));
         const releasedAmount = Math.round((calculated / 100) * totalBudget);
@@ -1446,6 +1516,117 @@ document.addEventListener('DOMContentLoaded', async () => {
             await sb.from('projects').update({ completion_percentage: calculated }).eq('id', projectId);
             projectRecord.completion_percentage = calculated;
         }
+    }
+
+    // =========================================================================
+    // EXECUTIVE VISUAL ANALYTICS SUITE (Pure SVG Charts & Gauges)
+    // =========================================================================
+    function renderExecutiveCharts(milestones, tasks) {
+        const totalBudget = Number(projectRecord?.budget || 1000);
+        
+        // 1. Escrow Donut Calculations
+        let releasedVal = 0;
+        let reviewVal = 0;
+        let lockedVal = 0;
+
+        milestones.forEach(m => {
+            const w = Number(m.weight_percentage) || (milestones.length ? 100 / milestones.length : 25);
+            const tranche = Math.round((w / 100) * totalBudget);
+            if (m.status === 'APPROVED') {
+                releasedVal += tranche;
+            } else if (m.status === 'SUBMITTED_FOR_REVIEW') {
+                reviewVal += tranche;
+            } else {
+                lockedVal += tranche;
+            }
+        });
+
+        if (milestones.length === 0) {
+            lockedVal = totalBudget;
+        }
+
+        if (legendReleasedAmount) legendReleasedAmount.textContent = '$' + releasedVal.toLocaleString();
+        if (legendLockedAmount) legendLockedAmount.textContent = '$' + lockedVal.toLocaleString();
+        if (legendReviewAmount) legendReviewAmount.textContent = '$' + reviewVal.toLocaleString();
+        if (chartTotalContractVal) chartTotalContractVal.textContent = '$' + totalBudget.toLocaleString() + ' USD';
+
+        // Render SVG Donut
+        if (escrowSvgMount) {
+            const r = 36;
+            const c = 2 * Math.PI * r;
+            const sumVal = Math.max(1, releasedVal + lockedVal + reviewVal);
+            
+            const relOffset = c - (releasedVal / sumVal) * c;
+            const revOffset = relOffset - (reviewVal / sumVal) * c;
+
+            escrowSvgMount.innerHTML = `
+                <svg width="96" height="96" viewBox="0 0 96 96">
+                    <circle cx="48" cy="48" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="12"></circle>
+                    <circle cx="48" cy="48" r="${r}" fill="none" stroke="#3b82f6" stroke-width="12" stroke-dasharray="${c}" stroke-dashoffset="${relOffset}" transform="rotate(-90 48 48)"></circle>
+                    <circle cx="48" cy="48" r="${r}" fill="none" stroke="#f59e0b" stroke-width="12" stroke-dasharray="${c}" stroke-dashoffset="${revOffset}" transform="rotate(-90 48 48)"></circle>
+                    <circle cx="48" cy="48" r="${r}" fill="none" stroke="#10b981" stroke-width="12" stroke-dasharray="${c}" stroke-dashoffset="0" transform="rotate(-90 48 48)" style="opacity: ${releasedVal > 0 ? 1 : 0};"></circle>
+                    <text x="48" y="52" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">${Math.round((releasedVal / totalBudget) * 100)}%</text>
+                </svg>
+            `;
+        }
+
+        // 2. Risk Speedometer Gauge Calculations
+        let riskScore = 0;
+        if (!agreementRecord || agreementRecord.status !== 'LOCKED') riskScore += 25;
+        const activeBlockers = projectUpdatesList.filter(u => u.category === 'BLOCKER' || (u.content && u.content.includes('CRITICAL'))).length;
+        if (activeBlockers > 0) riskScore += Math.min(40, activeBlockers * 20);
+        const now = new Date();
+        const overdueMilestones = milestones.filter(m => m.status !== 'APPROVED' && m.target_date && new Date(m.target_date) < now).length;
+        if (overdueMilestones > 0) riskScore += Math.min(35, overdueMilestones * 15);
+        riskScore = Math.min(100, riskScore);
+
+        if (chartRiskStatusPill) {
+            chartRiskStatusPill.textContent = riskScore >= 60 ? 'High Risk' : (riskScore >= 30 ? 'Moderate Risk' : '0% Low Risk');
+            chartRiskStatusPill.className = 'badge ' + (riskScore >= 60 ? 'badge-danger' : (riskScore >= 30 ? 'badge-warning' : 'badge-success'));
+        }
+        if (riskFactorsSummaryText) {
+            riskFactorsSummaryText.textContent = activeBlockers > 0 ? `${activeBlockers} active blockers` : (overdueMilestones > 0 ? `${overdueMilestones} overdue milestones` : 'Zero scope drift & compliant');
+        }
+        if (chartCryptoGuardStatus) {
+            chartCryptoGuardStatus.textContent = agreementRecord?.status === 'LOCKED' ? 'Immutable (SHA-256)' : 'Pending Agreement';
+        }
+
+        // Render Semi-Circle Gauge SVG (Needle rotation based on riskScore)
+        if (riskGaugeSvgMount) {
+            const angle = -90 + (riskScore / 100) * 180;
+            riskGaugeSvgMount.innerHTML = `
+                <svg width="140" height="78" viewBox="0 0 140 78">
+                    <path d="M 15 70 A 55 55 0 0 1 125 70" fill="none" stroke="#e2e8f0" stroke-width="12" stroke-linecap="round"></path>
+                    <path d="M 15 70 A 55 55 0 0 1 125 70" fill="none" stroke="${riskScore >= 60 ? '#ef4444' : (riskScore >= 30 ? '#f59e0b' : '#10b981')}" stroke-width="12" stroke-linecap="round" stroke-dasharray="172.7" stroke-dashoffset="${172.7 - (riskScore / 100) * 172.7}"></path>
+                    <g transform="translate(70, 70) rotate(${angle})">
+                        <polygon points="0,-45 4,0 -4,0" fill="#0f172a"></polygon>
+                        <circle cx="0" cy="0" r="5" fill="#3b82f6"></circle>
+                    </g>
+                    <text x="70" y="75" text-anchor="middle" font-size="11" font-weight="700" fill="#64748b">${riskScore}% Index</text>
+                </svg>
+            `;
+        }
+
+        // 3. Delivery Velocity Matrix
+        const totalM = milestones.length;
+        const approvedM = milestones.filter(m => m.status === 'APPROVED').length;
+        const mPct = totalM > 0 ? Math.round((approvedM / totalM) * 100) : 0;
+
+        const totalT = tasks.length;
+        const doneT = tasks.filter(t => t.status === 'DONE').length;
+        const tPct = totalT > 0 ? Math.round((doneT / totalT) * 100) : 0;
+
+        const totalW = milestones.reduce((s, m) => s + (Number(m.weight_percentage) || 0), 0);
+        const wPct = Math.min(100, totalW);
+
+        if (chartVelocityRatioBadge) chartVelocityRatioBadge.textContent = `${approvedM} / ${totalM} Milestones`;
+        if (velMilestonesPct) velMilestonesPct.textContent = mPct + '%';
+        if (velMilestonesBar) velMilestonesBar.style.width = mPct + '%';
+        if (velTasksPct) velTasksPct.textContent = tPct + '%';
+        if (velTasksBar) velTasksBar.style.width = tPct + '%';
+        if (velWeightPct) velWeightPct.textContent = wPct + '%';
+        if (velWeightBar) velWeightBar.style.width = wPct + '%';
+        if (chartSprintPacingText) chartSprintPacingText.textContent = overdueMilestones > 0 ? 'Delayed SLA' : 'Optimal Pacing';
     }
 
     function renderGanttTimelineHorizon(milestones) {
@@ -1491,7 +1672,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         ganttTimelineHorizon.appendChild(horizonRow);
-
         if (healthDeliveryPacing) healthDeliveryPacing.textContent = '100% On Track';
         if (healthScopeStability) healthScopeStability.textContent = agreementRecord?.status === 'LOCKED' ? 'Tamper Locked' : 'Draft Flexible';
     }
@@ -1594,7 +1774,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             milestonesContainer.appendChild(card);
         });
 
-        // Switch directly to Sprint Tasks Board filtered by this Milestone
         milestonesContainer.querySelectorAll('.btn-open-milestone-tasks').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1607,7 +1786,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Review Proof Trigger
         milestonesContainer.querySelectorAll('.btn-review-proof').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1648,7 +1826,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Submit Milestone Trigger
         milestonesContainer.querySelectorAll('.btn-submit-milestone').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1710,7 +1887,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (closeMilestoneDetailModalBtn) closeMilestoneDetailModalBtn.addEventListener('click', () => modalMilestoneDetail?.classList.add('hidden'));
     if (closeMilestoneDetailFooterBtn) closeMilestoneDetailFooterBtn.addEventListener('click', () => modalMilestoneDetail?.classList.add('hidden'));
 
-    // Client Approves Deliverable Proof -> Auto-Check for Project Completion (Stage 6)
     if (btnApproveFromProof) {
         btnApproveFromProof.addEventListener('click', async () => {
             const mid = reviewMilestoneId ? reviewMilestoneId.value : null;
@@ -1725,10 +1901,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     verified_at: new Date().toISOString()
                 }).eq('id', mid);
 
-                // Also mark associated sprint tasks as DONE
                 await sb.from('tasks').update({ status: 'DONE' }).eq('milestone_id', mid);
 
-                // Fetch updated milestones to determine next project stage automatically
                 const { data: updatedMilestones } = await sb
                     .from('milestones')
                     .select('*')
@@ -1744,7 +1918,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 let nextStage = projectRecord?.stage || PROJECT_STAGES.IN_PROGRESS;
                 if (totalApprovedWeight >= 100 || allApproved) {
-                    nextStage = PROJECT_STAGES.COMPLETED;
+                    nextStage = PROJECT_STAGES.REVIEW; // Prompt for final handover review before completed
                 } else if (anyInReview) {
                     nextStage = PROJECT_STAGES.REVIEW;
                 } else {
@@ -1761,17 +1935,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: currentUser?.id,
                     sender_name: 'WorkBridge Protocol Engine',
                     sender_role: 'SYSTEM',
-                    message: nextStage === PROJECT_STAGES.COMPLETED
-                        ? '🏆 All milestone deliverables verified! 100% of contract escrow released. Project officially marked COMPLETED.'
-                        : '✅ Milestone deliverable verified by Client! Escrow tranche released (' + Math.min(100, Math.round(totalApprovedWeight)) + '% total progress).'
+                    message: '✅ Milestone deliverable verified by Client! Escrow tranche released (' + Math.min(100, Math.round(totalApprovedWeight)) + '% total progress).'
                 }]);
 
-                if (window.Toast) {
-                    window.Toast.success(nextStage === PROJECT_STAGES.COMPLETED
-                        ? 'All milestones verified! Project is now 100% Completed!'
-                        : 'Technical deliverable verified! Progress weight released.');
-                }
-
+                if (window.Toast) window.Toast.success('Technical deliverable verified! Progress weight released.');
                 if (modalReviewProof) modalReviewProof.classList.add('hidden');
                 await loadMilestonesList();
                 await loadSprintTasks();
@@ -1799,7 +1966,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     notes: 'Revision Mandated: ' + feedback
                 }).eq('id', mid);
 
-                // Revert project stage back to IN_PROGRESS (Building)
                 await sb.from('projects').update({
                     stage: PROJECT_STAGES.IN_PROGRESS
                 }).eq('id', projectId);
@@ -1972,7 +2138,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 try {
                     await sb.from('tasks').update({ status: newStatus }).eq('id', taskId);
 
-                    // Auto-advance project stage from AGREEMENT_LOCKED to IN_PROGRESS (Building) when work begins
                     if (newStatus === 'IN_PROGRESS' && projectRecord?.stage === PROJECT_STAGES.AGREEMENT_LOCKED) {
                         await sb.from('projects').update({ stage: PROJECT_STAGES.IN_PROGRESS }).eq('id', projectId);
                         await loadProjectOverview();
@@ -2206,6 +2371,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             timelineHealthBadge.textContent = overdueMilestones > 0 ? ('Schedule: ' + overdueMilestones + ' Overdue') : 'Schedule: On Track';
             timelineHealthBadge.className = 'badge ' + (overdueMilestones > 0 ? 'badge-warning' : 'badge-success');
         }
+
+        renderExecutiveCharts(milestonesList, sprintTasksList);
     }
 
     // -------------------------------------------------------------------------
@@ -2402,8 +2569,237 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------------------
-    // 14. General Modals Setup (With Automated Stage & Task Orchestration)
+    // 14. Bilateral Handover & Official Governance Deed Certificate Handlers
     // -------------------------------------------------------------------------
+    if (btnOpenFinalHandoverModal || btnSidebarRequestSignoff || btnProposeStageAdvance) {
+        const triggerHandover = () => {
+            openFinalSignoffConsole();
+        };
+        if (btnOpenFinalHandoverModal) btnOpenFinalHandoverModal.addEventListener('click', triggerHandover);
+        if (btnSidebarRequestSignoff) btnSidebarRequestSignoff.addEventListener('click', triggerHandover);
+    }
+
+    if (closeFinalSignoffModalBtn) closeFinalSignoffModalBtn.addEventListener('click', () => finalSignoffModal?.classList.add('hidden'));
+    if (closeFinalSignoffFooterBtn) closeFinalSignoffFooterBtn.addEventListener('click', () => finalSignoffModal?.classList.add('hidden'));
+
+    function openFinalSignoffConsole() {
+        if (!finalSignoffModal) return;
+        const isClient = currentUser?.role === ROLES.CLIENT;
+
+        if (providerHandoverForm) providerHandoverForm.classList.toggle('hidden', isClient);
+        if (clientFinalSignoffForm) clientFinalSignoffForm.classList.toggle('hidden', !isClient);
+
+        // Check if provider has already submitted handover notes
+        const latestHandoverUpdate = projectUpdatesList.find(u => u.category === 'DELIVERABLE' || (u.content && u.content.includes('FINAL HANDOVER')));
+
+        if (handoverProviderStatusBadge) {
+            handoverProviderStatusBadge.textContent = latestHandoverUpdate ? 'Submitted ✅' : 'Pending Submission';
+            handoverProviderStatusBadge.className = 'badge ' + (latestHandoverUpdate ? 'badge-success' : 'badge-warning');
+        }
+
+        if (handoverClientStatusBadge) {
+            handoverClientStatusBadge.textContent = projectRecord?.stage === PROJECT_STAGES.COMPLETED ? 'Completed & Closed' : (latestHandoverUpdate ? 'Ready for Review' : 'Awaiting Provider');
+            handoverClientStatusBadge.className = 'badge ' + (projectRecord?.stage === PROJECT_STAGES.COMPLETED ? 'badge-success' : (latestHandoverUpdate ? 'badge-primary' : 'badge-subtle'));
+        }
+
+        if (clientInspectHandoverContent) {
+            if (latestHandoverUpdate) {
+                clientInspectHandoverContent.innerHTML = '<div style="white-space: pre-wrap; line-height: 1.5;">' + escapeHtml(latestHandoverUpdate.content) + '</div>';
+            } else {
+                clientInspectHandoverContent.innerHTML = '<span class="text-warning">Provider has not submitted final handover package yet.</span>';
+            }
+        }
+
+        finalSignoffModal.classList.remove('hidden');
+    }
+
+    // Provider Submits Final Handover
+    if (providerHandoverForm) {
+        providerHandoverForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const repoUrl = handoverRepoUrlInput ? handoverRepoUrlInput.value.trim() : '';
+            const notes = handoverSummaryInput ? handoverSummaryInput.value.trim() : '';
+
+            if (!repoUrl || !notes || !sb) return;
+
+            try {
+                await sb.from('project_updates').insert([{
+                    project_id: projectId,
+                    author_name: currentUser?.fullName || 'Technical Lead',
+                    title: 'FINAL HANDOVER PACKAGE & RELEASE',
+                    category: 'DELIVERABLE',
+                    content: 'FINAL HANDOVER SUBMISSION:\n' + notes + '\n\nREPOSITORY / RELEASE URL: ' + repoUrl,
+                    artifact_url: repoUrl
+                }]);
+
+                await sb.from('projects').update({
+                    stage: PROJECT_STAGES.REVIEW
+                }).eq('id', projectId);
+
+                await sb.from('workspace_messages').insert([{
+                    project_id: projectId,
+                    sender_id: currentUser?.id,
+                    sender_name: currentUser?.fullName || 'Technical Lead',
+                    sender_role: 'SERVICE_PROVIDER',
+                    message: '📦 Final Project Handover Package dispatched! Awaiting Client Principal verification and escrow release.'
+                }]);
+
+                if (window.Toast) window.Toast.success('Final handover package submitted to client!');
+                finalSignoffModal.classList.add('hidden');
+                providerHandoverForm.reset();
+                await hydrateWorkspace();
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Failed to submit final handover.');
+            }
+        });
+    }
+
+    // Client Approves Final Completion & Settles Escrow
+    if (clientFinalSignoffForm) {
+        clientFinalSignoffForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!sb) return;
+
+            try {
+                // Mark all milestones as APPROVED
+                await sb.from('milestones').update({
+                    status: 'APPROVED',
+                    verified_at: new Date().toISOString()
+                }).eq('project_id', projectId);
+
+                // Mark project as COMPLETED and 100% progress
+                await sb.from('projects').update({
+                    stage: PROJECT_STAGES.COMPLETED,
+                    completion_percentage: 100
+                }).eq('id', projectId);
+
+                await sb.from('workspace_messages').insert([{
+                    project_id: projectId,
+                    sender_id: currentUser?.id,
+                    sender_name: currentUser?.fullName || 'Client Principal',
+                    sender_role: 'CLIENT',
+                    message: '🏆 Final Handover Verified & Approved! 100% of escrow released ($' + Number(projectRecord?.budget || 1000).toLocaleString() + '). Project marked COMPLETED.'
+                }]);
+
+                if (window.Toast) window.Toast.success('Project successfully completed and escrow released!');
+                finalSignoffModal.classList.add('hidden');
+                await hydrateWorkspace();
+                setTimeout(() => openCertificateDeedModal(), 500);
+            } catch (err) {
+                if (window.Toast) window.Toast.error('Could not complete project sign-off.');
+            }
+        });
+    }
+
+    if (btnRejectFinalHandover) {
+        btnRejectFinalHandover.addEventListener('click', async () => {
+            const feedback = prompt('Enter requested revisions for the final handover:');
+            if (!feedback || !sb) return;
+
+            try {
+                await sb.from('workspace_messages').insert([{
+                    project_id: projectId,
+                    sender_id: currentUser?.id,
+                    sender_name: currentUser?.fullName || 'Client Principal',
+                    sender_role: 'CLIENT',
+                    message: '↩️ Final Handover Revision Requested: "' + feedback + '"'
+                }]);
+                if (window.Toast) window.Toast.info('Revision feedback sent to technical lead.');
+                finalSignoffModal.classList.add('hidden');
+            } catch (e) {
+                if (window.Toast) window.Toast.error('Could not send revision request.');
+            }
+        });
+    }
+
+    // Official Governance Deed & Certificate Modal Triggers
+    if (btnOpenDeedCertificate) btnOpenDeedCertificate.addEventListener('click', openCertificateDeedModal);
+    if (btnOpenCertificateFromTab) btnOpenCertificateFromTab.addEventListener('click', openCertificateDeedModal);
+    if (closeCertificateModalBtn) closeCertificateModalBtn.addEventListener('click', () => certificateDeedModal?.classList.add('hidden'));
+    if (closeCertificateFooterBtn) closeCertificateFooterBtn.addEventListener('click', () => certificateDeedModal?.classList.add('hidden'));
+    if (btnPrintOfficialDeed) {
+        btnPrintOfficialDeed.addEventListener('click', () => {
+            window.print();
+        });
+    }
+
+    async function openCertificateDeedModal() {
+        if (!certificateDeedModal || !certificatePrintableBody) return;
+        const hash = agreementRecord?.scope_hash || projectRecord?.scope_hash || await computeSha256Fingerprint(projectId, agreementRecord?.version, agreementRecord?.agreed_amount);
+        const budget = Number(agreementRecord?.agreed_amount || projectRecord?.budget || 1000);
+        const clientName = projectRecord?.client_name || 'Client Principal';
+        const providerName = projectRecord?.assigned_provider_name || 'Technical Lead';
+        const isCompleted = projectRecord?.stage === PROJECT_STAGES.COMPLETED;
+
+        certificatePrintableBody.innerHTML = `
+            <div class="deed-certificate-sheet">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1e293b; padding-bottom: 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase;">WorkBridge Institutional Governance Suite</span>
+                        <h2 style="font-size: 1.35rem; margin: 0.2rem 0 0 0; color: #0f172a; font-weight: 800;">Official Master Services &amp; Escrow Deed</h2>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="deed-official-seal">🛡️ SECURE C2PA RECORD</div>
+                        <div class="text-xs text-muted mt-1">PRJ ID: PRJ-${String(projectId).slice(-4).toUpperCase()}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 mb-3" style="gap: 1rem; font-size: 0.85rem;">
+                    <div class="p-2 border rounded" style="background: #ffffff;">
+                        <span class="text-xs text-muted" style="display: block;">CLIENT PRINCIPAL</span>
+                        <strong>${escapeHtml(clientName)}</strong> (${escapeHtml(projectRecord?.client_email || 'client@workbridge.io')})
+                    </div>
+                    <div class="p-2 border rounded" style="background: #ffffff;">
+                        <span class="text-xs text-muted" style="display: block;">TECHNICAL LEAD / PROVIDER</span>
+                        <strong>${escapeHtml(providerName)}</strong> (${escapeHtml(projectRecord?.assigned_provider_email || 'provider@workbridge.io')})
+                    </div>
+                </div>
+
+                <div class="mb-3 p-3 border rounded" style="background: #f8fafc; font-size: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                        <span class="text-muted">Contract Consideration:</span>
+                        <strong class="text-success">$${budget.toLocaleString()} USD</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                        <span class="text-muted">Escrow Settlement Status:</span>
+                        <strong class="${isCompleted ? 'text-success' : 'text-primary'}">${isCompleted ? '100% Released & Settled' : 'Active & Protected'}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span class="text-muted">Baseline Version:</span>
+                        <strong>v${agreementRecord?.version || '1.0'} (${agreementRecord?.status || 'LOCKED'})</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-xs font-bold text-muted" style="letter-spacing: 0.05em; display: block; margin-bottom: 0.3rem;">DETERMINISTIC SHA-256 SCOPE HASH FINGERPRINT</span>
+                    <div style="font-family: monospace; font-size: 0.78rem; background: #0f172a; color: #38bdf8; padding: 0.65rem 0.85rem; border-radius: 6px; word-break: break-all;">
+                        ${escapeHtml(hash)}
+                    </div>
+                </div>
+
+                <div class="mb-3" style="font-size: 0.82rem; color: #334155; line-height: 1.5;">
+                    <strong>Legal Attestation:</strong> This document certifies that all milestone deliverables, cryptographic requirements baselines, and bilateral handover protocols have been executed under strict WorkBridge protocol governance.
+                </div>
+
+                <div class="grid grid-2 mt-4 pt-3 border-top" style="gap: 1.5rem; font-size: 0.8rem;">
+                    <div>
+                        <div style="font-weight: 700; color: #0f172a;">CLIENT DIGITAL SIGNATURE</div>
+                        <div style="font-family: monospace; color: #16a34a; margin-top: 0.2rem;">Signed &amp; Ratified ✓</div>
+                        <div class="text-xs text-muted">${agreementRecord?.client_signed_at ? new Date(agreementRecord.client_signed_at).toLocaleString() : 'Verified by Auth State'}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #0f172a;">PROVIDER DIGITAL SIGNATURE</div>
+                        <div style="font-family: monospace; color: #16a34a; margin-top: 0.2rem;">Signed &amp; Ratified ✓</div>
+                        <div class="text-xs text-muted">${agreementRecord?.provider_signed_at ? new Date(agreementRecord.provider_signed_at).toLocaleString() : 'Verified by Auth State'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        certificateDeedModal.classList.remove('hidden');
+    }
+
+    // General Modals Setup
     function setupWorkspaceModals() {
         if (btnSyncWorkspace) {
             btnSyncWorkspace.addEventListener('click', async () => {
@@ -2418,22 +2814,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (closePostUpdateModalBtn) closePostUpdateModalBtn.addEventListener('click', () => { if (modalPostUpdate) modalPostUpdate.classList.add('hidden'); });
         if (cancelPostUpdateBtn) cancelPostUpdateBtn.addEventListener('click', () => { if (modalPostUpdate) modalPostUpdate.classList.add('hidden'); });
-
         if (closeReviewProofModalBtn) closeReviewProofModalBtn.addEventListener('click', () => { if (modalReviewProof) modalReviewProof.classList.add('hidden'); });
-
         if (closeRevisionModalBtn) closeRevisionModalBtn.addEventListener('click', () => { if (modalRevisionRequest) modalRevisionRequest.classList.add('hidden'); });
         if (cancelRevisionModalBtn) cancelRevisionModalBtn.addEventListener('click', () => { if (modalRevisionRequest) modalRevisionRequest.classList.add('hidden'); });
-
         if (closeDecisionModalBtn) closeDecisionModalBtn.addEventListener('click', () => { if (decisionModal) decisionModal.classList.add('hidden'); });
         if (cancelDecisionBtn) cancelDecisionBtn.addEventListener('click', () => { if (decisionModal) decisionModal.classList.add('hidden'); });
-
         if (closeAmendmentModalBtn) closeAmendmentModalBtn.addEventListener('click', () => { if (amendmentModal) amendmentModal.classList.add('hidden'); });
         if (cancelAmendmentBtn) cancelAmendmentBtn.addEventListener('click', () => { if (amendmentModal) amendmentModal.classList.add('hidden'); });
-
         if (closeMilestoneModalBtn) closeMilestoneModalBtn.addEventListener('click', () => { if (milestoneActionModal) milestoneActionModal.classList.add('hidden'); });
         if (cancelMilestoneActionBtn) cancelMilestoneActionBtn.addEventListener('click', () => { if (milestoneActionModal) milestoneActionModal.classList.add('hidden'); });
 
-        // Provider Submits Milestone Proof -> Automatically Transition Project to REVIEW (Stage 5)
         if (milestoneActionForm) {
             milestoneActionForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -2457,7 +2847,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         submitted_at: new Date().toISOString()
                     }).eq('id', mid);
 
-                    // Auto-transition Project Stage to REVIEW (Stage 5)
                     await sb.from('projects').update({
                         stage: PROJECT_STAGES.REVIEW
                     }).eq('id', projectId);
@@ -2487,7 +2876,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (closeAddMilestoneModalBtn) closeAddMilestoneModalBtn.addEventListener('click', () => { if (addMilestoneModal) addMilestoneModal.classList.add('hidden'); });
         if (cancelAddMilestoneBtn) cancelAddMilestoneBtn.addEventListener('click', () => { if (addMilestoneModal) addMilestoneModal.classList.add('hidden'); });
 
-        // Create Milestone -> Auto-Seeds 3 Sprint Tasks & Advances Locked Project to Building
         if (addMilestoneForm) {
             addMilestoneForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -2531,12 +2919,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (mErr) throw mErr;
 
-                    // Automatically seed 3 sprint tasks for this milestone on the Kanban board
                     if (createdMilestone) {
                         await seedDefaultTasksForMilestone(createdMilestone);
                     }
 
-                    // If agreement was locked, automatically move stage to IN_PROGRESS (Building)
                     if (projectRecord?.stage === PROJECT_STAGES.AGREEMENT_LOCKED) {
                         await sb.from('projects').update({ stage: PROJECT_STAGES.IN_PROGRESS }).eq('id', projectId);
                         await loadProjectOverview();
@@ -2563,12 +2949,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!targetStage || !sb) return;
 
                 try {
-                    const updateObj = { stage: targetStage };
-                    if (targetStage === PROJECT_STAGES.COMPLETED) {
-                        updateObj.completion_percentage = 100;
-                    }
-
-                    await sb.from('projects').update(updateObj).eq('id', projectId);
+                    await sb.from('projects').update({ stage: targetStage }).eq('id', projectId);
 
                     await sb.from('workspace_messages').insert([{
                         project_id: projectId,
@@ -2588,15 +2969,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Dynamic Multi-Event Audit History Ledger
         if (btnViewAuditHistory) {
             btnViewAuditHistory.addEventListener('click', async () => {
                 if (auditHistoryModal) auditHistoryModal.classList.remove('hidden');
                 if (!auditTimelineContainer) return;
 
                 const eventsHtml = [];
-
-                // Event 1: Project Initialization
                 eventsHtml.push(
                     '<div class="timeline-event mb-3 pb-2 border-b">'
                     + '  <div style="display:flex; justify-content:space-between; align-items:center;">'
@@ -2608,7 +2986,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     + '</div>'
                 );
 
-                // Event 2: Bilateral Ratification & SHA-256 Lock
                 if (agreementRecord?.client_signed || agreementRecord?.provider_signed) {
                     eventsHtml.push(
                         '<div class="timeline-event mb-3 pb-2 border-b">'
@@ -2623,7 +3000,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     );
                 }
 
-                // Event 3: Milestones & Proofs
                 milestonesList.forEach((m, idx) => {
                     if (m.status === 'SUBMITTED_FOR_REVIEW' || m.status === 'APPROVED') {
                         eventsHtml.push(
@@ -2639,7 +3015,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
 
-                // Event 4: Scope Amendments
                 scopeAmendmentsList.forEach(a => {
                     eventsHtml.push(
                         '<div class="timeline-event mb-3 pb-2 border-b">'
@@ -2693,9 +3068,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Utilities
-    // -------------------------------------------------------------------------
     function formatTime(ts) {
         if (!ts) return '';
         const d = new Date(ts);

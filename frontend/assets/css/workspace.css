@@ -5,11 +5,11 @@
    Dedicated styling for:
    - Dynamic Stage Pipeline (Steps 1-6 with Live Connectors & Pulse Indicators)
    - Real-Time Telemetry Ribbon & Dispute Risk Badges
+   - Executive Visual Analytics Suite (SVG Escrow Donut, Speedometer Gauge, Velocity Bars)
    - Core Engine A: Version Locking, SHA-256 Scope Stamp & Bilateral Ratification
    - Core Engine B: Weighted Milestone Stepper, Horizon Gantt & Filterable Kanban
-   - Chat, AI Discussion Synthesizer, ADR Decision Journal & Resource Vault
-   - Universal Viewport Modal Constraints (Absolute Zero Scroll Cut-offs)
-   - Cross-device responsive layouts (Mobile, Tablet, Laptop, Desktop)
+   - Bilateral Handover Protocol & Official Cryptographic Governance Deed Certificate
+   - Universal Viewport Modal Constraints & Print-to-PDF Stylesheet
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -783,7 +783,6 @@
 
 /* --------------------------------------------------------------------------
    8. Universal Modal Scrollable Body & Viewport Constraints
-   (Guarantees Submit/Cancel Action Footers are NEVER cut off)
    -------------------------------------------------------------------------- */
 .modal-backdrop {
     position: fixed;
@@ -884,5 +883,103 @@
 
     .modal-card .modal-footer {
         padding: 0.75rem 1rem;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   9. Executive Visual Analytics & Telemetry Suite (SVG Charts & Gauges)
+   -------------------------------------------------------------------------- */
+#executiveVisualChartsRow .card {
+    border-top: 3px solid var(--primary, #3b82f6);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#executiveVisualChartsRow .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.08);
+}
+
+#escrowSvgMount svg,
+#riskGaugeSvgMount svg {
+    overflow: visible;
+    display: block;
+}
+
+.donut-segment {
+    transition: stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --------------------------------------------------------------------------
+   10. Official Cryptographic Governance Deed & Stamp-Paper Certificate
+   -------------------------------------------------------------------------- */
+.deed-certificate-sheet {
+    border: 2px double #1e293b;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background: radial-gradient(circle at top right, #f8fafc 0%, #ffffff 70%);
+    color: #0f172a;
+    position: relative;
+}
+
+.deed-official-seal {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border: 1.5px solid #16a34a;
+    background: #f0fdf4;
+    color: #15803d;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   11. Clean Print-to-PDF Media Rules (For Official Contract & Deed Export)
+   -------------------------------------------------------------------------- */
+@media print {
+    body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .site-header,
+    .workspace-tabs,
+    .project-header-actions,
+    #invitationGuardBanner,
+    #finalReviewGuardBanner,
+    .modal-close-btn,
+    .modal-footer,
+    #toastContainer {
+        display: none !important;
+    }
+
+    /* If Certificate Modal is open during print, print only the Certificate */
+    body:has(#certificateDeedModal:not(.hidden)) .workspace-container {
+        display: none !important;
+    }
+
+    body:has(#certificateDeedModal:not(.hidden)) #certificateDeedModal {
+        position: static !important;
+        background: #ffffff !important;
+        padding: 0 !important;
+        height: auto !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+
+    body:has(#certificateDeedModal:not(.hidden)) #certificateDeedModal .modal-card {
+        max-width: 100% !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    body:has(#certificateDeedModal:not(.hidden)) #certificatePrintableBody {
+        overflow: visible !important;
+        padding: 0 !important;
     }
 }
